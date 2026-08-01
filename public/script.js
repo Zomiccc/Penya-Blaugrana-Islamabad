@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Create backdrop element
     const backdrop = document.createElement('div');
     backdrop.className = 'nav-backdrop';
-    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;';
+    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;pointer-events:none;';
     document.body.appendChild(backdrop);
 
     const setMenu = (open) => {
@@ -18,10 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (open) {
         backdrop.style.opacity = '1';
         backdrop.style.visibility = 'visible';
+        backdrop.style.pointerEvents = 'auto';
         document.body.style.overflow = 'hidden';
       } else {
         backdrop.style.opacity = '0';
         backdrop.style.visibility = 'hidden';
+        backdrop.style.pointerEvents = 'none';
         document.body.style.overflow = '';
       }
     };
