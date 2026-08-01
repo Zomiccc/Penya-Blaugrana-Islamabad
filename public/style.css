@@ -150,7 +150,7 @@ strong,b{font-weight:700}
    HEADER
    ========================================================================== */
 .scroll-progress{
-  position:fixed;top:0;left:0;height:3px;width:0;z-index:120;
+  position:fixed;top:0;left:0;height:3px;width:0;z-index:20010;
   background:linear-gradient(90deg,var(--grana),var(--gold));
   transition:width .1s linear;
 }
@@ -159,7 +159,7 @@ strong,b{font-weight:700}
 .topbar .container{display:flex;justify-content:space-between;align-items:center;padding:9px 28px;gap:16px;flex-wrap:wrap;overflow:hidden}
 
 header.site-header{
-  position:sticky;top:0;z-index:100;
+  position:sticky;top:0;z-index:20000;
   border-bottom:1px solid var(--line);
   transition:padding .3s ease;
 }
