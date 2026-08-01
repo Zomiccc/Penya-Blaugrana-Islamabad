@@ -654,9 +654,6 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
     flex-direction:column;align-items:flex-start;justify-content:center;
     padding:40px 34px;gap:26px;
     transform:translateX(100%);transition:transform .38s cubic-bezier(.16,.84,.44,1);z-index:9999;
-    /* Ensure solid background and proper stacking */
-    background-color:var(--night-2);
-    box-shadow:0 0 0 1000px rgba(0,0,0,0.5);
   }
   nav.main-nav a{font-size:1rem;letter-spacing:.1em;position:relative;z-index:10000}
   nav.main-nav.open{transform:translateX(0)}
