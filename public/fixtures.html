@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixtures | Penya Blaugrana Islamabad</title>
+<meta name="description" content="FC Barcelona's upcoming fixtures — dates, kickoff times, venues and live countdowns, brought to you by Penya Blaugrana Islamabad.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+<style>
+  .fixtures-page{padding:60px 0 90px}
+  .fixtures-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:22px;margin-top:36px}
+  .fixture-card.premium{
+    background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:26px 24px;position:relative;overflow:hidden;transition:transform .3s ease,border-color .3s ease;
+  }
+  .fixture-card.premium::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--senyera-rule)}
+  .fixture-card.premium:hover{transform:translateY(-4px);border-color:rgba(237,187,0,.4)}
+  .fixture-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px}
+  .fixture-comp{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-lt)}
+  .fixture-comp img{width:22px;height:22px;object-fit:contain}
+  .fixture-haw{font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;font-weight:700;color:var(--gold);border:1px solid rgba(237,187,0,.4);padding:3px 9px;border-radius:2px}
+  .fixture-card.premium .teams{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}
+  .fixture-card.premium .team{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;text-align:center}
+  .fixture-card.premium .team img{width:56px;height:56px;object-fit:contain}
+  .fixture-card.premium .team span{font-family:var(--mono);font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--chalk-dim);line-height:1.3}
+  .fixture-card.premium .vs{font-family:var(--mono);color:var(--gold);font-weight:700;font-size:.7rem;letter-spacing:.14em}
+  .fixture-meta{margin-bottom:16px}
+  .fixture-meta .meta{font-family:var(--mono);font-size:.68rem;color:var(--muted-lt);margin-bottom:4px}
+  .fixture-meta .venue-tag{color:var(--chalk);font-weight:700}
+  .fixture-countdown{
+    font-family:var(--mono);font-size:.78rem;color:var(--gold);font-weight:700;
+    background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:2px;
+    padding:10px 12px;text-align:center;letter-spacing:.04em;
+  }
+  .fixtures-note{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:30px;text-align:center}
+  @media(max-width:600px){.fixtures-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container">
+    <span>Penya Blaugrana Islamabad · Est. Islamabad, Pakistan</span>
+    <span>Més que un club</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
+      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About us</a>
+      <a href="join.html">Join us</a>
+      <a href="fixtures.html" class="active">Fixtures</a>
+      <a href="media.html">Media</a>
+      <a href="statutes.html">Statutes</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn" href="join.html"><span>Join us</span></a>
+      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="tifo" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container">
+    <div class="eyebrow">Matchday</div>
+    <h1>Upcoming <em>fixtures</em></h1>
+    <p>Every FC Barcelona match, with kickoff times in Pakistan time, venues and live countdowns. Data refreshed automatically from Football-Data.org.</p>
+  </div>
+</section>
+
+<div class="shield-divider"></div>
+
+<section class="fixtures-page">
+  <div class="container">
+    <div class="eyebrow">The schedule</div>
+    <h2 style="max-width:16ch">Next ten Barça matches</h2>
+    <div class="fixtures-grid" id="fixturesList">
+      <p class="loading-msg">Loading fixtures…</p>
+    </div>
+    <p class="fixtures-note">Fixture data via Football-Data.org · cached by our server · times shown in Pakistan Standard Time (PKT)</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
+        <h4>Penya Blaugrana Islamabad</h4>
+        <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+          <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+        </div>
+      </div>
+      <div>
+        <h5>Venue</h5>
+        <p>Marina Mall, Dua Chowk, Phase 4-B Ghauri Town, Islamabad, 45500, Pakistan</p>
+      </div>
+      <div>
+        <h5>Quick links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="join.html">Join us</a></li>
+          <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="media.html">Media</a></li>
+          <li><a href="statutes.html">Statutes</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+        <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+        <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+        <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+        <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="animations.js"></script>
+</body>
+</html>

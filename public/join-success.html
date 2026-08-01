@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to PBI | Penya Blaugrana Islamabad</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container">
+    <span>Penya Blaugrana Islamabad · Est. Islamabad, Pakistan</span>
+    <span>Més que un club</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
+      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html" class="active">Home</a>
+      <a href="about.html">About us</a>
+      <a href="join.html">Join us</a>
+      <a href="fixtures.html">Fixtures</a>
+      <a href="media.html">Media</a>
+      <a href="statutes.html">Statutes</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn" href="join.html"><span>Join us</span></a>
+      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="tifo" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container">
+    <h1 id="statusHeading">Checking your payment…</h1>
+    <p id="statusSub">One moment while we confirm this with Stripe.</p>
+  </div>
+</section>
+
+<section>
+  <div class="container" style="max-width:640px;text-align:center">
+    <div id="successBox" style="display:none">
+      <div class="eyebrow" style="justify-content:center">Membership confirmed</div>
+      <p>Welcome to Penya Blaugrana Islamabad! Your membership payment was received and your board seat in the Barça family is confirmed. A confirmation email is on its way to you.</p>
+      <a class="btn" href="index.html">Back to Home</a>
+    </div>
+    <div id="pendingBox" style="display:none">
+      <p>We couldn't confirm your payment yet. If Stripe has just redirected you here, this can take a few seconds — refresh this page. If the issue continues, please contact us so we can check your submission manually.</p>
+      <a class="btn blue" href="contact.html">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
+        <h4>Penya Blaugrana Islamabad</h4>
+        <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+          <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+        </div>
+      </div>
+      <div>
+        <h5>Venue</h5>
+        <p>Marina Mall, Dua Chowk, Phase 4-B Ghauri Town, Islamabad, 45500, Pakistan</p>
+      </div>
+      <div>
+        <h5>Quick links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="join.html">Join us</a></li>
+          <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="media.html">Media</a></li>
+          <li><a href="statutes.html">Statutes</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+        <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+        <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+        <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+        <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="animations.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id');
+  const heading = document.getElementById('statusHeading');
+  const sub = document.getElementById('statusSub');
+
+  if (!sessionId) {
+    heading.textContent = 'No payment session found';
+    sub.textContent = '';
+    document.getElementById('pendingBox').style.display = 'block';
+  } else {
+    fetch(`/api/checkout-session/${sessionId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === 'paid') {
+          heading.textContent = 'Payment Successful';
+          sub.textContent = 'Benvingut a la família Blaugrana!';
+          document.getElementById('successBox').style.display = 'block';
+          // the one moment on this whole site that earns confetti
+          if (window.pbiCelebrate) window.pbiCelebrate();
+        } else {
+          heading.textContent = 'Payment Pending';
+          sub.textContent = '';
+          document.getElementById('pendingBox').style.display = 'block';
+        }
+      })
+      .catch(() => {
+        heading.textContent = 'Payment Pending';
+        sub.textContent = '';
+        document.getElementById('pendingBox').style.display = 'block';
+      });
+  }
+</script>
+</body>
+</html>

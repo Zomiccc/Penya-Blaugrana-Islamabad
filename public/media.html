@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media | Penya Blaugrana Islamabad</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+<!-- Elfsight platform script (loaded once in head for all widgets) -->
+<script src="https://elfsightcdn.com/platform.js" async></script>
+<style>
+/* Gallery: a mosaic, echoing the tifo grid. First tile spans two columns. */
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:40px}
+.gallery figure{margin:0;position:relative;overflow:hidden;border-radius:2px;background:var(--night-2)}
+.gallery figure:nth-child(1){grid-column:span 2;grid-row:span 2}
+.gallery img{height:100%;width:100%;object-fit:cover;aspect-ratio:4/3}
+.gallery figure:nth-child(1) img{aspect-ratio:auto;min-height:100%}
+.gallery figure::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 50%,rgba(4,6,15,.6));
+  opacity:0;transition:opacity .4s ease;
+}
+.gallery figure:hover::after{opacity:1}
+@media(max-width:900px){.gallery{grid-template-columns:1fr 1fr}.gallery figure:nth-child(1){grid-column:span 2;grid-row:auto}}
+@media(max-width:560px){.gallery{grid-template-columns:1fr}.gallery figure:nth-child(1){grid-column:auto}}
+
+.insta-panel{
+  background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:80px 34px;margin-bottom:70px;position:relative;overflow:hidden;
+}
+.insta-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--senyera-rule)}
+.insta-panel-head{display:flex;align-items:center;gap:14px;margin-bottom:60px;flex-wrap:wrap}
+.insta-panel-head .ig-icon{
+  width:42px;height:48px;flex-shrink:0;background:var(--gold);clip-path:var(--shield);
+  display:flex;align-items:center;justify-content:center;color:var(--ink);
+  font-family:var(--display);font-variation-settings:'wdth' 110,'wght' 900;font-size:.8rem;
+}
+.insta-panel-head h3{margin:0;font-size:1.15rem;color:var(--chalk)}
+.insta-panel-head .hint{margin:3px 0 0;color:var(--muted-lt);font-size:.82rem}
+.insta-panel-head a.follow{
+  margin-left:auto;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(237,187,0,.4);padding-bottom:3px;
+}
+.insta-panel-head a.follow:hover{color:var(--chalk);border-color:var(--chalk)}
+.instagram-widget-container{
+  max-width:1200px;margin:0 auto;text-align:center;
+  isolation:isolate; /* Isolate widget to prevent layout/animation interference */
+}
+#instagramFallback{
+  display:none;text-align:center;padding:44px 24px;color:var(--muted-lt);font-size:.92rem;
+  background:rgba(0,0,0,.35);border:1px dashed var(--line);border-radius:3px;
+}
+#instagramFallback .fallback-btn{
+  display:inline-block;margin-top:16px;padding:12px 24px;background:var(--gold);
+  color:var(--ink);text-decoration:none;font-family:var(--mono);font-size:.75rem;
+  letter-spacing:.1em;text-transform:uppercase;border-radius:2px;transition:background .3s ease;
+}
+#instagramFallback .fallback-btn:hover{background:var(--chalk)}
+/* Hide Elfsight admin/edit panels - only visible to widget owner */
+.elfsight-admin,
+.elfsight-edit,
+.elfsight-controls,
+.elfsight-badge,
+.elfsight-watermark,
+.elfsight-widget .elfsight-admin-panel,
+.elfsight-widget .elfsight-edit-button,
+.elfsight-widget .elfsight-controls,
+[data-elfsight-app] .elfsight-admin-panel,
+[data-elfsight-app] .elfsight-edit-button,
+[data-elfsight-app] .elfsight-controls,
+.e-elfsight-admin,
+.e-elfsight-edit,
+.e-elfsight-controls,
+.e-widget-admin,
+.e-widget-edit,
+.elfsight-app .elfsight-admin,
+.elfsight-app .elfsight-edit,
+.elfsight-app .elfsight-controls {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+/* Responsive Instagram widget */
+@media(max-width:900px){
+  .insta-panel{padding:60px 24px}
+  .insta-panel-head{margin-bottom:40px}
+  .instagram-widget-container{max-width:100%}
+}
+@media(max-width:560px){
+  .insta-panel{padding:50px 20px}
+  .insta-panel-head{flex-direction:column;align-items:flex-start;gap:12px}
+  .insta-panel-head a.follow{margin-left:0;margin-top:8px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container">
+    <span>Penya Blaugrana Islamabad · Est. Islamabad, Pakistan</span>
+    <span>Més que un club</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
+      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About us</a>
+      <a href="join.html">Join us</a>
+      <a href="fixtures.html">Fixtures</a>
+      <a href="media.html" class="active">Media</a>
+      <a href="statutes.html">Statutes</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn" href="join.html"><span>Join us</span></a>
+      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="tifo" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container">
+    <div class="eyebrow">Gallery</div>
+    <h1>The <em>moments</em></h1>
+    <p>Moments from Penya Blaugrana Islamabad — match screenings, meetups, and the Barça family in Pakistan.</p>
+  </div>
+</section>
+
+<div class="shield-divider"></div>
+
+
+<section>
+  <div class="container">
+    <div class="insta-panel reveal-scale">
+      <div class="insta-panel-head">
+        <div class="ig-icon">IG</div>
+        <div>
+          <h3>Live from @pbislamabad</h3>
+          <p class="hint">Tap any photo to open the post on Instagram</p>
+        </div>
+        <a class="follow" href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener">Follow us →</a>
+      </div>
+      <div class="instagram-widget-container">
+        <!-- Elfsight Instagram Feed -->
+        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0" data-elfsight-app-lazy></div>
+        <div id="instagramFallback">
+          <p>The Instagram feed couldn't load. Please visit our Instagram page to see our latest content.</p>
+          <a href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener" class="fallback-btn">View us on Instagram</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="eyebrow">PBI moments</div>
+    <h2>From our community</h2>
+    <div class="gallery reveal-stagger">
+      <figure><img src="https://pbisb.com/wp-content/uploads/2026/07/MGA1546-scaled.jpg" alt="Members gathered at a PBI screening"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2026/07/soccer-ball-on-a-field-inside-a-stadium-full-of-fans-photo.jpg" alt="A stadium full of supporters"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1544366981-53db834f982a.avif" alt="Barça fans celebrating"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1575343406218-42d896e03a85-1.avif" alt="Supporters gathering before a match"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/0e6527234716145dc9f71c479c1f347b.jpg" alt="The PBI community"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/SG_8977.webp" alt="PBI board and members"></figure>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
+        <h4>Penya Blaugrana Islamabad</h4>
+        <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+          <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+        </div>
+      </div>
+      <div>
+        <h5>Venue</h5>
+        <p>Marina Mall, Dua Chowk, Phase 4-B Ghauri Town, Islamabad, 45500, Pakistan</p>
+      </div>
+      <div>
+        <h5>Quick links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="join.html">Join us</a></li>
+          <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="media.html">Media</a></li>
+          <li><a href="statutes.html">Statutes</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+        <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+        <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+        <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+        <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="animations.js"></script>
+<script>
+// Elfsight widget fallback handler
+document.addEventListener('DOMContentLoaded', () => {
+  const widget = document.querySelector('.elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0');
+  const fallback = document.getElementById('instagramFallback');
+  
+  if (!widget || !fallback) return;
+  
+  // Show fallback if widget fails to load after 10 seconds
+  setTimeout(() => {
+    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
+      fallback.style.display = 'block';
+    }
+  }, 10000);
+  
+  // Monitor for widget load
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (widget.innerHTML && widget.innerHTML.trim() !== '') {
+        fallback.style.display = 'none';
+      }
+    });
+  });
+  
+  observer.observe(widget, { childList: true, subtree: true });
+  
+  // Double-check after 15 seconds as a safety net
+  setTimeout(() => {
+    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
+      fallback.style.display = 'block';
+    }
+  }, 15000);
+});
+</script>
+</body>
+</html>

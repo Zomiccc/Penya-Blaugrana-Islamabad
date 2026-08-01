@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penya Blaugrana Islamabad — Pakistan's first FC Barcelona penya</title>
+<meta name="description" content="Penya Blaugrana Islamabad is the first official FC Barcelona supporters' club in Pakistan. Match screenings, meetups and membership in Islamabad.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="container">
+    <span>Penya Blaugrana Islamabad · Est. Islamabad, Pakistan</span>
+    <span>Més que un club</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
+      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html" class="active">Home</a>
+      <a href="about.html">About us</a>
+      <a href="join.html">Join us</a>
+      <a href="fixtures.html">Fixtures</a>
+      <a href="media.html">Media</a>
+      <a href="statutes.html">Statutes</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn" href="join.html"><span>Join us</span></a>
+      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ HERO: THE TIFO ============================ -->
+<section class="hero">
+  <div class="tifo" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-kicker">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="">
+        <div>
+          Pakistan's first FC Barcelona penya
+          <span>Islamabad · Pakistan</span>
+        </div>
+      </div>
+
+      <h1>
+        <span class="line-lift l1"><span>Penya</span></span>
+        <span class="line-lift l2"><span>Blaugrana</span></span>
+        <span class="line-lift l3"><span>Islamabad</span></span>
+      </h1>
+
+      <p class="hero-sub">
+        Barça play at nine in Barcelona. That's <b>one in the morning here</b> — so we stay up.
+        Every match goes on the big screen, the room fills, and Camp Nou gets a little louder from 5,000km away.
+      </p>
+
+      <div class="cta-row">
+        <a class="btn gold" href="join.html"><span>Become a member</span></a>
+        <a class="btn alt" href="about.html"><span>Who we are</span></a>
+      </div>
+
+      <div class="hero-meta">
+        <div><b>First in Pakistan</b>Official FC Barcelona penya</div>
+        <div><b>Islamabad</b>Marina Mall, Ghauri Town</div>
+        <div><b>Més que un club</b>More than a club</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================ LED TICKER ============================ -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>Més que un club <i>Més que un club</i> Força Barça <i>Visca el Barça</i> Islamabad Culers</span>
+    <span>Més que un club <i>Més que un club</i> Força Barça <i>Visca el Barça</i> Islamabad Culers</span>
+  </div>
+</div>
+
+<!-- ============================ MATCHDAY SCOREBOARD ============================ -->
+<section class="fixtures">
+  <div class="container">
+    <div class="fixtures-card reveal-scale">
+
+      <div class="scoreboard-head">
+        <div>
+          <div class="eyebrow">Matchday</div>
+          <h2 class="section-title">Next Barça match</h2>
+        </div>
+        <span class="live-dot">Live fixture data</span>
+      </div>
+
+      <p class="next-match-strip" id="nextMatchStrip">Loading next fixture…</p>
+
+      <div class="countdown" id="countdown">
+        <div class="box"><b class="d">--</b><small>Days</small></div>
+        <span class="colon">:</span>
+        <div class="box"><b class="h">--</b><small>Hrs</small></div>
+        <span class="colon">:</span>
+        <div class="box"><b class="m">--</b><small>Mins</small></div>
+        <span class="colon">:</span>
+        <div class="box"><b class="s">--</b><small>Secs</small></div>
+      </div>
+
+      <div class="clock-row">
+        <div class="clock-cell">
+          <div class="city">Right now in Barcelona</div>
+          <div class="time" id="clockBarcelona">--:--</div>
+          <p class="note">Where the match is played.</p>
+        </div>
+        <div class="clock-cell here">
+          <div class="city">Right now in Islamabad</div>
+          <div class="time" id="clockIslamabad">--:--</div>
+          <p class="note">Four hours ahead. Kettle on, curtains closed.</p>
+        </div>
+      </div>
+
+      <p class="venue-line" id="venueLine"></p>
+
+      <div class="fixture-scroll" id="fixtureScroll">
+        <p class="loading-msg">Fetching live match data…</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="shield-divider"></div>
+
+<!-- ============================ WHO WE ARE ============================ -->
+<section class="tile-blau">
+  <div class="container split">
+    <div class="reveal-left">
+      <div class="eyebrow">The penya</div>
+      <h2>Our passion</h2>
+      <p>At Penya Blaugrana Islamabad, our passion is FC Barcelona. We are building a community in Pakistan where culers come together to celebrate the beautiful game, share unforgettable moments, and live the values of the club.</p>
+      <p>Through match screenings, cultural events and community gatherings, we bring Barça fans in Islamabad closer to the team we all love.</p>
+      <p>Our passion goes beyond the pitch — we proudly support FCB Femení and work to raise awareness of their achievements, and of women's football in Pakistan.</p>
+    </div>
+    <div class="reveal-right framed">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1544366981-53db834f982a.avif" alt="Barça supporters celebrating together">
+    </div>
+  </div>
+</section>
+
+<!-- ============================ OUR TRIPS ============================ -->
+<section class="tile-grana">
+  <div class="container split">
+    <div class="our-trips-media reveal-left">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1575343406218-42d896e03a85-1.avif" alt="Supporters travelling to a match together">
+      <img class="badge" src="https://pbisb.com/wp-content/uploads/2025/08/dimond.png" alt="">
+    </div>
+    <div class="reveal-right">
+      <div class="eyebrow">Together we travel</div>
+      <h2>Our trips</h2>
+      <p>Our goal is to create chances for fans to watch matches side by side, share the experience, and strengthen the bond between culers here.</p>
+      <p>Being part of the Barça family means joining penyas that bring supporters together across borders.</p>
+      <p>It's a real family — friendships get built and memories get made through our love for the club.</p>
+      <a class="btn blue" href="media.html"><span>See the moments</span></a>
+    </div>
+  </div>
+</section>
+
+<div class="shield-divider"></div>
+
+<!-- ============================ WHAT WE STAND FOR ============================ -->
+<section class="section-tint">
+  <div class="container">
+    <div class="eyebrow">What we stand for</div>
+    <h2 style="max-width:14ch">The things we carry into the room</h2>
+    <div class="values-grid reveal-stagger">
+
+      <div class="value-card tile-blau">
+        <div class="icon-wrap"><img src="https://pbisb.com/wp-content/uploads/2025/08/dimond.png" alt=""></div>
+        <h4>Our values</h4>
+        <p>As an FC Barcelona supporters' club, we are committed to upholding respect, unity, passion, community, inclusivity, integrity and solidarity.</p>
+      </div>
+
+      <div class="value-card tile-grana">
+        <div class="icon-wrap"><img src="https://pbisb.com/wp-content/uploads/2025/08/overlapping-circles.png" alt=""></div>
+        <h4>Our spirit</h4>
+        <ul>
+          <li>Respect and tolerance</li>
+          <li>Sportsmanship and fair play</li>
+          <li>Solidarity</li>
+          <li>Democracy</li>
+        </ul>
+      </div>
+
+      <div class="value-card tile-blau">
+        <div class="icon-wrap"><img src="https://pbisb.com/wp-content/uploads/2025/08/soccer-ball-variant-4.png" alt=""></div>
+        <h4>Our venue</h4>
+        <p>If you live in, work in, or are visiting Islamabad, join us on match days as we gather to watch together — a little piece of Camp Nou in Pakistan.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================ STATUTES CTA ============================ -->
+<section class="banner-cta">
+  <div class="container reveal">
+    <div class="eyebrow">House rules</div>
+    <h2>Our rules and regulations</h2>
+    <p>The statutes set out the rights and responsibilities of members, and define how Penya Blaugrana Islamabad is structured and governed.</p>
+    <a class="btn alt" href="statutes.html"><span>Read the statutes</span></a>
+  </div>
+</section>
+
+<div class="shield-divider"></div>
+
+<!-- ============================ VENUE ============================ -->
+<section class="tile-blau">
+  <div class="container">
+    <div class="venue-gallery reveal-scale">
+      <img src="https://pbisb.com/wp-content/uploads/2026/07/MGA1546-scaled.jpg" alt="Members gathered at a PBI screening">
+      <div class="stack">
+        <img src="https://pbisb.com/wp-content/uploads/2026/07/soccer-ball-on-a-field-inside-a-stadium-full-of-fans-photo.jpg" alt="A stadium full of supporters">
+      </div>
+    </div>
+    <div class="reveal" style="max-width:66ch">
+      <div class="eyebrow">The room</div>
+      <h2>Where we gather</h2>
+      <p>As the newest addition to the worldwide Barça family, Penya Blaugrana Islamabad hosts match screenings for supporters across the twin cities. While we finalise our official home venue, the commitment stays the same: the best atmosphere to watch FC Barcelona outside Camp Nou.</p>
+      <p>From screenings to social meetups, every gathering is built on passion, energy and camaraderie. Whether you've supported Barça your whole life or you're just discovering the club, there's a place for you here.</p>
+      <a class="btn gold" href="contact.html"><span>Find us</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ CONTACT CTA ============================ -->
+<section class="banner-cta">
+  <div class="container reveal">
+    <div class="eyebrow">Get in touch</div>
+    <h2>Questions? Ask us anything</h2>
+    <p>Want to join, bring a group on match day, or just find out where we're watching this weekend — we're a message away.</p>
+    <a class="btn" href="contact.html"><span>Contact us</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
+        <h4>Penya Blaugrana Islamabad</h4>
+        <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+          <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+        </div>
+      </div>
+      <div>
+        <h5>Venue</h5>
+        <p>Marina Mall, Dua Chowk, Phase 4-B Ghauri Town, Islamabad, 45500, Pakistan</p>
+      </div>
+      <div>
+        <h5>Quick links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="join.html">Join us</a></li>
+          <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="media.html">Media</a></li>
+          <li><a href="statutes.html">Statutes</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook">f</a>
+        <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok">t</a>
+        <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram">i</a>
+        <a href="https://x.com/IslamabadP45636" aria-label="X">x</a>
+        <a href="https://youtube.com/@pbislamabad" aria-label="YouTube">y</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="animations.js"></script>
+</body>
+</html>
