@@ -2,13 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const burger = document.querySelector('.hamburger');
   const nav = document.querySelector('.main-nav');
   if (burger && nav) {
+    // Create backdrop element
+    const backdrop = document.createElement('div');
+    backdrop.className = 'nav-backdrop';
+    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;';
+    document.body.appendChild(backdrop);
+
     const setMenu = (open) => {
       nav.classList.toggle('open', open);
       burger.classList.toggle('open', open);
       burger.setAttribute('aria-expanded', String(open));
       burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      
+      // Toggle backdrop
+      if (open) {
+        backdrop.style.opacity = '1';
+        backdrop.style.visibility = 'visible';
+        document.body.style.overflow = 'hidden';
+      } else {
+        backdrop.style.opacity = '0';
+        backdrop.style.visibility = 'hidden';
+        document.body.style.overflow = '';
+      }
     };
     setMenu(false);
+    
+    // Close menu when clicking backdrop
+    backdrop.addEventListener('click', () => setMenu(false));
+    
     burger.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
     burger.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenu(!nav.classList.contains('open')); }

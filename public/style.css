@@ -653,11 +653,11 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
     background:var(--night-2);border-left:1px solid var(--line);
     flex-direction:column;align-items:flex-start;justify-content:center;
     padding:40px 34px;gap:26px;
-    transform:translateX(100%);transition:transform .38s cubic-bezier(.16,.84,.44,1);z-index:90;
+    transform:translateX(100%);transition:transform .38s cubic-bezier(.16,.84,.44,1);z-index:9999;
   }
   nav.main-nav a{font-size:1rem;letter-spacing:.1em}
   nav.main-nav.open{transform:translateX(0)}
-  .hamburger{display:flex;z-index:95}
+  .hamburger{display:flex;z-index:10000}
   .header-cta .btn{display:none}
   .split,.contact-wrap,.venue-gallery,.footer-grid{grid-template-columns:1fr}
   .split{gap:44px}
