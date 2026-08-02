@@ -254,7 +254,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
   margin-bottom:26px;
 }
-.hero-kicker img{width:44px;height:44px;object-fit:contain;flex-shrink:0}
+.hero-kicker img{width:60px;height:60px;object-fit:contain;flex-shrink:0}
 .hero-kicker span{display:block;color:var(--chalk-dim);font-size:.62rem;letter-spacing:.16em;margin-top:2px}
 
 .hero h1{margin-bottom:0;line-height:.86}
