@@ -76,12 +76,8 @@
 .elfsight-app .elfsight-admin,
 .elfsight-app .elfsight-edit,
 .elfsight-app .elfsight-controls,
-/* Newer Elfsight widgets ship under an "eapps-" prefix — this is what
-   renders the "Free Instagram Feed Widget" pill on the free plan */
-[class*="eapps-widget-toolbar"],
-[class*="eapps-"][class*="toolbar"],
-[class*="eapps-"][class*="badge"],
-[class*="eapps-"][class*="powered"],
+/* Elfsight's free-plan badge is a link to elfsight.com — hide it specifically,
+   without broad class-substring matching that could catch a real content wrapper */
 a[href*="elfsight.com"] {
   display: none !important;
   visibility: hidden !important;
@@ -160,7 +156,7 @@ a[href*="elfsight.com"] {
       </div>
       <div class="instagram-widget-container">
         <!-- Elfsight Instagram Feed -->
-        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0" data-elfsight-app-lazy></div>
+        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0"></div>
         <div id="instagramFallback">
           <p>The Instagram feed couldn't load. Please visit our Instagram page to see our latest content.</p>
           <a href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener" class="fallback-btn">View us on Instagram</a>
