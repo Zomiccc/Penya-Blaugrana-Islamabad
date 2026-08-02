@@ -188,7 +188,7 @@ a[href*="elfsight.com"] {
       </div>
       <div class="instagram-widget-container">
         <!-- Elfsight Instagram Feed -->
-        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0" data-elfsight-app-lazy="false"></div>
+        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0"></div>
         <div id="instagramFallback">
           <p>The Instagram feed couldn't load. Please visit our Instagram page to see our latest content.</p>
           <a href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener" class="fallback-btn">View us on Instagram</a>
@@ -261,33 +261,38 @@ a[href*="elfsight.com"] {
 document.addEventListener('DOMContentLoaded', () => {
   const widget = document.querySelector('.elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0');
   const fallback = document.getElementById('instagramFallback');
-  
+
   if (!widget || !fallback) return;
-  
-  // Show fallback if widget fails to load after 10 seconds
-  setTimeout(() => {
-    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
-      fallback.style.display = 'block';
+
+  // Elfsight injects an empty loading shell into this div almost immediately,
+  // so checking "is there any HTML at all" falsely reports success. Instead,
+  // check for an actual loaded photo (a real <img> with a src).
+  const hasRealContent = () => widget.querySelector('img[src]') !== null;
+
+  let resolved = false;
+  const checkNow = () => {
+    if (resolved) return;
+    if (hasRealContent()) {
+      resolved = true;
+      fallback.style.display = 'none';
+      clearInterval(poll);
     }
-  }, 10000);
-  
-  // Monitor for widget load
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (widget.innerHTML && widget.innerHTML.trim() !== '') {
-        fallback.style.display = 'none';
-      }
-    });
-  });
-  
+  };
+
+  // Poll every 2s for real content
+  const poll = setInterval(checkNow, 2000);
+
+  const observer = new MutationObserver(checkNow);
   observer.observe(widget, { childList: true, subtree: true });
-  
-  // Double-check after 15 seconds as a safety net
+
+  // Give up after 20 seconds and show the fallback if no real photo ever loaded
   setTimeout(() => {
-    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
+    if (!resolved) {
+      clearInterval(poll);
+      observer.disconnect();
       fallback.style.display = 'block';
     }
-  }, 15000);
+  }, 20000);
 });
 </script>
 </body>
