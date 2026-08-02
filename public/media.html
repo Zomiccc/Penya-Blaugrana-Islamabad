@@ -75,6 +75,40 @@
 .e-widget-edit,
 .elfsight-app .elfsight-admin,
 .elfsight-app .elfsight-edit,
+.elfsight-app .elfsight-controls,
+/* Newer Elfsight widgets ship under an "eapps-" prefix — this is what
+   renders the "Free Instagram Feed Widget" pill on the free plan */
+[class*="eapps-widget-toolbar"],
+[class*="eapps-"][class*="toolbar"],
+[class*="eapps-"][class*="badge"],
+[class*="eapps-"][class*="powered"],
+a[href*="elfsight.com"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+.elfsight-admin,
+.elfsight-edit,
+.elfsight-controls,
+.elfsight-badge,
+.elfsight-watermark,
+.elfsight-widget .elfsight-admin-panel,
+.elfsight-widget .elfsight-edit-button,
+.elfsight-widget .elfsight-controls,
+[data-elfsight-app] .elfsight-admin-panel,
+[data-elfsight-app] .elfsight-edit-button,
+[data-elfsight-app] .elfsight-controls,
+.e-elfsight-admin,
+.e-elfsight-edit,
+.e-elfsight-controls,
+.e-widget-admin,
+.e-widget-edit,
+.elfsight-app .elfsight-admin,
+.elfsight-app .elfsight-edit,
 .elfsight-app .elfsight-controls {
   display: none !important;
   visibility: hidden !important;

@@ -159,11 +159,6 @@ function renderFixtureCard(refs, event) {
   }
   tickMini();
   setInterval(tickMini, 60000);
-
-  const note = document.createElement('p');
-  note.className = 'api-note';
-  note.textContent = 'Live fixture data via Football-Data.org (cached by our server).';
-  refs.scrollEl.parentElement.appendChild(note);
 }
 
 function fallbackBadge(teamName) {
