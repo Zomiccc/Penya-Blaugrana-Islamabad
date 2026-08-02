@@ -79,47 +79,7 @@
   .insta-panel-head a.follow{margin-left:0;margin-top:8px}
 }
 </style>
-/* Elfsight widget fallback handler */
-document.addEventListener('DOMContentLoaded', () => {
-  const widget = document.querySelector('.elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0');
-  const fallback = document.getElementById('instagramFallback');
-  
-  if (!widget || !fallback) return;
-  
-  // Show fallback if widget fails to load after 10 seconds
-  setTimeout(() => {
-    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
-      fallback.style.display = 'block';
-    }
-  }, 10000);
-  
-  // Monitor for widget load
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (widget.innerHTML && widget.innerHTML.trim() !== '') {
-        fallback.style.display = 'none';
-      }
-    });
-  });
-  
-  observer.observe(widget, { childList: true, subtree: true });
-  
-  // Double-check after 15 seconds as a safety net
-  setTimeout(() => {
-    if (!widget.innerHTML || widget.innerHTML.trim() === '') {
-      fallback.style.display = 'block';
-    }
-  }, 15000);
-});
-@media(max-width:900px){
-  .insta-panel{padding:60px 24px}
-  .insta-panel-head{margin-bottom:40px}
-}
-@media(max-width:560px){
-  .insta-panel{padding:50px 20px}
-  .insta-panel-head{flex-direction:column;align-items:flex-start;gap:12px}
-  .insta-panel-head a.follow{margin-left:0;margin-top:8px}
-}
+
 </style>
 </head>
 <body>
