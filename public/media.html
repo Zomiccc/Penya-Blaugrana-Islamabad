@@ -40,10 +40,39 @@
   text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(237,187,0,.4);padding-bottom:3px;
 }
 .insta-panel-head a.follow:hover{color:var(--chalk);border-color:var(--chalk)}
-.instagram-widget-container{
-  max-width:1200px;margin:0 auto;text-align:center;
-  isolation:isolate; /* Isolate widget to prevent layout/animation interference */
+.instagram-widget-container{max-width:1200px;margin:0 auto}
+
+/* Our own live feed grid — no third-party widget */
+.insta-live-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
 }
+.insta-tile{
+  position:relative;aspect-ratio:1/1;overflow:hidden;border-radius:3px;
+  background:var(--night);border:1px solid var(--line);
+  display:block;text-decoration:none;
+}
+.insta-tile img,.insta-tile video{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .5s cubic-bezier(.16,.84,.44,1);
+}
+.insta-tile:hover img,.insta-tile:hover video{transform:scale(1.05)}
+.insta-tile .play-badge{
+  position:absolute;top:10px;right:10px;width:26px;height:26px;
+  background:rgba(4,6,15,.7);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
+}
+.insta-tile .play-badge svg{width:11px;height:11px;fill:#fff;margin-left:1px}
+.insta-tile .caption-veil{
+  position:absolute;inset:auto 0 0 0;padding:16px 12px 10px;
+  background:linear-gradient(180deg,transparent,rgba(4,6,15,.9));
+  opacity:0;transition:opacity .3s ease;
+  font-size:.72rem;color:var(--chalk-dim);line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.insta-tile:hover .caption-veil{opacity:1}
+@media(max-width:900px){.insta-live-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.insta-live-grid{grid-template-columns:repeat(2,1fr);gap:6px}}
+
 #instagramFallback{
   display:none;text-align:center;padding:44px 24px;color:var(--muted-lt);font-size:.92rem;
   background:rgba(0,0,0,.35);border:1px dashed var(--line);border-radius:3px;
@@ -54,41 +83,9 @@
   letter-spacing:.1em;text-transform:uppercase;border-radius:2px;transition:background .3s ease;
 }
 #instagramFallback .fallback-btn:hover{background:var(--chalk)}
-/* Hide Elfsight admin/edit panels - only visible to widget owner */
-.elfsight-admin,
-.elfsight-edit,
-.elfsight-controls,
-.elfsight-badge,
-.elfsight-watermark,
-.elfsight-widget .elfsight-admin-panel,
-.elfsight-widget .elfsight-edit-button,
-.elfsight-widget .elfsight-controls,
-[data-elfsight-app] .elfsight-admin-panel,
-[data-elfsight-app] .elfsight-edit-button,
-[data-elfsight-app] .elfsight-controls,
-.e-elfsight-admin,
-.e-elfsight-edit,
-.e-elfsight-controls,
-.e-widget-admin,
-.e-widget-edit,
-.elfsight-app .elfsight-admin,
-.elfsight-app .elfsight-edit,
-.elfsight-app .elfsight-controls,
-/* Elfsight's free-plan badge is a link to elfsight.com — hide it specifically,
-   without broad class-substring matching that could catch a real content wrapper */
-a[href*="elfsight.com"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  left: -9999px !important;
-  top: -9999px !important;
-}
 @media(max-width:900px){
   .insta-panel{padding:60px 24px}
   .insta-panel-head{margin-bottom:40px}
-  .instagram-widget-container{max-width:100%}
 }
 @media(max-width:560px){
   .insta-panel{padding:50px 20px}
@@ -152,8 +149,9 @@ a[href*="elfsight.com"] {
         <a class="follow" href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener">Follow us →</a>
       </div>
       <div class="instagram-widget-container">
-        <!-- Elfsight Instagram Feed -->
-        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0"></div>
+        <div class="insta-live-grid" id="instaLiveGrid">
+          <p class="loading-msg">Loading latest posts…</p>
+        </div>
         <div id="instagramFallback">
           <p>The Instagram feed couldn't load. Please visit our Instagram page to see our latest content.</p>
           <a href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener" class="fallback-btn">View us on Instagram</a>
@@ -221,44 +219,46 @@ a[href*="elfsight.com"] {
 
 <script src="script.js"></script>
 <script src="animations.js"></script>
+<script src="instagram-posts.js"></script>
 <script>
-// Elfsight widget fallback handler
+/* ==========================================================================
+   OUR OWN INSTAGRAM FEED — no API, no backend, no third-party widget.
+   Reads straight from the PBI_INSTAGRAM_POSTS list in instagram-posts.js.
+   To add a new post, edit that file — see the instructions at the top of it.
+   ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-  const widget = document.querySelector('.elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0');
+  const grid = document.getElementById('instaLiveGrid');
   const fallback = document.getElementById('instagramFallback');
+  if (!grid || !fallback) return;
 
-  if (!widget || !fallback) return;
+  const posts = (typeof PBI_INSTAGRAM_POSTS !== 'undefined' ? PBI_INSTAGRAM_POSTS : []).slice(0, 12);
 
-  // Elfsight injects an empty loading shell into this div almost immediately,
-  // so checking "is there any HTML at all" falsely reports success. Instead,
-  // check for an actual loaded photo (a real <img> with a src).
-  const hasRealContent = () => widget.querySelector('img[src]') !== null;
+  if (!posts.length) {
+    grid.innerHTML = '';
+    fallback.style.display = 'block';
+    return;
+  }
 
-  let resolved = false;
-  const checkNow = () => {
-    if (resolved) return;
-    if (hasRealContent()) {
-      resolved = true;
-      fallback.style.display = 'none';
-      clearInterval(poll);
-    }
-  };
-
-  // Poll every 2s for real content
-  const poll = setInterval(checkNow, 2000);
-
-  const observer = new MutationObserver(checkNow);
-  observer.observe(widget, { childList: true, subtree: true });
-
-  // Give up after 20 seconds and show the fallback if no real photo ever loaded
-  setTimeout(() => {
-    if (!resolved) {
-      clearInterval(poll);
-      observer.disconnect();
-      fallback.style.display = 'block';
-    }
-  }, 20000);
+  grid.innerHTML = posts.map(instaTileHTML).join('');
 });
+
+function instaTileHTML(post) {
+  const isVideo = post.type === 'video';
+  const caption = (post.caption || '').replace(/"/g, '&quot;');
+  const media = isVideo
+    ? `<video src="${post.src}" poster="${post.poster || ''}" muted loop playsinline preload="metadata" onmouseover="this.play()" onmouseout="this.pause()" onclick="event.preventDefault();this.paused?this.play():this.pause()"></video>`
+    : `<img src="${post.src}" alt="${caption || 'PBI Instagram post'}" loading="lazy">`;
+  const playBadge = isVideo
+    ? '<span class="play-badge"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>'
+    : '';
+  return `
+    <a class="insta-tile" href="${post.permalink}" target="_blank" rel="noopener">
+      ${media}
+      ${playBadge}
+      ${caption ? `<span class="caption-veil">${caption}</span>` : ''}
+    </a>
+  `;
+}
 </script>
 </body>
 </html>
