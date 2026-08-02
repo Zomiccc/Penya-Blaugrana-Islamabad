@@ -7,7 +7,6 @@ const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.addEventListener('DOMContentLoaded', () => {
   buildTifoWalls();
   initScrollReveal();
-  initShieldDividers();
   initScrollProgress();
   initHeaderCondense();
   initCountdownTick();
