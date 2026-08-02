@@ -5,7 +5,7 @@
    stadium-signage display type, and a tifo mosaic as the signature element.
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&display=swap');
 
 :root{
   /* --- Club colours, official values --- */
@@ -45,7 +45,7 @@
 
   --display:'Teko', 'Arial Narrow', sans-serif;
   --body:'Teko', system-ui, sans-serif;
-  --mono:'Space Mono', ui-monospace, monospace;
+  --mono:'Teko', 'Arial Narrow', sans-serif;
 
   --container:1240px;
 }
@@ -97,11 +97,6 @@ strong,b{font-weight:700}
   letter-spacing:.22em;text-transform:uppercase;
   font-size:.68rem;color:var(--gold);
   margin-bottom:16px;
-}
-.eyebrow::before{
-  content:"";display:inline-block;width:24px;height:16px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 32'%3E%3Crect width='24' height='32' fill='%2301411C'/%3E%3Crect width='7' height='32' fill='%23fff'/%3E%3Ccircle cx='18' cy='16' r='7' fill='%23fff'/%3E%3Ccircle cx='20.3' cy='16' r='6' fill='%2301411C'/%3E%3Cpolygon points='23,11 24.3,14.6 28.2,14.6 25.1,16.9 26.3,20.5 23,18.2 19.7,20.5 20.9,16.9 17.8,14.6 21.7,14.6' fill='%23fff'/%3E%3Crect x='24' width='24' height='8' fill='%23AA151B'/%3E%3Crect x='24' y='8' width='24' height='16' fill='%23F1BF00'/%3E%3Crect x='24' y='24' width='24' height='8' fill='%23AA151B'/%3E%3C/svg%3E");
-  background-size:cover;background-repeat:no-repeat;border-radius:1px;flex-shrink:0;
 }
 
 /* --- Senyera rule: the Catalan flag as a divider. Used instead of hairlines --- */
@@ -246,10 +241,10 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
     linear-gradient(180deg, rgba(4,6,15,.9) 0%, transparent 22%, transparent 66%, rgba(4,6,15,.96) 100%);
 }
 .hero .container{position:relative;z-index:3;max-width:var(--container)}
-.hero-inner{max-width:720px}
+.hero-inner{max-width:720px;margin:0 auto;text-align:center}
 
 .hero-kicker{
-  display:flex;align-items:center;gap:14px;
+  display:flex;align-items:center;justify-content:center;gap:14px;
   font-family:var(--mono);font-size:.7rem;font-weight:700;
   letter-spacing:.2em;text-transform:uppercase;color:var(--gold);
   margin-bottom:26px;
@@ -260,20 +255,16 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 .hero h1{margin-bottom:0;line-height:.86}
 .hero h1 .l1{display:block;color:var(--chalk)}
 .hero h1 .l2{display:block;color:var(--gold)}
-.hero h1 .l3{
-  display:block;color:transparent;
-  -webkit-text-stroke:2px var(--chalk-dim);
-  paint-order:stroke fill;
-}
+.hero h1 .l3{display:block;color:var(--chalk)}
 .hero-sub{
   font-size:1.08rem;color:var(--chalk-dim);max-width:520px;
-  margin:30px 0 34px;line-height:1.7;
+  margin:30px auto 34px;line-height:1.7;
 }
 .hero-sub b{color:var(--chalk);font-weight:700}
-.hero .cta-row{display:flex;gap:14px;flex-wrap:wrap}
+.hero .cta-row{display:flex;flex-direction:column;gap:14px;align-items:center}
 
 .hero-meta{
-  display:flex;gap:30px;flex-wrap:wrap;
+  display:flex;gap:30px;flex-wrap:wrap;justify-content:center;
   margin-top:52px;padding-top:26px;
   border-top:1px solid var(--line);
   font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-lt);
@@ -286,7 +277,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
-  background:var(--grana);
+  background:var(--blau);
   border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);
   padding:16px 0;
 }
@@ -294,11 +285,11 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 .ticker-track span{
   font-family:var(--display);font-variation-settings:'wdth' 120,'wght' 900;
   font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;
-  letter-spacing:-.01em;color:#fff;
+  letter-spacing:-.01em;color:var(--gold);
   padding:0 26px;white-space:nowrap;display:flex;align-items:center;gap:26px;
 }
 .ticker-track span i{
-  font-style:normal;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.55);
+  font-style:normal;color:transparent;-webkit-text-stroke:1.5px rgba(237,187,0,.55);
 }
 .ticker-track span::after{
   content:"";width:14px;height:14px;background:var(--gold);
@@ -441,10 +432,10 @@ section{padding:104px 0;position:relative}
   border:1px solid rgba(237,187,0,.4);border-radius:var(--radius-lg);
 }
 
-.section-alt{background:var(--paper);color:var(--ink)}
-.section-alt h1,.section-alt h2,.section-alt h3,.section-alt h4{color:var(--ink)}
-.section-alt p,.section-alt li{color:var(--muted)}
-.section-alt .eyebrow{color:var(--grana)}
+.section-alt{background:var(--night-2);color:var(--chalk-dim)}
+.section-alt h1,.section-alt h2,.section-alt h3,.section-alt h4{color:var(--chalk)}
+.section-alt p,.section-alt li{color:var(--muted-lt)}
+.section-alt .eyebrow{color:var(--gold)}
 .section-tint{background:var(--night-2);color:var(--chalk-dim)}
 .section-tint h2,.section-tint h3,.section-tint h4{color:var(--chalk)}
 
@@ -455,10 +446,6 @@ section{padding:104px 0;position:relative}
 .tile-blau h2,.tile-blau h3,.tile-blau h4,.tile-grana h2,.tile-grana h3,.tile-grana h4{color:#fff}
 .tile-blau p,.tile-blau ul,.tile-blau li,.tile-grana p,.tile-grana ul,.tile-grana li{color:rgba(255,255,255,.84)}
 .tile-blau .eyebrow,.tile-grana .eyebrow{color:var(--gold)}
-section.tile-blau::before,section.tile-grana::before{
-  content:"";position:absolute;inset:0;pointer-events:none;opacity:.07;
-  background:repeating-linear-gradient(90deg, #fff 0 2px, transparent 2px 46px);
-}
 section.tile-blau>*,section.tile-grana>*{position:relative;z-index:2}
 
 /* ==========================================================================
@@ -533,33 +520,34 @@ section.tile-blau>*,section.tile-grana>*{position:relative;z-index:2}
    ========================================================================== */
 form.card-form{
   position:relative;
-  background:#fff;color:var(--ink);
+  background:var(--night-2);color:var(--chalk);
+  border:1px solid var(--line);
   border-radius:var(--radius-lg);
   padding:44px 40px 40px;
-  box-shadow:var(--shadow-paper);
   overflow:hidden;
 }
-form.card-form::before{content:"";position:absolute;top:0;left:0;right:0;height:8px;background:var(--senyera-rule)}
-form.card-form h3{color:var(--ink);margin-bottom:8px;margin-top:8px}
-form.card-form .sub{color:var(--muted);font-size:.92rem;margin-bottom:30px}
+form.card-form::before{content:"";position:absolute;top:0;left:0;right:0;height:8px;background:var(--gold)}
+form.card-form h3{color:var(--chalk);margin-bottom:8px;margin-top:8px}
+form.card-form .sub{color:var(--muted-lt);font-size:.92rem;margin-bottom:30px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
 .form-row.full{grid-template-columns:1fr}
 label{
   display:block;font-family:var(--mono);font-size:.62rem;font-weight:700;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--muted-lt);margin-bottom:8px;
 }
 input,select,textarea{
   width:100%;padding:14px 15px;
-  border:1px solid rgba(4,6,15,.16);border-radius:2px;
-  font-family:var(--body);font-size:.96rem;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:2px;
+  font-family:var(--body);font-size:.96rem;color:var(--chalk);background:var(--night);
   transition:border-color .2s ease,box-shadow .2s ease;
 }
-input:hover,select:hover,textarea:hover{border-color:rgba(4,6,15,.32)}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--grana);box-shadow:0 0 0 3px rgba(165,0,68,.12)}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+input:hover,select:hover,textarea:hover{border-color:rgba(237,187,0,.35)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(237,187,0,.12)}
 textarea{min-height:130px;resize:vertical}
-.checkline{display:flex;gap:12px;align-items:flex-start;font-size:.85rem;color:var(--muted);margin:16px 0}
-.checkline input[type=checkbox]{width:auto;margin-top:3px;accent-color:var(--grana);flex-shrink:0}
-.checkline label{font-family:var(--body);font-size:.85rem;letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted)}
+.checkline{display:flex;gap:12px;align-items:flex-start;font-size:.85rem;color:var(--muted-lt);margin:16px 0}
+.checkline input[type=checkbox]{width:auto;margin-top:3px;accent-color:var(--gold);flex-shrink:0}
+.checkline label{font-family:var(--body);font-size:.85rem;letter-spacing:0;text-transform:none;font-weight:400;color:var(--muted-lt)}
 
 .benefits-list{list-style:none;padding:0;margin:28px 0;display:grid;gap:14px}
 .benefits-list li{display:flex;gap:14px;align-items:flex-start;color:rgba(255,255,255,.9);font-size:.96rem}
@@ -567,7 +555,7 @@ textarea{min-height:130px;resize:vertical}
   content:"";width:12px;height:15px;flex-shrink:0;margin-top:.35em;
   background:var(--gold);clip-path:var(--shield);
 }
-.section-alt .benefits-list li{color:var(--muted)}
+.section-alt .benefits-list li{color:var(--muted-lt)}
 
 /* ==========================================================================
    FEES — membership tiers as ticket stubs
@@ -619,15 +607,15 @@ textarea{min-height:130px;resize:vertical}
    ========================================================================== */
 .statutes-body{
   max-width:860px;margin:0 auto;
-  background:#fff;color:var(--ink);
+  background:linear-gradient(155deg,var(--blau) 0%,var(--blau-dk) 100%);color:#fff;
   padding:56px 52px;border-radius:var(--radius-lg);
   box-shadow:var(--shadow-paper);position:relative;overflow:hidden;
 }
-.statutes-body::before{content:"";position:absolute;top:0;left:0;bottom:0;width:8px;background:var(--senyera-rule)}
-.statutes-body h2{color:var(--grana);font-size:1.7rem;margin-top:52px;padding-bottom:12px;border-bottom:1px solid var(--line-dark)}
+.statutes-body::before{content:"";position:absolute;top:0;left:0;bottom:0;width:8px;background:var(--gold)}
+.statutes-body h2{color:var(--gold);font-size:1.7rem;margin-top:52px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.2)}
 .statutes-body h2:first-child{margin-top:0}
-.statutes-body h5{margin-top:26px;color:var(--blau);font-family:var(--mono);letter-spacing:.14em}
-.statutes-body p,.statutes-body ul,.statutes-body ol,.statutes-body li{color:var(--muted)}
+.statutes-body h5{margin-top:26px;color:var(--gold);font-family:var(--mono);letter-spacing:.14em}
+.statutes-body p,.statutes-body ul,.statutes-body ol,.statutes-body li{color:rgba(255,255,255,.88)}
 .statutes-body li{margin-bottom:8px}
 
 /* ==========================================================================

@@ -120,7 +120,7 @@ function renderNextStrip(refs, event) {
   const isHome = event.isHome;
   const opponent = event.opponent;
   refs.nextStripEl.innerHTML =
-    `Next up: FC Barcelona ${isHome ? 'host' : 'travel to'} <b>${opponent}</b> — ${formatPKT(toDate(event))}`;
+    `Next up: FC Barcelona ${isHome ? 'host' : 'travel to'} <b>${opponent}</b>, ${formatPKT(toDate(event))}`;
 }
 
 function renderVenueLine(refs, event) {
@@ -167,7 +167,7 @@ function fallbackBadge(teamName) {
 }
 
 function renderFallback(refs) {
-  if (refs.nextStripEl) refs.nextStripEl.textContent = 'Fixture data temporarily unavailable — check back shortly.';
+  if (refs.nextStripEl) refs.nextStripEl.textContent = 'Fixture data temporarily unavailable. Check back shortly.';
   if (refs.venueLineEl) refs.venueLineEl.textContent = '';
   if (refs.scrollEl) {
     refs.scrollEl.innerHTML = '<p class="loading-msg">Could not load live fixtures right now. Please refresh, or check FCBarcelona.com for the latest schedule.</p>';
@@ -190,7 +190,7 @@ async function initFixturesPage(listEl) {
     const data = await res.json();
     const matches = (data.matches || []).slice(0, 10);
     if (!matches.length) {
-      listEl.innerHTML = '<p class="loading-msg">No upcoming fixtures right now — check back soon.</p>';
+      listEl.innerHTML = '<p class="loading-msg">No upcoming fixtures right now. Check back soon.</p>';
       return;
     }
     listEl.innerHTML = matches.map((m) => fixtureCardHTML(m)).join('');

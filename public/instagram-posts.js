@@ -24,7 +24,7 @@
    - caption:   a short caption/description, shown on hover (optional)
    ========================================================================== */
 
-const PBI_INSTAGRAM_POSTS = [
+var PBI_INSTAGRAM_POSTS = [
   {
     type: "image",
     src: "https://pbisb.com/wp-content/uploads/2026/07/MGA1546-scaled.jpg",
