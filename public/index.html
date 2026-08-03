@@ -10,12 +10,6 @@
 </head>
 <body>
 
-<div class="topbar">
-  <div class="container">
-    <span>Penya Blaugrana Islamabad · Est. Islamabad, Pakistan</span>
-    <span>Més que un club</span>
-  </div>
-</div>
 
 <header class="site-header">
   <div class="container">
@@ -74,6 +68,27 @@
   </div>
 </div>
 
+<!-- ============================ LIVE JOIN FLYER ============================ -->
+<section>
+  <div class="container">
+    <div class="join-flyer reveal" id="joinFlyer" aria-label="Recent members">
+      <div class="flyer-panel">
+        <div class="flyer-crest" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2 2 6v6c0 5.2 4.1 9.4 10 10 5.9-.6 10-4.8 10-10V6l-10-4z"/></svg>
+        </div>
+        <div class="flyer-live">
+          <span class="flyer-dot" aria-hidden="true"></span>
+          <span class="flyer-live-label">Live</span>
+        </div>
+        <div class="flyer-names" id="flyerNames" aria-live="polite">
+          <span class="flyer-name is-current">Muhammad Ali has joined</span>
+        </div>
+      </div>
+      <div class="flyer-strip" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============================ MATCHDAY SCOREBOARD ============================ -->
 <section class="fixtures">
   <div class="container">
@@ -101,12 +116,12 @@
 
       <div class="clock-row">
         <div class="clock-cell">
-          <div class="city">🇪🇸 Right now in Barcelona</div>
+          <div class="city"><img src="https://flagcdn.com/w80/es.png" alt="Spain" class="city-flag"> Right now in Barcelona</div>
           <div class="time" id="clockBarcelona">--:--</div>
           <p class="note">Where the match is played.</p>
         </div>
         <div class="clock-cell here">
-          <div class="city">🇵🇰 Right now in Islamabad</div>
+          <div class="city"><img src="https://flagcdn.com/w80/pk.png" alt="Pakistan" class="city-flag"> Right now in Islamabad</div>
           <div class="time" id="clockIslamabad">--:--</div>
         </div>
       </div>
@@ -143,7 +158,7 @@
   <div class="container split">
     <div class="our-trips-media reveal-left">
       <img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1575343406218-42d896e03a85-1.avif" alt="Supporters travelling to a match together">
-      <img class="badge" src="https://pbisb.com/wp-content/uploads/2025/08/dimond.png" alt="">
+     <!-- <img class="badge" src="https://pbisb.com/wp-content/uploads/2025/08/dimond.png" alt=""> -->
     </div>
     <div class="reveal-right">
       <div class="eyebrow">Together we travel</div>
@@ -277,6 +292,7 @@
 </footer>
 
 <script src="script.js"></script>
+<script src="join.js"></script>
 <script src="animations.js"></script>
 </body>
 </html>
