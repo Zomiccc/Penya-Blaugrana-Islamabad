@@ -67,11 +67,20 @@ document.addEventListener('DOMContentLoaded', () => {
    from the bottom. Items are duplicated for a seamless infinite loop.
    ========================================================================== */
 function initFlyerScroll(listEl) {
-  // Clone all items and append them so the scroll loops seamlessly
+  // Collect original items
   const items = Array.from(listEl.children);
-  items.forEach((item) => {
-    listEl.appendChild(item.cloneNode(true));
+  if (!items.length) return;
+
+  // Clear the list and create an inner track wrapper
+  listEl.innerHTML = '';
+  const track = document.createElement('div');
+  track.className = 'flyer-track';
+
+  // Append original items + clones for seamless loop
+  [...items, ...items.map((item) => item.cloneNode(true))].forEach((item) => {
+    track.appendChild(item);
   });
+  listEl.appendChild(track);
 
   // Inject the animation styles
   const style = document.createElement('style');
@@ -80,10 +89,15 @@ function initFlyerScroll(listEl) {
       overflow:hidden !important;
       height:calc(4 * 2.8rem) !important;
       position:relative !important;
+    }
+    .flyer-track{
+      display:flex !important;
+      flex-direction:column !important;
+      gap:10px !important;
       animation:flyerScroll 60s linear infinite !important;
       will-change:transform;
     }
-    .flyer-list:hover{animation-play-state:paused}
+    .flyer-list:hover .flyer-track{animation-play-state:paused}
     @keyframes flyerScroll{
       from{transform:translateY(0)}
       to{transform:translateY(-50%)}
