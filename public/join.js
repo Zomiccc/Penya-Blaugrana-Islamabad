@@ -107,12 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — rotating "who joined" names
-   Cycles through 40 Pakistani names with a slide-up / fade animation.
+   JOIN FLYER — a live-feeling list of 5 rows, each showing a different
+   person + a varied message ("just joined", "just bought the membership",
+   "just joined the Barça Family"). One row gets swapped for a fresh
+   name/message every couple of seconds, so the whole list stays alive.
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-  const host = document.getElementById('flyerNames');
-  if (!host) return;
+  const list = document.getElementById('flyerList');
+  if (!list) return;
 
   const names = [
     'Muhammad Ali', 'Ahmed Raza', 'Bilal Khan', 'Usman Tariq',
@@ -132,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
     'Mustafa Durrani', 'Ayaan Cheema', 'Bakht Zaman', 'Sohail Butt',
   ];
 
+  const messages = [
+    (n) => `${n} just joined`,
+    (n) => `${n} just bought the membership`,
+    (n) => `${n} just joined the Barça Family`,
+  ];
+
   // Fisher-Yates shuffle so each cycle feels different
   function shuffle(arr) {
     const a = [...arr];
@@ -145,36 +153,35 @@ document.addEventListener('DOMContentLoaded', () => {
   let queue = shuffle(names);
   let idx = 0;
 
-  function nextName() {
+  function nextMessage() {
     if (idx >= queue.length) {
       queue = shuffle(names);
       idx = 0;
     }
-    return queue[idx++];
+    const name = queue[idx++];
+    const template = messages[Math.floor(Math.random() * messages.length)];
+    return template(name);
   }
 
-  function rotate() {
-    const current = host.querySelector('.flyer-name.is-current');
-    if (!current) return;
+  const rows = Array.from(list.querySelectorAll('.flyer-row'));
+  if (!rows.length) return;
 
-    // build the incoming name element
-    const incoming = document.createElement('span');
-    incoming.className = 'flyer-name';
-    incoming.textContent = `${nextName()} has joined`;
-    host.appendChild(incoming);
+  // Give the 5 starting rows varied messages right away instead of the
+  // static placeholder text baked into the HTML.
+  rows.forEach((row) => { row.textContent = nextMessage(); });
 
-    // force reflow so the initial transform (translateY 100%) applies
-    void incoming.offsetWidth;
-
-    // slide old out (up), new in (from below)
-    current.classList.remove('is-current');
-    current.classList.add('is-leaving');
-    incoming.classList.add('is-current');
-
-    // clean up the old element after the transition finishes
-    setTimeout(() => current.remove(), 600);
+  function rotateOneRow() {
+    const row = rows[Math.floor(Math.random() * rows.length)];
+    row.classList.add('is-updating');
+    setTimeout(() => {
+      row.textContent = nextMessage();
+      row.classList.remove('is-updating');
+      row.classList.add('is-updating-in');
+      setTimeout(() => row.classList.remove('is-updating-in'), 400);
+    }, 250);
   }
 
-  // start the rotation
-  setInterval(rotate, 3500);
+  // Swap one row for a fresh name/message every 2.2 seconds — with 5 rows
+  // rotating independently, the whole list constantly feels alive.
+  setInterval(rotateOneRow, 2200);
 });

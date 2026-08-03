@@ -73,16 +73,22 @@
   <div class="container">
     <div class="join-flyer reveal" id="joinFlyer" aria-label="Recent members">
       <div class="flyer-panel">
-        <div class="flyer-crest" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 2 2 6v6c0 5.2 4.1 9.4 10 10 5.9-.6 10-4.8 10-10V6l-10-4z"/></svg>
+        <div class="flyer-panel-head">
+          <div class="flyer-crest" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2 2 6v6c0 5.2 4.1 9.4 10 10 5.9-.6 10-4.8 10-10V6l-10-4z"/></svg>
+          </div>
+          <div class="flyer-live">
+            <span class="flyer-dot" aria-hidden="true"></span>
+            <span class="flyer-live-label">Live</span>
+          </div>
         </div>
-        <div class="flyer-live">
-          <span class="flyer-dot" aria-hidden="true"></span>
-          <span class="flyer-live-label">Live</span>
-        </div>
-        <div class="flyer-names" id="flyerNames" aria-live="polite">
-          <span class="flyer-name is-current">Muhammad Ali has joined</span>
-        </div>
+        <ul class="flyer-list" id="flyerList" aria-live="polite">
+          <li class="flyer-row">Muhammad Ali just joined</li>
+          <li class="flyer-row">Ahmed Raza just bought the membership</li>
+          <li class="flyer-row">Bilal Khan just joined the Barça Family</li>
+          <li class="flyer-row">Usman Tariq just joined</li>
+          <li class="flyer-row">Hassan Mahmood just bought the membership</li>
+        </ul>
       </div>
       <div class="flyer-strip" aria-hidden="true"></div>
     </div>
