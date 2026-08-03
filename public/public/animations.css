@@ -1,0 +1,172 @@
+/* ==========================================================================
+   PENYA BLAUGRANA ISLAMABAD — motion layer
+   Loaded after style.css.
+   One orchestrated signature (the tifo wall) + disciplined micro-motion.
+   ========================================================================== */
+
+/* ---------- Accessibility floor ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  .reveal,.reveal-left,.reveal-right,.reveal-scale,.reveal-stagger>*{
+    opacity:1 !important;transform:none !important;clip-path:none !important;filter:none !important;
+  }
+  .tifo-card{opacity:1 !important;transform:none !important}
+  .ticker-track{animation:none !important}
+  .flyer-name{transition:none !important;transform:none !important;opacity:1 !important}
+  .flyer-name.is-leaving{display:none !important}
+  .flyer-dot{animation:none !important}
+}
+
+/* ==========================================================================
+   SCROLL REVEALS — a wipe, not a fade.
+   Content is "unveiled" upward like a banner being raised in the stand.
+   ========================================================================== */
+.reveal,.reveal-left,.reveal-right,.reveal-scale{
+  opacity:0;
+  transition:
+    opacity .8s cubic-bezier(.16,.84,.44,1),
+    transform .9s cubic-bezier(.16,.84,.44,1),
+    clip-path .9s cubic-bezier(.16,.84,.44,1);
+}
+.reveal{transform:translateY(38px);clip-path:inset(0 0 12% 0)}
+.reveal-left{transform:translateX(-42px)}
+.reveal-right{transform:translateX(42px)}
+.reveal-scale{transform:scale(.955) translateY(24px)}
+.reveal.is-visible,.reveal-left.is-visible,.reveal-right.is-visible,.reveal-scale.is-visible{
+  opacity:1;transform:none;clip-path:inset(0 0 0 0);
+}
+
+.reveal-stagger>*{
+  opacity:0;transform:translateY(30px);
+  transition:opacity .7s cubic-bezier(.16,.84,.44,1),transform .7s cubic-bezier(.16,.84,.44,1);
+}
+.reveal-stagger.is-visible>*{opacity:1;transform:none}
+.reveal-stagger.is-visible>*:nth-child(1){transition-delay:.04s}
+.reveal-stagger.is-visible>*:nth-child(2){transition-delay:.14s}
+.reveal-stagger.is-visible>*:nth-child(3){transition-delay:.24s}
+.reveal-stagger.is-visible>*:nth-child(4){transition-delay:.34s}
+.reveal-stagger.is-visible>*:nth-child(5){transition-delay:.44s}
+.reveal-stagger.is-visible>*:nth-child(6){transition-delay:.54s}
+
+/* Headline lines lift one after another — the page-load sequence */
+.line-lift{display:block;overflow:hidden;padding:.06em .05em .12em;margin:-.06em -.05em -.12em}
+.line-lift>span{
+  display:block;
+  transform:translateY(105%);
+  animation:lineLift .95s cubic-bezier(.16,.84,.44,1) forwards;
+}
+.line-lift:nth-of-type(1)>span{animation-delay:.35s}
+.line-lift:nth-of-type(2)>span{animation-delay:.47s}
+.line-lift:nth-of-type(3)>span{animation-delay:.59s}
+@keyframes lineLift{to{transform:translateY(0)}}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.hero-kicker{animation:fadeUp .8s .2s cubic-bezier(.16,.84,.44,1) both}
+.hero-sub{animation:fadeUp .8s .78s cubic-bezier(.16,.84,.44,1) both}
+.hero .cta-row{animation:fadeUp .8s .9s cubic-bezier(.16,.84,.44,1) both}
+.hero-meta{animation:fadeUp .8s 1.02s cubic-bezier(.16,.84,.44,1) both}
+
+/* ==========================================================================
+   TIFO WALL — the signature.
+   Cards deal in on a diagonal, then respond to the pointer like a stand
+   raising their cards as you walk past.
+   ========================================================================== */
+.tifo-card{transition-delay:var(--deal,0ms)}
+.tifo.dealt .tifo-card{transition-delay:var(--deal,0ms),var(--deal,0ms),var(--deal,0ms)}
+/* once the deal-in finishes JS strips the delay so pointer response is instant */
+.tifo.live .tifo-card{transition-delay:0ms !important;transition-duration:.32s,.32s,.32s,.32s}
+
+/* the automatic sweep for idle / touch visitors */
+.tifo-card.wave{
+  background-color:var(--gold-lt) !important;
+  transform:scale(1.35);
+}
+
+/* ==========================================================================
+   FLOODLIGHT — a slow warm wash that drifts over dark sections
+   ========================================================================== */
+@keyframes floodDrift{
+  0%,100%{transform:translate3d(-8%,0,0) scale(1);opacity:.5}
+  50%{transform:translate3d(8%,-3%,0) scale(1.12);opacity:.85}
+}
+.floodlight{
+  position:absolute;top:-30%;left:20%;width:60%;height:120%;
+  pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at center, rgba(237,187,0,.09), transparent 62%);
+  animation:floodDrift 16s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   SHIELD DIVIDER — a strip of tifo cards between sections
+   ========================================================================== */
+.shield-divider{
+  display:flex;justify-content:center;gap:6px;
+  padding:0;margin:0;background:var(--night);position:relative;z-index:3;
+  overflow:hidden;
+}
+.shield-divider span{
+  width:14px;height:17px;clip-path:var(--shield);flex-shrink:0;
+  opacity:0;transform:translateY(8px);
+  animation:dividerIn .5s cubic-bezier(.16,.84,.44,1) forwards;
+}
+@keyframes dividerIn{to{opacity:1;transform:none}}
+.shield-divider span:nth-child(4n+1){background:var(--blau)}
+.shield-divider span:nth-child(4n+2){background:var(--grana)}
+.shield-divider span:nth-child(4n+3){background:var(--gold)}
+.shield-divider span:nth-child(4n){background:var(--grana)}
+
+/* ==========================================================================
+   MICRO-INTERACTIONS
+   ========================================================================== */
+/* Cards lift with a gold hairline that draws itself in */
+.fixture-card,.fee-card,form.card-form,.insta-panel{
+  transition:transform .4s cubic-bezier(.16,.84,.44,1),box-shadow .4s ease,border-color .4s ease;
+}
+.fee-card:hover{transform:translateY(-8px)}
+.fixture-card:hover{transform:translateY(-5px);border-color:rgba(237,187,0,.4)}
+
+/* Gallery images: desaturate at rest, come alive on hover */
+.gallery img,.venue-gallery img,.split img{
+  transition:transform .7s cubic-bezier(.16,.84,.44,1),filter .5s ease;
+}
+.gallery a:hover img,.gallery img:hover{transform:scale(1.05)}
+.venue-gallery img:hover{transform:scale(1.03)}
+
+/* Countdown tick */
+@keyframes digitTick{
+  0%{transform:translateY(0);opacity:1}
+  40%{transform:translateY(-22%);opacity:.25}
+  100%{transform:translateY(0);opacity:1}
+}
+.countdown .box b.tick{animation:digitTick .45s cubic-bezier(.16,.84,.44,1)}
+.countdown .box{transition:border-color .3s ease}
+.countdown .box:has(b.tick){border-color:rgba(237,187,0,.4)}
+
+/* Logo crest gets a slow gold breath in the header */
+@keyframes crestBreathe{0%,100%{filter:drop-shadow(0 0 0 rgba(237,187,0,0))}50%{filter:drop-shadow(0 0 10px rgba(237,187,0,.35))}}
+.logo img{animation:crestBreathe 5s ease-in-out infinite}
+
+/* Mobile nav links stagger in when the panel opens */
+nav.main-nav.open a{animation:fadeUp .45s cubic-bezier(.16,.84,.44,1) both}
+nav.main-nav.open a:nth-child(1){animation-delay:.08s}
+nav.main-nav.open a:nth-child(2){animation-delay:.13s}
+nav.main-nav.open a:nth-child(3){animation-delay:.18s}
+nav.main-nav.open a:nth-child(4){animation-delay:.23s}
+nav.main-nav.open a:nth-child(5){animation-delay:.28s}
+nav.main-nav.open a:nth-child(6){animation-delay:.33s}
+
+/* ==========================================================================
+   CELEBRATION — reserved for the one moment that deserves it:
+   a completed membership. Not on every button.
+   ========================================================================== */
+.confetti-piece{
+  position:fixed;top:0;left:0;width:9px;height:11px;
+  pointer-events:none;z-index:9999;
+  clip-path:var(--shield);
+  will-change:transform,opacity;
+}

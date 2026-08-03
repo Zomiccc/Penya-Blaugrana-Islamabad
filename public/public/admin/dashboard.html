@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | Penya Blaugrana Islamabad</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../animations.css">
+<style>
+  body{background:var(--night)}
+  .admin-header{background:#000;padding:0;position:sticky;top:0;z-index:60}
+  .admin-header::after{content:"";display:block;height:4px;background:var(--senyera-rule)}
+  .admin-header .container{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:16px;padding-bottom:16px}
+  .admin-header h1{color:#fff;font-size:1.15rem;margin:0}
+  .admin-header .username{color:var(--muted-lt);font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;margin-right:14px}
+  .admin-header .btn{padding:10px 20px;font-size:.72rem}
+  .admin-wrap{padding:44px 0 90px}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:40px;background:var(--line);border:1px solid var(--line)}
+  .stat-card{background:var(--night-2);padding:26px 20px;text-align:left;position:relative;overflow:hidden}
+  .stat-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .5s cubic-bezier(.16,.84,.44,1)}
+  .stat-card:hover::before{transform:scaleX(1)}
+  .stat-card b{display:block;font-family:var(--mono);font-weight:700;font-size:1.9rem;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1;margin-bottom:8px}
+  .stat-card span{font-family:var(--mono);font-size:.6rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted-lt)}
+
+  .panel{background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:34px;margin-bottom:28px;position:relative;overflow:hidden}
+  .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--senyera-rule)}
+  .panel h2{font-size:1.05rem;color:var(--chalk);margin-bottom:22px}
+  .panel p{color:var(--muted-lt);font-size:.9rem}
+
+  .pricing-row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end}
+  .pricing-row .field{min-width:170px}
+  #pricingMsg,#pwMsg{font-family:var(--mono);font-size:.75rem;margin-top:16px;display:none;padding:11px 14px;border-radius:2px}
+
+  .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
+  .toolbar select,.toolbar input{width:auto;min-width:180px;background:rgba(0,0,0,.4);border-color:var(--line);color:var(--chalk)}
+  .toolbar select option{background:#0A1024;color:var(--chalk)}
+
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:760px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);color:var(--chalk-dim)}
+  th{font-family:var(--mono);color:var(--muted-lt);text-transform:uppercase;font-size:.6rem;letter-spacing:.18em;font-weight:700}
+  tbody tr{transition:background .2s ease}
+  tbody tr:hover{background:rgba(237,187,0,.05)}
+
+  .badge{padding:4px 11px;border-radius:2px;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+  .badge.paid{background:rgba(0,150,80,.15);color:#3ddc8a;border:1px solid rgba(61,220,138,.3)}
+  .badge.pending{background:rgba(237,187,0,.12);color:var(--gold);border:1px solid rgba(237,187,0,.32)}
+
+  .row-actions{display:flex;gap:8px}
+  .row-actions button{
+    border:1px solid transparent;border-radius:2px;padding:7px 12px;cursor:pointer;
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+    transition:.2s ease;
+  }
+  .btn-mark{background:var(--blau);color:#fff}
+  .btn-mark:hover{background:var(--blau-lt)}
+  .btn-del{background:transparent;color:var(--grana-lt);border-color:rgba(212,18,106,.45) !important}
+  .btn-del:hover{background:var(--grana);color:#fff;border-color:var(--grana) !important}
+
+  @media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr}}
+  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}}
+</style>
+</head>
+<body>
+
+<header class="admin-header">
+  <div class="container">
+    <h1>PBI Admin</h1>
+    <div>
+      <span class="username" id="whoami"></span>
+      <button class="btn" id="logoutBtn" style="padding:8px 18px;font-size:.8rem"><span>Logout</span></button>
+      <a class="btn blue" href="../index.html" style="padding:8px 18px;font-size:.8rem"><span>View site</span></a>
+    </div>
+  </div>
+</header>
+
+<div class="admin-wrap container">
+
+  <div class="stat-grid" id="statGrid">
+    <div class="stat-card"><b id="statTotal">–</b><span>Total Members</span></div>
+    <div class="stat-card"><b id="statPaid">–</b><span>Paid</span></div>
+    <div class="stat-card"><b id="statPending">–</b><span>Pending</span></div>
+    <div class="stat-card"><b id="statSplit">–</b><span>Adults / Kids</span></div>
+    <div class="stat-card"><b id="statRevenue">–</b><span>Revenue Collected</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Fixtures Sync</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      FC Barcelona fixtures are fetched from Football-Data.org by the backend and cached here.
+      Visitors never hit the external API — only this server does.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:2px;background:var(--line);border:1px solid var(--line);margin-bottom:20px">
+      <div class="stat-card"><b id="fxCount">–</b><span>Cached Fixtures</span></div>
+      <div class="stat-card"><b id="fxStatus">–</b><span>API Status</span></div>
+      <div class="stat-card"><b id="fxLastSync" style="font-size:1.1rem">–</b><span>Last Sync</span></div>
+      <div class="stat-card"><b id="fxNextSync" style="font-size:1.1rem">–</b><span>Next Sync</span></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn blue" id="fxSyncBtn" style="padding:10px 20px;font-size:.74rem"><span>Sync Now</span></button>
+      <button class="btn" id="fxClearBtn" style="padding:10px 20px;font-size:.74rem"><span>Clear Cache</span></button>
+    </div>
+    <div id="fxMsg" style="font-family:var(--mono);font-size:.75rem;margin-top:14px;display:none;padding:11px 14px;border-radius:2px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Membership Pricing</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      This price is what the Join Us page charges through Stripe — it updates live, no redeploy needed.
+    </p>
+    <form id="pricingForm" class="pricing-row">
+      <div class="field">
+        <label>Adult Price</label>
+        <input type="number" min="1" step="1" id="priceAdult" required>
+      </div>
+      <div class="field">
+        <label>Kids Price</label>
+        <input type="number" min="1" step="1" id="priceKids" required>
+      </div>
+      <div class="field">
+        <label>Currency</label>
+        <input type="text" id="priceCurrency" required>
+      </div>
+      <button type="submit" class="btn blue">Save Prices</button>
+    </form>
+    <div id="pricingMsg"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Members</h2>
+    <div class="toolbar">
+      <input type="text" id="searchBox" placeholder="Search name / email / country">
+      <select id="statusFilter">
+        <option value="">All statuses</option>
+        <option value="paid">Paid</option>
+        <option value="pending">Pending</option>
+      </select>
+      <select id="typeFilter">
+        <option value="">All types</option>
+        <option value="adult">Adult</option>
+        <option value="kids">Kids</option>
+      </select>
+      <button class="btn" id="refreshBtn" style="padding:9px 18px;font-size:.8rem">Refresh</button>
+      <a class="btn blue" id="exportLink" href="/api/admin/members/export.csv" style="padding:9px 18px;font-size:.8rem">Export CSV</a>
+    </div>
+    <div style="overflow-x:auto">
+      <div class="table-scroll"><table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Email</th><th>Contact</th><th>Country</th><th>Type</th>
+            <th>Amount</th><th>Status</th><th>Submitted</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="membersBody">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted)">Loading…</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Instagram Feed (Media Page)</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      The Media page now uses the Elfsight Instagram Feed widget, which is directly embedded with the club's
+      <b>@pbislamabad</b> account. The widget automatically shows new Instagram posts and links to the real posts.
+    </p>
+    <div style="background:rgba(237,187,0,.1);border:1px solid rgba(237,187,0,.3);border-radius:6px;padding:16px;margin-bottom:20px">
+      <p style="color:var(--chalk);font-size:.88rem;margin:0">
+        <strong>Note:</strong> The Elfsight widget is currently embedded directly in the Media page. If you need to change the widget ID or configuration, you can do so in the Media page HTML. The legacy SnapWidget configuration below is no longer in use.
+      </p>
+    </div>
+    <ol style="color:var(--muted);font-size:.88rem;margin:0 0 22px;padding-left:20px;line-height:1.8">
+      <li>Current widget ID: <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:3px">88e69abf-4036-4c9c-8c15-4a4ad70fced0</code></li>
+      <li>Visit <a href="https://apps.elfsight.com/widget/instagram-feed" target="_blank" style="color:var(--blau)">Elfsight Instagram Feed</a> to configure your widget</li>
+      <li>The widget loads automatically with lazy loading enabled for better performance</li>
+      <li>If the widget fails to load, users see a fallback button to visit your Instagram directly</li>
+    </ol>
+    <form id="instagramForm" style="opacity:0.5;pointer-events:none">
+      <textarea id="instagramEmbed" rows="6" style="font-family:monospace;font-size:.82rem" placeholder="Legacy SnapWidget embed (no longer used)"></textarea>
+      <button type="submit" class="btn blue" style="margin-top:14px" disabled>Save Instagram Feed (Disabled)</button>
+    </form>
+    <div id="instagramMsg" style="font-size:.85rem;margin-top:12px;display:none;padding:8px 12px;border-radius:6px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Change Admin Password</h2>
+    <form id="pwForm" class="pricing-row">
+      <div class="field"><label>Current Password</label><input type="password" id="pwCurrent" required></div>
+      <div class="field"><label>New Password (min 8 chars)</label><input type="password" id="pwNew" minlength="8" required></div>
+      <button type="submit" class="btn">Update Password</button>
+    </form>
+    <div id="pwMsg"></div>
+  </div>
+
+</div>
+
+<script src="admin.js"></script>
+<script src="../animations.js"></script>
+</body>
+</html>

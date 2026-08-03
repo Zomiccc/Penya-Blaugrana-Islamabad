@@ -3,9 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Join us | Penya Blaugrana Islamabad</title>
+<title>Media | Penya Blaugrana Islamabad</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="animations.css">
+<style>
+/* Gallery: a mosaic, echoing the tifo grid. First tile spans two columns. */
+.gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:40px}
+.gallery figure{margin:0;position:relative;overflow:hidden;border-radius:2px;background:var(--night-2)}
+.gallery figure:nth-child(1){grid-column:span 2;grid-row:span 2}
+.gallery img{height:100%;width:100%;object-fit:cover;aspect-ratio:4/3}
+.gallery figure:nth-child(1) img{aspect-ratio:auto;min-height:100%}
+.gallery figure::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 50%,rgba(4,6,15,.6));
+  opacity:0;transition:opacity .4s ease;
+}
+.gallery figure:hover::after{opacity:1}
+@media(max-width:900px){.gallery{grid-template-columns:1fr 1fr}.gallery figure:nth-child(1){grid-column:span 2;grid-row:auto}}
+@media(max-width:560px){.gallery{grid-template-columns:1fr}.gallery figure:nth-child(1){grid-column:auto}}
+
+.insta-panel{
+  background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:80px 34px;margin-bottom:70px;position:relative;overflow:hidden;
+}
+.insta-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--senyera-rule)}
+.insta-panel-head{display:flex;align-items:center;gap:14px;margin-bottom:60px;flex-wrap:wrap}
+.insta-panel-head .ig-icon{
+  width:42px;height:48px;flex-shrink:0;background:var(--gold);clip-path:var(--shield);
+  display:flex;align-items:center;justify-content:center;color:var(--ink);
+  font-family:var(--display);font-variation-settings:'wdth' 110,'wght' 900;font-size:.8rem;
+}
+.insta-panel-head h3{margin:0;font-size:1.15rem;color:var(--chalk)}
+.insta-panel-head .hint{margin:3px 0 0;color:var(--muted-lt);font-size:.82rem}
+.insta-panel-head a.follow{
+  margin-left:auto;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(237,187,0,.4);padding-bottom:3px;
+}
+.insta-panel-head a.follow:hover{color:var(--chalk);border-color:var(--chalk)}
+.instagram-widget-container{max-width:1200px;margin:0 auto;text-align:center;isolation:isolate}
+/* Hide Elfsight admin/edit panels - only visible to widget owner */
+.elfsight-admin,
+.elfsight-edit,
+.elfsight-controls,
+.elfsight-badge,
+.elfsight-watermark,
+.elfsight-widget .elfsight-admin-panel,
+.elfsight-widget .elfsight-edit-button,
+.elfsight-widget .elfsight-controls,
+[data-elfsight-app] .elfsight-admin-panel,
+[data-elfsight-app] .elfsight-edit-button,
+[data-elfsight-app] .elfsight-controls,
+.e-elfsight-admin,
+.e-elfsight-edit,
+.e-elfsight-controls,
+.e-widget-admin,
+.e-widget-edit,
+.elfsight-app .elfsight-admin,
+.elfsight-app .elfsight-edit,
+.elfsight-app .elfsight-controls {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+}
+@media(max-width:900px){
+  .insta-panel{padding:60px 24px}
+  .insta-panel-head{margin-bottom:40px}
+}
+@media(max-width:560px){
+  .insta-panel{padding:50px 20px}
+  .insta-panel-head{flex-direction:column;align-items:flex-start;gap:12px}
+  .insta-panel-head a.follow{margin-left:0;margin-top:8px}
+}
+</style>
+
+</style>
 </head>
 <body>
 
@@ -20,9 +95,9 @@
     <nav class="main-nav">
       <a href="index.html">Home</a>
       <a href="about.html">About us</a>
-      <a href="join.html" class="active">Join us</a>
+      <a href="join.html">Join us</a>
       <a href="fixtures.html">Fixtures</a>
-      <a href="media.html">Media</a>
+      <a href="media.html" class="active">Media</a>
       <a href="statutes.html">Statutes</a>
       <a href="contact.html">Contact</a>
     </nav>
@@ -37,115 +112,42 @@
   <div class="tifo" aria-hidden="true"></div>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="container">
-    <div class="eyebrow">Join us</div>
-    <h1>Membership</h1>
-    <p>After the joining fee, become a part of our Blaugrana family.</p>
+    <div class="eyebrow">Gallery</div>
+    <h1>The <em>moments</em></h1>
+    <p>Moments from Penya Blaugrana Islamabad — match screenings, meetups, and the Barça family in Pakistan.</p>
   </div>
 </section>
 
-
-<section class="tile-blau">
-  <div class="container split">
-    <div class="reveal-left">
-      <div class="eyebrow">The perks</div>
-      <h2>What membership gets you</h2>
-      <p>Joining Penya Blaugrana Islamabad means becoming part of Pakistan's vibrant FC Barcelona fan community.</p>
-      <p>We bring together passionate Barça supporters from across the country, united by a love for football and the values of our club.</p>
-      <p>Your membership helps us grow the community, organize events, and celebrate FC Barcelona in Pakistan.</p>
-      <ul class="benefits-list">
-        <li>Priority access to our venue for important matches</li>
-        <li>20% discount on all Barça products and food</li>
-        <li>Access to our members-only WhatsApp group</li>
-        <li>Connect with fellow FC Barcelona supporters across Pakistan</li>
-        <li>Meet new people and make many friends</li>
-      </ul>
-    </div>
-    <div class="reveal-right">
-      <img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1544366981-53db834f982a.avif" alt="Barça fans">
-    </div>
-  </div>
-</section>
 
 
 <section>
   <div class="container">
-    <div style="max-width:52ch">
-      <div class="eyebrow">Joining fee</div>
-      <h2>Two ways in</h2>
-      <p>Annual membership. Pick the option that applies to you below.</p>
-    </div>
-    <div class="fees-grid reveal-stagger">
-      <div class="fee-card tile-blau">
-        <h4>Adult</h4>
-        <p class="tier-note">16 and over · annual membership</p>
-        <div class="price" id="feeAdultPrice">PKR 3,000</div>
-      </div>
-      <div class="fee-card tile-grana">
-        <h4>Kids</h4>
-        <p class="tier-note">Under 16 · annual membership · registered by a parent</p>
-        <div class="price" id="feeKidsPrice">PKR 1,000</div>
-      </div>
-    </div>
-
-    <div class="join-flyer reveal" id="joinFlyer" aria-label="Recent members">
-      <div class="flyer-panel">
-        <div class="flyer-crest" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 2 2 6v6c0 5.2 4.1 9.4 10 10 5.9-.6 10-4.8 10-10V6l-10-4z"/></svg>
-        </div>
-        <div class="flyer-live">
-          <span class="flyer-dot" aria-hidden="true"></span>
-          <span class="flyer-live-label">Live</span>
-        </div>
-        <div class="flyer-names" id="flyerNames" aria-live="polite">
-          <span class="flyer-name is-current">Muhammad Ali has joined</span>
-        </div>
-      </div>
-      <div class="flyer-strip" aria-hidden="true"></div>
-    </div>
-  </div>
-</section>
-
-<section class="section-alt">
-  <div class="container">
-    <form class="card-form reveal-scale" id="joinForm" style="max-width:760px;margin:0 auto">
-      <div class="eyebrow">Member application</div>
-      <h3>Your details</h3>
-      <p class="sub">We only ask for what we need to issue your membership and reach you on match day.</p>
-      <div id="formMessage" style="display:none;padding:12px 16px;border-radius:8px;margin-bottom:18px;font-size:.9rem"></div>
-
-      <div class="form-row">
-        <div><label>First Name</label><input type="text" name="firstName" placeholder="First name" required></div>
-        <div><label>Last Name</label><input type="text" name="lastName" placeholder="Last name" required></div>
-      </div>
-      <div class="form-row">
-        <div><label>Contact Number</label><input type="tel" name="contactNumber" placeholder="+92 3xx xxxxxxx" required></div>
+    <div class="insta-panel reveal-scale">
+      <div class="insta-panel-head">
+        <div class="ig-icon">IG</div>
         <div>
-          <label>Country of Residence</label>
-          <select name="country" required><option value="Pakistan">Pakistan</option><option>United Kingdom</option><option>United States of America</option><option>United Arab Emirates</option><option>Other</option></select>
+          <h3>Live from @pbislamabad</h3>
+          <!--<p class="hint">Tap any photo to open the post on Instagram</p> -->
         </div>
+        <a class="follow" href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener">Follow us →</a>
       </div>
-      <div class="form-row full">
-        <div><label>Email Address</label><input type="email" name="email" placeholder="you@example.com" required></div>
+      <div class="instagram-widget-container">
+        <!-- Elfsight Instagram Feed -->
+        <script src="https://elfsightcdn.com/platform.js" async></script>
+        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0" data-elfsight-app-lazy></div>
       </div>
-      <div class="checkline"><input type="checkbox" id="agree" required><label for="agree" style="margin:0">By submitting this form, you agree to comply with the PBI Statutes and our processing of your personal data as set out in our <a href="privacy.html" style="color:var(--gold);text-decoration:underline;text-underline-offset:3px">Privacy Notice</a></label></div>
-      <div class="checkline"><input type="checkbox" id="child"><label for="child" style="margin:0">Are you registering for a child under 16</label></div>
-      <div class="form-row" id="childRow" style="display:none">
-        <div><label>Child's Full Name</label><input type="text" name="childName" placeholder="Full name"></div>
-        <div><label>Date Of Birth</label><input type="date" name="childDob"></div>
-      </div>
+    </div>
 
-      <div class="form-row full">
-        <div>
-          <label>Membership Type</label>
-          <select name="membershipType" id="membershipType">
-            <option value="adult">Adult (Annual): <span id="priceAdultLabel">PKR 3,000</span></option>
-            <option value="kids">Kids (Under 16, Annual): <span id="priceKidsLabel">PKR 1,000</span></option>
-          </select>
-        </div>
-      </div>
-
-      <button type="submit" class="btn" id="joinSubmitBtn" style="width:100%;justify-content:center;margin-top:10px"><span>Continue to payment</span></button>
-    </form>
+    <div class="eyebrow">PBI moments</div>
+    <h2>From our community</h2>
+    <div class="gallery reveal-stagger">
+      <figure><img src="https://pbisb.com/wp-content/uploads/2026/07/MGA1546-scaled.jpg" alt="Members gathered at a PBI screening"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2026/07/soccer-ball-on-a-field-inside-a-stadium-full-of-fans-photo.jpg" alt="A stadium full of supporters"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1544366981-53db834f982a.avif" alt="Barça fans celebrating"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/photo-1575343406218-42d896e03a85-1.avif" alt="Supporters gathering before a match"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/0e6527234716145dc9f71c479c1f347b.jpg" alt="The PBI community"></figure>
+      <figure><img src="https://pbisb.com/wp-content/uploads/2025/08/SG_8977.webp" alt="PBI board and members"></figure>
+    </div>
   </div>
 </section>
 
@@ -195,7 +197,6 @@
 </footer>
 
 <script src="script.js"></script>
-<script src="join.js"></script>
 <script src="animations.js"></script>
 </body>
 </html>

@@ -69,7 +69,7 @@ body{
 /* --- Display type: wide, heavy, stadium signage --- */
 h1,h2,h3,h4{
   font-family:var(--display);
-  font-weight:700;
+  font-variation-settings:'wdth' 118, 'wght' 800;
   text-transform:uppercase;
   letter-spacing:-.015em;
   line-height:.94;
@@ -78,10 +78,10 @@ h1,h2,h3,h4{
   word-wrap:break-word;
   overflow-wrap:break-word;
 }
-h1{font-size:clamp(2.6rem,7.2vw,5.6rem);font-weight:700;letter-spacing:-.03em}
+h1{font-size:clamp(2.6rem,7.2vw,5.6rem);font-variation-settings:'wdth' 122,'wght' 900;letter-spacing:-.03em}
 h2{font-size:clamp(2rem,4.6vw,3.5rem)}
-h3{font-size:clamp(1.35rem,2.4vw,1.9rem);font-weight:700;}
-h4{font-size:1.2rem;font-weight:700;letter-spacing:0}
+h3{font-size:clamp(1.35rem,2.4vw,1.9rem);font-variation-settings:'wdth' 112,'wght' 800}
+h4{font-size:1.2rem;font-variation-settings:'wdth' 110,'wght' 800;letter-spacing:0}
 h5{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;font-weight:700;margin:0 0 1em;color:var(--gold)}
 p{margin:0 0 1.1em;word-wrap:break-word;overflow-wrap:break-word}
 a{color:inherit;text-decoration:none}
@@ -114,7 +114,7 @@ strong,b{font-weight:700}
   background:var(--btn-bg);color:var(--btn-fg);
   border:2px solid var(--btn-line);border-radius:2px;
   font-family:var(--display);
-  font-weight:700;
+  font-variation-settings:'wdth' 112,'wght' 800;
   letter-spacing:.06em;text-transform:uppercase;
   font-size:.88rem;line-height:1;
   cursor:pointer;position:relative;overflow:hidden;isolation:isolate;
@@ -174,7 +174,7 @@ header.site-header.condensed .container{padding:9px 28px}
 .logo img{height:68px;width:auto;object-fit:contain;transition:height .3s ease;max-width:100%}
 header.site-header.condensed .logo img{height:52px}
 .logo .word{
-  font-family:var(--display);font-weight:700;
+  font-family:var(--display);font-variation-settings:'wdth' 108,'wght' 800;
   font-size:.95rem;line-height:1.05;text-transform:uppercase;letter-spacing:.01em;color:var(--chalk);
   white-space:normal;
 }
@@ -283,7 +283,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 }
 .ticker-track{display:flex;width:max-content;animation:tickerRun 38s linear infinite}
 .ticker-track span{
-  font-family:var(--display);font-weight:700;
+  font-family:var(--display);font-variation-settings:'wdth' 120,'wght' 900;
   font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;
   letter-spacing:-.01em;color:var(--gold);
   padding:0 26px;white-space:nowrap;display:flex;align-items:center;gap:26px;
@@ -614,7 +614,7 @@ textarea{min-height:130px;resize:vertical}
 .flyer-name{
   position:absolute;inset:0;
   display:flex;align-items:center;
-  font-family:var(--display);font-weight:700;
+  font-family:var(--display);font-variation-settings:'wdth' 112,'wght' 700;
   font-size:clamp(1.05rem,2.4vw,1.5rem);line-height:1.2;
   color:#fff;letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -644,7 +644,7 @@ textarea{min-height:130px;resize:vertical}
   width:40px;height:46px;flex-shrink:0;
   background:var(--gold);clip-path:var(--shield);border-radius:0;
   color:var(--ink);display:flex;align-items:center;justify-content:center;
-  font-family:var(--display);font-weight:700;font-size:.85rem;
+  font-family:var(--display);font-variation-settings:'wdth' 110,'wght' 900;font-size:.85rem;
 }
 .contact-detail h5{margin-bottom:5px;color:var(--gold)}
 .contact-detail p{margin:0;color:var(--chalk-dim);font-size:.95rem}
