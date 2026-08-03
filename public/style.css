@@ -51,14 +51,14 @@
 }
 
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;touch-action:pan-y;width:100%;max-width:100vw;overflow-x:hidden}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;touch-action:pan-y;width:100%;max-width:100vw;overflow-x:hidden;font-size:112.5%}
 body{
   margin:0;
   font-family:var(--body);
   color:var(--chalk);
   background:var(--night);
   line-height:1.6;
-  font-size:21px;
+  font-size:19px;
   overflow-x:hidden;
   width:100%;
   max-width:100vw;
@@ -79,7 +79,8 @@ h1,h2,h3,h4{
   overflow-wrap:break-word;
 }
 h1{font-size:clamp(2.6rem,7.2vw,5.6rem);font-weight:700;letter-spacing:-.03em}
-h2{font-size:clamp(2rem,4.6vw,3.5rem)}
+h2{font-size:clamp(2rem,4.6vw,3.5rem);color:var(--gold)}
+.gold-heading{color:var(--gold)}
 h3{font-size:clamp(1.35rem,2.4vw,1.9rem);font-weight:700;}
 h4{font-size:1.2rem;font-weight:700;letter-spacing:0}
 h5{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.18em;font-weight:700;margin:0 0 1em;color:var(--gold)}
@@ -209,7 +210,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   position:relative;
   min-height:min(92vh,860px);
   display:flex;align-items:center;
-  padding:70px 0 60px;
+  padding:120px 0 100px;
   background:var(--night);
   overflow:hidden;
   isolation:isolate;
@@ -281,7 +282,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);
   padding:16px 0;
 }
-.ticker-track{display:flex;width:max-content;animation:tickerRun 120s linear infinite;will-change:transform}
+.ticker-track{display:flex;width:max-content;animation:tickerRun 38s linear infinite}
 .ticker-track span{
   font-family:var(--display);font-weight:700;
   font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;
@@ -419,7 +420,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 /* ==========================================================================
    SECTIONS
    ========================================================================== */
-section{padding:60px 0;position:relative}
+section{padding:104px 0;position:relative}
 .split{display:grid;grid-template-columns:1.05fr .95fr;gap:70px;align-items:center}
 .split img{border-radius:var(--radius-lg)}
 .split p{color:var(--chalk-dim);max-width:56ch}
@@ -434,7 +435,8 @@ section{padding:60px 0;position:relative}
 }
 
 .section-alt{background:var(--night-2);color:var(--chalk-dim)}
-.section-alt h1,.section-alt h2,.section-alt h3,.section-alt h4{color:var(--chalk)}
+.section-alt h1,.section-alt h3,.section-alt h4{color:var(--chalk)}
+.section-alt h2{color:var(--gold)}
 .section-alt p,.section-alt li{color:var(--muted-lt)}
 .section-alt .eyebrow{color:var(--gold)}
 .section-tint{background:var(--night-2);color:var(--chalk-dim)}
@@ -444,7 +446,8 @@ section{padding:60px 0;position:relative}
 .tile-blau{background:linear-gradient(155deg,var(--blau) 0%,var(--blau-dk) 100%)}
 .tile-grana{background:linear-gradient(155deg,var(--grana) 0%,var(--grana-dk) 100%)}
 .tile-blau,.tile-grana{color:rgba(255,255,255,.88);position:relative;overflow:hidden}
-.tile-blau h2,.tile-blau h3,.tile-blau h4,.tile-grana h2,.tile-grana h3,.tile-grana h4{color:#fff}
+.tile-blau h3,.tile-blau h4,.tile-grana h3,.tile-grana h4{color:#fff}
+.tile-blau h2,.tile-grana h2{color:var(--gold)}
 .tile-blau p,.tile-blau ul,.tile-blau li,.tile-grana p,.tile-grana ul,.tile-grana li{color:rgba(255,255,255,.84)}
 .tile-blau .eyebrow,.tile-grana .eyebrow{color:var(--gold)}
 section.tile-blau>*,section.tile-grana>*{position:relative;z-index:2}
@@ -497,7 +500,7 @@ section.tile-blau>*,section.tile-grana>*{position:relative;z-index:2}
   -webkit-mask-image:linear-gradient(90deg,transparent 40%,#000 100%);
 }
 .banner-cta .container{position:relative;z-index:2;max-width:var(--container)}
-.banner-cta h2{color:var(--chalk);max-width:16ch}
+.banner-cta h2{color:var(--gold);max-width:16ch}
 .banner-cta p{max-width:52ch;color:var(--chalk-dim);margin-bottom:32px}
 
 /* ==========================================================================
@@ -581,6 +584,13 @@ textarea{min-height:130px;resize:vertical}
    JOIN FLYER — live "who joined" banner under the fee cards
    Dark blue panel on top, light blue strip below.
    ========================================================================== */
+.flyer-section{padding:24px 0}
+.venue-map{
+  margin-top:32px;border-radius:var(--radius-lg);overflow:hidden;
+  border:1px solid var(--line);box-shadow:var(--shadow);
+}
+.venue-map iframe{width:100%;height:380px;display:block;border:0}
+@media(max-width:560px){.venue-map iframe{height:280px}}
 .join-flyer{
   position:relative;overflow:hidden;
   margin-top:28px;border-radius:var(--radius-lg);
@@ -609,30 +619,30 @@ textarea{min-height:130px;resize:vertical}
   width:8px;height:8px;border-radius:50%;background:var(--gold);
   animation:livePulse 1.8s ease-in-out infinite;
 }
-.flyer-list{
+.flyer-viewport{
+  height:188px;overflow:hidden;position:relative;
+  mask-image:linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
+}
+.flyer-track{
   list-style:none;margin:0;padding:0;
-  display:flex;flex-direction:column;gap:10px;
+  display:flex;flex-direction:column;gap:14px;
+  animation:flyerFloat 60s linear infinite;
 }
 .flyer-row{
-  font-family:'Arial Black','Helvetica Neue',Arial,sans-serif;font-weight:900;
-  font-size:clamp(1.1rem,2.2vw,1.5rem);line-height:1.4;
-  color:#fff;letter-spacing:.02em;
+  font-family:var(--display);font-weight:700;
+  font-size:clamp(.92rem,1.6vw,1.15rem);line-height:1.3;
+  color:rgba(255,255,255,.92);letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding-left:16px;position:relative;
-  transition:opacity .35s ease,transform .35s ease,color .35s ease;
 }
 .flyer-row::before{
   content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;
   border-radius:50%;background:var(--gold);
 }
-.flyer-row.is-updating{opacity:0;transform:translateY(-8px)}
-.flyer-row.is-updating-in{
-  animation:flyerRowIn .4s cubic-bezier(.16,.84,.44,1);
-  color:var(--gold);
-}
-@keyframes flyerRowIn{
-  from{opacity:0;transform:translateY(8px)}
-  to{opacity:1;transform:translateY(0)}
+@keyframes flyerFloat{
+  from{transform:translateY(-50%)}
+  to{transform:translateY(0%)}
 }
 .flyer-strip{
   height:8px;
@@ -643,6 +653,10 @@ textarea{min-height:130px;resize:vertical}
   .flyer-panel{padding:18px 18px 22px}
   .flyer-crest{display:none}
   .flyer-row{font-size:.85rem}
+  .flyer-viewport{height:160px}
+}
+@media (prefers-reduced-motion: reduce){
+  .flyer-track{animation:none}
 }
 
 /* ==========================================================================
@@ -691,19 +705,19 @@ textarea{min-height:130px;resize:vertical}
 .statutes-body .table-wrap{overflow-x:auto;margin:18px 0 26px;-webkit-overflow-scrolling:touch}
 .statutes-body table{
   width:100%;border-collapse:collapse;
-  font-family:var(--body);font-size:.92rem;
+  font-family:var(--body);font-size:1.08rem;
   background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden;
 }
 .statutes-body table thead th{
-  font-family:var(--mono);font-weight:700;font-size:.66rem;
+  font-family:var(--mono);font-weight:700;font-size:.8rem;
   letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
   text-align:left;padding:14px 16px;
   background:rgba(0,0,0,.32);border-bottom:1px solid rgba(237,187,0,.3);
   white-space:nowrap;
 }
 .statutes-body table tbody td{
-  padding:13px 16px;color:rgba(255,255,255,.86);
-  border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top;line-height:1.5;
+  padding:15px 16px;color:rgba(255,255,255,.86);
+  border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top;line-height:1.55;
 }
 .statutes-body table tbody tr:last-child td{border-bottom:none}
 .statutes-body table tbody tr:nth-child(even){background:rgba(0,0,0,.12)}
@@ -754,7 +768,7 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
   .our-trips-media .badge{right:10px;bottom:-20px;width:74px;height:84px;padding:19px}
 }
 @media(max-width:700px){
-  body{font-size:19px}
+  body{font-size:16px}
   section{padding:72px 0}
   .container{padding:0 20px}
   .hero{min-height:auto;padding:80px 0 70px}
@@ -769,7 +783,7 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
   .footer-bottom{justify-content:flex-start}
 }
 @media(max-width:560px){
-  body{font-size:17px}
+  body{font-size:15px}
   section{padding:60px 0}
   .container{padding:0 16px}
   .topbar .container{padding:8px 16px;gap:12px;flex-direction:column;align-items:flex-start}

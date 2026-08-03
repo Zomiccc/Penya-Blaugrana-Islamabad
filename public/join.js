@@ -107,16 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — a live-feeling list of 5 rows, each showing a different
-   person + a varied message ("just joined", "just bought the membership",
-   "just joined the Barça Family"). One row gets swapped for a fresh
-   name/message every couple of seconds, so the whole list stays alive.
+   JOIN FLYER — a continuously floating list of "who joined" messages.
+   Names + messages are built once into a track that's duplicated exactly
+   once, then a pure CSS animation floats it top-to-bottom on an endless,
+   seamless loop (no JS-driven interval swapping — genuinely continuous
+   motion instead of a discrete "snap" every few seconds).
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
   const list = document.getElementById('flyerList');
   if (!list) return;
 
   const names = [
+    // men
     'Muhammad Ali', 'Ahmed Raza', 'Bilal Khan', 'Usman Tariq',
     'Hassan Mahmood', 'Abdullah Sheikh', 'Fahad Iqbal', 'Imran Qureshi',
     'Junaid Akhtar', 'Kamran Shahid', 'Saad Anwar', 'Talha Malik',
@@ -132,6 +134,12 @@ document.addEventListener('DOMContentLoaded', () => {
     'Rehan Bhatti', 'Arsalan Javed', 'Zohaib Iqbal', 'Nabeel Aziz',
     'Owais Mirza', 'Hamdan Riaz', 'Ibrahim Sultan', 'Shayan Wasti',
     'Mustafa Durrani', 'Ayaan Cheema', 'Bakht Zaman', 'Sohail Butt',
+    // women
+    'Ayesha Malik', 'Sara Khan', 'Fatima Zahra', 'Zainab Fatima',
+    'Mahnoor Aslam', 'Hira Sheikh', 'Amna Tariq', 'Sana Riaz',
+    'Iqra Yousaf', 'Mariam Chaudhry', 'Noor Fatima', 'Rabia Khan',
+    'Sadia Iqbal', 'Kiran Malik', 'Bushra Ahmed', 'Warda Sheikh',
+    'Anum Raza', 'Komal Butt', 'Areeba Khan', 'Nimra Javed',
   ];
 
   const messages = [
@@ -140,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     (n) => `${n} just joined the Barça Family`,
   ];
 
-  // Fisher-Yates shuffle so each cycle feels different
+  // Fisher-Yates shuffle so the order feels different on every page load
   function shuffle(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -150,38 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return a;
   }
 
-  let queue = shuffle(names);
-  let idx = 0;
-
-  function nextMessage() {
-    if (idx >= queue.length) {
-      queue = shuffle(names);
-      idx = 0;
-    }
-    const name = queue[idx++];
+  // Build a decent-length list (24 entries) so the loop doesn't feel repetitive
+  const shuffled = shuffle(names).slice(0, 24);
+  const lines = shuffled.map((name) => {
     const template = messages[Math.floor(Math.random() * messages.length)];
     return template(name);
-  }
+  });
 
-  const rows = Array.from(list.querySelectorAll('.flyer-row'));
-  if (!rows.length) return;
-
-  // Give the 5 starting rows varied messages right away instead of the
-  // static placeholder text baked into the HTML.
-  rows.forEach((row) => { row.textContent = nextMessage(); });
-
-  function rotateOneRow() {
-    const row = rows[Math.floor(Math.random() * rows.length)];
-    row.classList.add('is-updating');
-    setTimeout(() => {
-      row.textContent = nextMessage();
-      row.classList.remove('is-updating');
-      row.classList.add('is-updating-in');
-      setTimeout(() => row.classList.remove('is-updating-in'), 400);
-    }, 250);
-  }
-
-  // Swap one row for a fresh name/message every 2.2 seconds — with 5 rows
-  // rotating independently, the whole list constantly feels alive.
-  setInterval(rotateOneRow, 2200);
+  const rowsHTML = lines.map((text) => `<li class="flyer-row">${text}</li>`).join('');
+  // Render the list TWICE back-to-back — that's what makes the CSS
+  // animation's translateY(-50%) → translateY(0%) loop seamlessly forever.
+  list.innerHTML = rowsHTML + rowsHTML;
 });

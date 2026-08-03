@@ -11,28 +11,6 @@
 <body>
 
 
-<header class="site-header">
-  <div class="container">
-    <a class="logo" href="index.html">
-      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
-      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
-    </a>
-    <nav class="main-nav">
-      <a href="index.html" class="active">Home</a>
-      <a href="about.html">About us</a>
-      <a href="join.html">Join us</a>
-      <a href="fixtures.html">Fixtures</a>
-      <a href="media.html">Media</a>
-      <a href="statutes.html">Statutes</a>
-      <a href="contact.html">Contact</a>
-    </nav>
-    <div class="header-cta">
-      <a class="btn" href="join.html"><span>Join us</span></a>
-      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
-    </div>
-  </div>
-</header>
-
 <!-- ============================ HERO: THE TIFO ============================ -->
 <section class="hero">
   <div class="tifo" aria-hidden="true"></div>
@@ -69,7 +47,7 @@
 </div>
 
 <!-- ============================ LIVE JOIN FLYER ============================ -->
-<section>
+<section class="flyer-section">
   <div class="container">
     <div class="join-flyer reveal" id="joinFlyer" aria-label="Recent members">
       <div class="flyer-panel">
@@ -82,13 +60,14 @@
             <span class="flyer-live-label">Live</span>
           </div>
         </div>
-        <ul class="flyer-list" id="flyerList" aria-live="polite">
-          <li class="flyer-row">Muhammad Ali just joined</li>
-          <li class="flyer-row">Ahmed Raza just bought the membership</li>
-          <li class="flyer-row">Bilal Khan just joined the Barça Family</li>
-          <li class="flyer-row">Usman Tariq just joined</li>
-          <li class="flyer-row">Hassan Mahmood just bought the membership</li>
-        </ul>
+        <div class="flyer-viewport">
+          <ul class="flyer-track" id="flyerList" aria-live="off">
+            <li class="flyer-row">Ayesha Malik just joined</li>
+            <li class="flyer-row">Sara Khan just bought the membership</li>
+            <li class="flyer-row">Fatima Zahra just joined the Barça Family</li>
+            <li class="flyer-row">Ali Hassan just joined</li>
+          </ul>
+        </div>
       </div>
       <div class="flyer-strip" aria-hidden="true"></div>
     </div>
@@ -147,8 +126,7 @@
 <section class="tile-blau">
   <div class="container split">
     <div class="reveal-left">
-      <div class="eyebrow">Penya Blaugrana Islamabad</div>
-      <h2>Our passion</h2>
+      <h2 class="gold-heading">Our passion</h2>
       <p>At Penya Blaugrana Islamabad, our passion is FC Barcelona. We are building a community in Pakistan where culers come together to celebrate the beautiful game, share unforgettable moments, and live the values of the club.</p>
       <p>Through match screenings, cultural events and community gatherings, we bring Barça fans in Islamabad closer to the team we all love.</p>
       <p>Our passion goes beyond the pitch. We proudly support FCB Femení and work to raise awareness of their achievements, and of women's football in Pakistan.</p>
@@ -167,8 +145,7 @@
      <!-- <img class="badge" src="https://pbisb.com/wp-content/uploads/2025/08/dimond.png" alt=""> -->
     </div>
     <div class="reveal-right">
-      <div class="eyebrow">Together we travel</div>
-      <h2>Our trips</h2>
+      <h2 class="gold-heading">Our trips</h2>
       <p>Our goal is to create chances for fans to watch matches side by side, share the experience, and strengthen the bond between culers here.</p>
       <p>Being part of the Barça family means joining penyas that bring supporters together across borders.</p>
       <p>It's a real family. Friendships get built and memories get made through our love for the club.</p>
@@ -181,8 +158,7 @@
 <!-- ============================ WHAT WE STAND FOR ============================ -->
 <section class="section-tint">
   <div class="container">
-    <div class="eyebrow">What we stand for</div>
-    <h2 style="max-width:14ch">The things we carry into the room</h2>
+    <h2 class="gold-heading" style="max-width:18ch">The things we carry into the venue</h2>
     <div class="values-grid reveal-stagger">
 
       <div class="value-card tile-blau">
@@ -197,7 +173,6 @@
         <ul>
           <li>Respect and tolerance</li>
           <li>Sportsmanship and fair play</li>
-          <li>Solidarity</li>
           <li>Democracy</li>
         </ul>
       </div>
@@ -205,7 +180,7 @@
       <div class="value-card tile-blau">
         <div class="icon-wrap"><img src="https://pbisb.com/wp-content/uploads/2025/08/soccer-ball-variant-4.png" alt=""></div>
         <h4>Our venue</h4>
-        <p>If you live in, work in or are visiting Islamabad, join us on match days as we gather to watch together, creating an atmosphere that brings a <b class="gold-text">little piece</b> of Camp Nou in Pakistan.</p>
+        <p>If you live in, work in or are visiting Islamabad, join us on match days as we gather to watch Barcelona together, creating an atmosphere that brings a <b class="gold-text">little piece</b> of Camp Nou in Pakistan.</p>
       </div>
 
     </div>
@@ -215,8 +190,7 @@
 <!-- ============================ STATUTES CTA ============================ -->
 <section class="banner-cta">
   <div class="container reveal">
-    <div class="eyebrow">House rules</div>
-    <h2>Our rules and regulations</h2>
+    <h2 class="gold-heading">Our rules and regulations</h2>
     <p>The statutes set out the rights and responsibilities of members, and define how Penya Blaugrana Islamabad is structured and governed.</p>
     <a class="btn alt" href="statutes.html"><span>Read the statutes</span></a>
   </div>
@@ -233,11 +207,16 @@
       </div>
     </div>
     <div class="reveal" style="max-width:66ch">
-      <div class="eyebrow">The room</div>
-      <h2>Where we gather</h2>
-      <p>As the newest addition to the worldwide Barça family, Penya Blaugrana Islamabad hosts match screenings for supporters across the twin cities. While we finalise our official home venue, the commitment stays the same: the best atmosphere to watch FC Barcelona outside Camp Nou.</p>
+      <h2 class="gold-heading">Where we gather</h2>
+      <p>As the newest addition to the worldwide Barça family, Penya Blaugrana Islamabad hosts match screenings for supporters across Pakistan. While we finalise our official home venue, the commitment stays the same: the best atmosphere to watch FC Barcelona outside Camp Nou.</p>
       <p>From screenings to social meetups, every gathering is built on passion, energy and camaraderie. Whether you've supported Barça your whole life or you're just discovering the club, there's a place for you here.</p>
       <a class="btn gold" href="contact.html"><span>Find us</span></a>
+    </div>
+    <div class="venue-map reveal-scale">
+      <iframe
+        src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBfGHL60PVLpZyxj4A9ZwPDeKjXdlPPOyQ&q=Marina+Mall,+Dua+Chowk,+Phase+4-B+Ghauri+Town,+Islamabad,+45500,+Pakistan"
+        loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen
+        title="Penya Blaugrana Islamabad venue location"></iframe>
     </div>
   </div>
 </section>
@@ -245,8 +224,7 @@
 <!-- ============================ CONTACT CTA ============================ -->
 <section class="banner-cta">
   <div class="container reveal">
-    <div class="eyebrow">Get in touch</div>
-    <h2>Questions? Ask us anything</h2>
+    <h2 class="gold-heading">GET IN TOUCH</h2>
     <p>Want to join, bring a group on match day, or just find out where we're watching this weekend. We're a message away.</p>
     <a class="btn" href="contact.html"><span>Contact us</span></a>
   </div>
@@ -259,13 +237,6 @@
         <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
         <h4>Penya Blaugrana Islamabad</h4>
         <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
-        <div class="social-row">
-          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg></a>
-          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48"/></svg></a>
-          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2c-2.72 0-3.06.01-4.12.06-1.06.05-1.79.22-2.43.47-.66.26-1.22.6-1.77 1.16-.56.55-.9 1.11-1.16 1.77-.25.64-.42 1.37-.47 2.43C2 8.94 2 9.28 2 12s.01 3.06.06 4.12c.05 1.06.22 1.79.47 2.43.26.66.6 1.22 1.16 1.77.55.56 1.11.9 1.77 1.16.64.25 1.37.42 2.43.47C8.94 22 9.28 22 12 22s3.06-.01 4.12-.06c1.06-.05 1.79-.22 2.43-.47.66-.26 1.22-.6 1.77-1.16.56-.55.9-1.11 1.16-1.77.25-.64.42-1.37.47-2.43.05-1.06.06-1.4.06-4.12s-.01-3.06-.06-4.12c-.05-1.06-.22-1.79-.47-2.43a4.9 4.9 0 0 0-1.16-1.77 4.9 4.9 0 0 0-1.77-1.16c-.64-.25-1.37-.42-2.43-.47C15.06 2.01 14.72 2 12 2m0 1.8c2.67 0 2.99.01 4.04.06.98.04 1.5.21 1.86.34.47.18.8.4 1.15.75.35.35.57.68.75 1.15.13.36.29.88.34 1.86.05 1.05.06 1.37.06 4.04s-.01 2.99-.06 4.04c-.04.98-.21 1.5-.34 1.86-.18.47-.4.8-.75 1.15-.35.35-.68.57-1.15.75-.36.13-.88.29-1.86.34-1.05.05-1.37.06-4.04.06s-2.99-.01-4.04-.06c-.98-.04-1.5-.21-1.86-.34a3.1 3.1 0 0 1-1.15-.75 3.1 3.1 0 0 1-.75-1.15c-.13-.36-.29-.88-.34-1.86C3.81 14.99 3.8 14.67 3.8 12s.01-2.99.06-4.04c.04-.98.21-1.5.34-1.86.18-.47.4-.8.75-1.15.35-.35.68-.57 1.15-.75.36-.13.88-.29 1.86-.34C9.01 3.81 9.33 3.8 12 3.8m0 3.06a5.14 5.14 0 1 0 0 10.28 5.14 5.14 0 0 0 0-10.28M12 15.4a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8m6.54-9.94a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0"/></svg></a>
-          <a href="https://x.com/IslamabadP45636" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.83-5.97 6.83H1.66l7.73-8.84L1.25 2.25h6.83l4.72 6.24zm-1.16 17.52h1.83L7.02 4.13H5.06z"/></svg></a>
-          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.56A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14C4.5 20.5 12 20.5 12 20.5s7.5 0 9.38-.56a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8M9.6 15.6V8.4l6.4 3.6z"/></svg></a>
-        </div>
       </div>
       <div>
         <h5>Venue</h5>
@@ -286,13 +257,6 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
-      <div class="social-row">
-        <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg></a>
-        <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48"/></svg></a>
-        <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2c-2.72 0-3.06.01-4.12.06-1.06.05-1.79.22-2.43.47-.66.26-1.22.6-1.77 1.16-.56.55-.9 1.11-1.16 1.77-.25.64-.42 1.37-.47 2.43C2 8.94 2 9.28 2 12s.01 3.06.06 4.12c.05 1.06.22 1.79.47 2.43.26.66.6 1.22 1.16 1.77.55.56 1.11.9 1.77 1.16.64.25 1.37.42 2.43.47C8.94 22 9.28 22 12 22s3.06-.01 4.12-.06c1.06-.05 1.79-.22 2.43-.47.66-.26 1.22-.6 1.77-1.16.56-.55.9-1.11 1.16-1.77.25-.64.42-1.37.47-2.43.05-1.06.06-1.4.06-4.12s-.01-3.06-.06-4.12c-.05-1.06-.22-1.79-.47-2.43a4.9 4.9 0 0 0-1.16-1.77 4.9 4.9 0 0 0-1.77-1.16c-.64-.25-1.37-.42-2.43-.47C15.06 2.01 14.72 2 12 2m0 1.8c2.67 0 2.99.01 4.04.06.98.04 1.5.21 1.86.34.47.18.8.4 1.15.75.35.35.57.68.75 1.15.13.36.29.88.34 1.86.05 1.05.06 1.37.06 4.04s-.01 2.99-.06 4.04c-.04.98-.21 1.5-.34 1.86-.18.47-.4.8-.75 1.15-.35.35-.68.57-1.15.75-.36.13-.88.29-1.86.34-1.05.05-1.37.06-4.04.06s-2.99-.01-4.04-.06c-.98-.04-1.5-.21-1.86-.34a3.1 3.1 0 0 1-1.15-.75 3.1 3.1 0 0 1-.75-1.15c-.13-.36-.29-.88-.34-1.86C3.81 14.99 3.8 14.67 3.8 12s.01-2.99.06-4.04c.04-.98.21-1.5.34-1.86.18-.47.4-.8.75-1.15.35-.35.68-.57 1.15-.75.36-.13.88-.29 1.86-.34C9.01 3.81 9.33 3.8 12 3.8m0 3.06a5.14 5.14 0 1 0 0 10.28 5.14 5.14 0 0 0 0-10.28M12 15.4a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8m6.54-9.94a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0"/></svg></a>
-        <a href="https://x.com/IslamabadP45636" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.83-5.97 6.83H1.66l7.73-8.84L1.25 2.25h6.83l4.72 6.24zm-1.16 17.52h1.83L7.02 4.13H5.06z"/></svg></a>
-        <a href="https://youtube.com/@pbislamabad" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.56A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14C4.5 20.5 12 20.5 12 20.5s7.5 0 9.38-.56a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8M9.6 15.6V8.4l6.4 3.6z"/></svg></a>
-      </div>
     </div>
   </div>
 </footer>

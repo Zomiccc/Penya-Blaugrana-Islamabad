@@ -62,48 +62,76 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — vertical auto-scroller
-   Shows 3-4 rows at a time, scrolls slowly upward, new items appear
-   from the bottom. Items are duplicated for a seamless infinite loop.
+   JOIN FLYER — realistic rotating supporter ticker
+   Shows 3-4 names per slide. Names fade/slide in one by one (0s, 15s, 30s, 45s).
+   The whole slide stays visible for 60s, then transitions to the next slide.
+   The panel also has a subtle floating up/down motion with natural pauses.
    ========================================================================== */
 function initFlyerScroll(listEl) {
-  // Collect original items
-  const items = Array.from(listEl.children);
-  if (!items.length) return;
+  const baseItems = Array.from(listEl.children);
+  if (!baseItems.length) return;
 
-  // Clear the list and create an inner track wrapper
+  // Build a pool of supporter messages (mix of female and male names)
+  const messages = [
+    'Ayesha Malik just joined',
+    'Sara Khan just bought the membership',
+    'Fatima Zahra just joined the Barça Family',
+    'Zara Ahmed just joined',
+    'Maryam Hussain just bought the membership',
+    'Ali Hassan just joined',
+    'Ahmed Raza just bought the membership',
+    'Bilal Khan just joined the Barça Family',
+    'Usman Tariq just joined',
+    'Hassan Mahmood just bought the membership',
+  ];
+
+  // Create slides: each slide is a group of 4 messages
+  const perSlide = 4;
+  const slides = [];
+  for (let i = 0; i < messages.length; i += perSlide) {
+    slides.push(messages.slice(i, i + perSlide));
+  }
+
+  // Clear original items and prepare container
   listEl.innerHTML = '';
+  listEl.style.overflow = 'hidden';
+  listEl.style.position = 'relative';
+  listEl.style.height = 'calc(4 * 2.8rem)';
+
+  // Create a slide track that holds one slide at a time
   const track = document.createElement('div');
   track.className = 'flyer-track';
-
-  // Append original items + clones for seamless loop
-  [...items, ...items.map((item) => item.cloneNode(true))].forEach((item) => {
-    track.appendChild(item);
-  });
   listEl.appendChild(track);
 
-  // Inject the animation styles
-  const style = document.createElement('style');
-  style.textContent = `
-    .flyer-list{
-      overflow:hidden !important;
-      height:calc(4 * 2.8rem) !important;
-      position:relative !important;
-    }
-    .flyer-track{
-      display:flex !important;
-      flex-direction:column !important;
-      gap:10px !important;
-      animation:flyerScroll 60s linear infinite !important;
-      will-change:transform;
-    }
-    .flyer-list:hover .flyer-track{animation-play-state:paused}
-    @keyframes flyerScroll{
-      from{transform:translateY(0)}
-      to{transform:translateY(-50%)}
-    }
-  `;
-  document.head.appendChild(style);
+  let current = 0;
+
+  function renderSlide() {
+    const slide = slides[current];
+    track.innerHTML = '';
+    slide.forEach((msg) => {
+      const row = document.createElement('li');
+      row.className = 'flyer-row';
+      row.textContent = msg;
+      track.appendChild(row);
+    });
+
+    // Animate each row in one by one (0s, 15s, 30s, 45s)
+    const rows = Array.from(track.children);
+    rows.forEach((row, i) => {
+      row.style.opacity = '0';
+      row.style.transform = 'translateY(20px)';
+      row.style.transition = 'opacity .6s ease, transform .6s ease';
+      setTimeout(() => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateY(0)';
+      }, i * 15000);
+    });
+
+    current = (current + 1) % slides.length;
+  }
+
+  renderSlide();
+  setInterval(renderSlide, 60000);
 }
 
 /* ==========================================================================
