@@ -58,7 +58,7 @@ body{
   color:var(--chalk);
   background:var(--night);
   line-height:1.6;
-  font-size:17.5px;
+  font-size:21px;
   overflow-x:hidden;
   width:100%;
   max-width:100vw;
@@ -209,7 +209,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   position:relative;
   min-height:min(92vh,860px);
   display:flex;align-items:center;
-  padding:120px 0 100px;
+  padding:70px 0 60px;
   background:var(--night);
   overflow:hidden;
   isolation:isolate;
@@ -281,7 +281,7 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);
   padding:16px 0;
 }
-.ticker-track{display:flex;width:max-content;animation:tickerRun 38s linear infinite}
+.ticker-track{display:flex;width:max-content;animation:tickerRun 120s linear infinite;will-change:transform}
 .ticker-track span{
   font-family:var(--display);font-weight:700;
   font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;
@@ -754,7 +754,7 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
   .our-trips-media .badge{right:10px;bottom:-20px;width:74px;height:84px;padding:19px}
 }
 @media(max-width:700px){
-  body{font-size:16px}
+  body{font-size:19px}
   section{padding:72px 0}
   .container{padding:0 20px}
   .hero{min-height:auto;padding:80px 0 70px}
@@ -769,7 +769,7 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
   .footer-bottom{justify-content:flex-start}
 }
 @media(max-width:560px){
-  body{font-size:15px}
+  body{font-size:17px}
   section{padding:60px 0}
   .container{padding:0 16px}
   .topbar .container{padding:8px 16px;gap:12px;flex-direction:column;align-items:flex-start}

@@ -53,7 +53,44 @@ document.addEventListener('DOMContentLoaded', () => {
   if (fixturesListEl) {
     initFixturesPage(fixturesListEl);
   }
+
+  // Join flyer vertical scroller (index.html)
+  const flyerList = document.getElementById('flyerList');
+  if (flyerList) {
+    initFlyerScroll(flyerList);
+  }
 });
+
+/* ==========================================================================
+   JOIN FLYER — vertical auto-scroller
+   Shows 3-4 rows at a time, scrolls slowly upward, new items appear
+   from the bottom. Items are duplicated for a seamless infinite loop.
+   ========================================================================== */
+function initFlyerScroll(listEl) {
+  // Clone all items and append them so the scroll loops seamlessly
+  const items = Array.from(listEl.children);
+  items.forEach((item) => {
+    listEl.appendChild(item.cloneNode(true));
+  });
+
+  // Inject the animation styles
+  const style = document.createElement('style');
+  style.textContent = `
+    .flyer-list{
+      overflow:hidden !important;
+      height:calc(4 * 2.8rem) !important;
+      position:relative !important;
+      animation:flyerScroll 60s linear infinite !important;
+      will-change:transform;
+    }
+    .flyer-list:hover{animation-play-state:paused}
+    @keyframes flyerScroll{
+      from{transform:translateY(0)}
+      to{transform:translateY(-50%)}
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 /* ==========================================================================
    LIVE FC BARCELONA FIXTURES
