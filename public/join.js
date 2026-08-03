@@ -105,3 +105,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/* ==========================================================================
+   JOIN FLYER — rotating "who joined" names
+   Cycles through 40 Pakistani names with a slide-up / fade animation.
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  const host = document.getElementById('flyerNames');
+  if (!host) return;
+
+  const names = [
+    'Muhammad Ali', 'Ahmed Raza', 'Bilal Khan', 'Usman Tariq',
+    'Hassan Mahmood', 'Abdullah Sheikh', 'Fahad Iqbal', 'Imran Qureshi',
+    'Junaid Akhtar', 'Kamran Shahid', 'Saad Anwar', 'Talha Malik',
+    'Zeeshan Ahmed', 'Ahsan Raza', 'Hamza Tariq', 'Noman Aslam',
+    'Adnan Khan', 'Farhan Ahmed', 'Sufyan Mahmood', 'Daniyal Khan',
+    'Asad Ullah', 'Bilal Ahmed', 'Faisal Mehmood', 'Gohar Ali',
+    'Haris Nadeem', 'Irfan Malik', 'Jibran Sheikh', 'Khurram Raza',
+    'Mansoor Ahmed', 'Naveed Iqbal', 'Omer Sheikh', 'Prem Gull',
+    'Qasim Raza', 'Raheel Khan', 'Salman Tariq', 'Tahir Mehmood',
+    'Umair Javed', 'Waqar Younis', 'Yasir Hussain', 'Zain Abbas',
+    'Sameer Baig', 'Rizwan Yousaf', 'Danish Ali', 'Waleed Farooq',
+    'Ammar Siddiqui', 'Shahzaib Khan', 'Moiz Ansari', 'Taimoor Chaudhry',
+    'Rehan Bhatti', 'Arsalan Javed', 'Zohaib Iqbal', 'Nabeel Aziz',
+    'Owais Mirza', 'Hamdan Riaz', 'Ibrahim Sultan', 'Shayan Wasti',
+    'Mustafa Durrani', 'Ayaan Cheema', 'Bakht Zaman', 'Sohail Butt',
+  ];
+
+  // Fisher-Yates shuffle so each cycle feels different
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  let queue = shuffle(names);
+  let idx = 0;
+
+  function nextName() {
+    if (idx >= queue.length) {
+      queue = shuffle(names);
+      idx = 0;
+    }
+    return queue[idx++];
+  }
+
+  function rotate() {
+    const current = host.querySelector('.flyer-name.is-current');
+    if (!current) return;
+
+    // build the incoming name element
+    const incoming = document.createElement('span');
+    incoming.className = 'flyer-name';
+    incoming.textContent = `${nextName()} has joined`;
+    host.appendChild(incoming);
+
+    // force reflow so the initial transform (translateY 100%) applies
+    void incoming.offsetWidth;
+
+    // slide old out (up), new in (from below)
+    current.classList.remove('is-current');
+    current.classList.add('is-leaving');
+    incoming.classList.add('is-current');
+
+    // clean up the old element after the transition finishes
+    setTimeout(() => current.remove(), 600);
+  }
+
+  // start the rotation
+  setInterval(rotate, 3500);
+});
