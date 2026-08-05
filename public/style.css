@@ -318,17 +318,19 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
     font-size:clamp(.9rem,4.5vw,1.15rem);
     white-space:normal;word-break:break-word;
     line-height:1.4;
-    /* All spans stacked; only the first is visible by default */
     position:absolute;top:0;left:0;right:0;
     opacity:0;transform:translateY(8px);
     transition:opacity .5s ease,transform .5s ease;
   }
-  /* First span ALWAYS visible — ultimate fallback even if JS never runs */
+  /* Fallback: first span visible before JS loads */
   .ticker-track span:first-child{
     opacity:1;transform:translateY(0);position:relative;
   }
-  /* JS adds .ticker-active to the current phrase */
-  .ticker-track span.ticker-active{
+  /* Once JS is active, it controls visibility — override the first-child fallback */
+  .ticker-track.ticker-js span:first-child{
+    opacity:0;transform:translateY(8px);position:absolute;
+  }
+  .ticker-track.ticker-js span.ticker-active{
     opacity:1;transform:translateY(0);position:relative;
   }
 }

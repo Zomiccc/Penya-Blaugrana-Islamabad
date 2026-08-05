@@ -155,6 +155,9 @@ function initMobileTicker(trackEl) {
     // If only one phrase, CSS already shows it — nothing to cycle
     if (phrases.length <= 1) return;
 
+    // Mark the track as JS-controlled so CSS overrides the first-child fallback
+    trackEl.classList.add('ticker-js');
+
     let i = 0;
     function show() {
       spans.forEach((s) => s.classList.remove('ticker-active'));
@@ -172,6 +175,8 @@ function initMobileTicker(trackEl) {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (window.innerWidth >= 768) {
+        // Desktop: remove JS control, let CSS marquee run
+        trackEl.classList.remove('ticker-js');
         trackEl.querySelectorAll('span').forEach((s) => s.classList.remove('ticker-active'));
         if (trackEl._tickerInterval) { clearInterval(trackEl._tickerInterval); trackEl._tickerInterval = null; }
       } else {
