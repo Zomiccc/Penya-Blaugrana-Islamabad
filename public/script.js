@@ -63,42 +63,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ==========================================================================
    JOIN FLYER — realistic rotating supporter ticker
-   Shows 3-4 names per slide. Names fade/slide in one by one (0s, 15s, 30s, 45s).
-   The whole slide stays visible for 60s, then transitions to the next slide.
-   The panel also has a subtle floating up/down motion with natural pauses.
+   Shows 4 names per slide. The first row is visible immediately, the next
+   three fade/slide in at 3s, 6s, 9s. The whole slide lasts 14s.
    ========================================================================== */
 function initFlyerScroll(listEl) {
   const baseItems = Array.from(listEl.children);
   if (!baseItems.length) return;
 
-  // Build a pool of supporter messages (mix of female and male names)
-  const messages = [
-    'Ayesha Malik just joined',
-    'Sara Khan just bought the membership',
-    'Fatima Zahra just joined the Barça Family',
-    'Zara Ahmed just joined',
-    'Maryam Hussain just bought the membership',
-    'Ali Hassan just joined',
-    'Ahmed Raza just bought the membership',
-    'Bilal Khan just joined the Barça Family',
-    'Usman Tariq just joined',
-    'Hassan Mahmood just bought the membership',
-  ];
+  const messages = baseItems.map((el) => el.textContent.trim()).filter(Boolean);
+  if (!messages.length) return;
 
-  // Create slides: each slide is a group of 4 messages
   const perSlide = 4;
   const slides = [];
   for (let i = 0; i < messages.length; i += perSlide) {
     slides.push(messages.slice(i, i + perSlide));
   }
 
-  // Clear original items and prepare container
   listEl.innerHTML = '';
-  listEl.style.overflow = 'hidden';
-  listEl.style.position = 'relative';
-  listEl.style.height = 'calc(4 * 2.8rem)';
+  listEl.removeAttribute('style');
 
-  // Create a slide track that holds one slide at a time
   const track = document.createElement('div');
   track.className = 'flyer-track';
   listEl.appendChild(track);
@@ -108,30 +91,25 @@ function initFlyerScroll(listEl) {
   function renderSlide() {
     const slide = slides[current];
     track.innerHTML = '';
-    slide.forEach((msg) => {
+    slide.forEach((msg, i) => {
       const row = document.createElement('li');
       row.className = 'flyer-row';
       row.textContent = msg;
-      track.appendChild(row);
-    });
-
-    // Animate each row in one by one (0s, 15s, 30s, 45s)
-    const rows = Array.from(track.children);
-    rows.forEach((row, i) => {
       row.style.opacity = '0';
-      row.style.transform = 'translateY(20px)';
-      row.style.transition = 'opacity .6s ease, transform .6s ease';
+      row.style.transform = 'translateY(18px)';
+      row.style.transition = 'opacity .55s ease, transform .55s ease';
+      track.appendChild(row);
       setTimeout(() => {
         row.style.opacity = '1';
         row.style.transform = 'translateY(0)';
-      }, i * 15000);
+      }, i * 3000);
     });
 
     current = (current + 1) % slides.length;
   }
 
   renderSlide();
-  setInterval(renderSlide, 60000);
+  setInterval(renderSlide, 14000);
 }
 
 /* ==========================================================================

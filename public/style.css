@@ -276,29 +276,44 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 
 /* ==========================================================================
    LED TICKER — the stadium board
+   Use inline-block, not nested flex, so the text can never wrap or overlap.
+   Two identical spans scroll past; the animation moves by one span width.
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
   background:var(--blau);
   border-top:2px solid var(--gold);border-bottom:2px solid var(--gold);
-  padding:16px 0;
+  padding:14px 0;
 }
-.ticker-track{display:flex;width:max-content;animation:tickerRun 38s linear infinite}
+.ticker-track{
+  display:inline-flex;
+  white-space:nowrap;
+  will-change:transform;
+  animation:tickerRun 60s linear infinite;
+}
 .ticker-track span{
+  display:inline-block;
+  white-space:nowrap;
+  padding-right:60px;
   font-family:var(--display);font-weight:700;
-  font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;
-  letter-spacing:-.01em;color:var(--gold);
-  padding:0 26px;white-space:nowrap;display:flex;align-items:center;gap:26px;
+  font-size:clamp(1.1rem,3vw,2rem);
+  text-transform:uppercase;
+  letter-spacing:.02em;color:var(--gold);
 }
-.ticker-track span i{
-  font-style:normal;
-}
+.ticker-track span i{font-style:normal;}
 .ticker-track span::after{
-  content:"";width:14px;height:14px;background:var(--gold);
-  clip-path:var(--shield);flex-shrink:0;
+  content:"";display:inline-block;vertical-align:middle;
+  width:13px;height:13px;margin-left:26px;
+  background:var(--gold);clip-path:var(--shield);
 }
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker:hover .ticker-track{animation-play-state:paused}
+@media(max-width:560px){
+  .ticker{padding:11px 0}
+  .ticker-track{animation-duration:80s}
+  .ticker-track span{font-size:1rem;padding-right:36px}
+  .ticker-track span::after{width:10px;height:10px;margin-left:18px}
+}
 
 /* ==========================================================================
    PAGE HERO (inner pages)
@@ -630,23 +645,23 @@ textarea{min-height:130px;resize:vertical}
   animation:livePulse 1.8s ease-in-out infinite;
 }
 .flyer-viewport{
-  height:188px;overflow:hidden;position:relative;
-  mask-image:linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0, black 24px, black calc(100% - 24px), transparent 100%);
+  height:176px;overflow:hidden;position:relative;
+  mask-image:linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
 }
 .flyer-track{
   list-style:none;margin:0;padding:0;
-  display:flex;flex-direction:column;gap:14px;
+  display:flex;flex-direction:column;gap:12px;
 }
 .flyer-row{
   font-family:var(--display);font-weight:700;
-  font-size:clamp(.92rem,1.6vw,1.15rem);line-height:1.3;
+  font-size:clamp(.9rem,1.6vw,1.1rem);line-height:1.35;
   color:rgba(255,255,255,.92);letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding-left:16px;position:relative;
 }
 .flyer-row::before{
-  content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;
+  content:"";position:absolute;left:0;top:.52em;width:6px;height:6px;
   border-radius:50%;background:var(--gold);
 }
 .flyer-strip{
@@ -658,7 +673,8 @@ textarea{min-height:130px;resize:vertical}
   .flyer-panel{padding:18px 18px 22px}
   .flyer-crest{display:none}
   .flyer-row{font-size:.85rem}
-  .flyer-viewport{height:160px}
+  .flyer-viewport{height:150px}
+  .flyer-track{gap:10px}
 }
 @media (prefers-reduced-motion: reduce){
   .flyer-track{animation:none}
