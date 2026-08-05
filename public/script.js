@@ -59,6 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (flyerList) {
     initFlyerScroll(flyerList);
   }
+
+  // Mobile ticker: one phrase at a time, 60s each (index.html)
+  const tickerTrack = document.querySelector('.ticker-track');
+  if (tickerTrack) {
+    initMobileTicker(tickerTrack);
+  }
 });
 
 /* ==========================================================================
@@ -122,6 +128,56 @@ function initFlyerScroll(listEl) {
 
   showNext();
   setInterval(showNext, 60000);
+}
+
+/* ==========================================================================
+   MOBILE TICKER — one phrase at a time on narrow screens
+   On screens < 768px the CSS disables the horizontal marquee and hides all
+   spans. This function picks the first unique phrase, shows it for 60s,
+   then fades to the next. Desktop is untouched (the CSS animation runs).
+   ========================================================================== */
+function initMobileTicker(trackEl) {
+  // Only activate on mobile widths
+  function check() {
+    if (window.innerWidth >= 768) return;
+    // Collect unique phrases (the track has two identical copies)
+    const spans = Array.from(trackEl.querySelectorAll('span'));
+    if (!spans.length) return;
+    const phrases = [];
+    const seen = new Set();
+    spans.forEach((s) => {
+      const text = s.textContent.trim();
+      if (text && !seen.has(text)) { seen.add(text); phrases.push(s); }
+    });
+    if (phrases.length <= 1) return;
+
+    let i = 0;
+    function show() {
+      spans.forEach((s) => s.classList.remove('ticker-active'));
+      phrases[i].classList.add('ticker-active');
+      i = (i + 1) % phrases.length;
+    }
+    show();
+    // Clear any previous interval (in case of resize re-trigger)
+    if (trackEl._tickerInterval) clearInterval(trackEl._tickerInterval);
+    trackEl._tickerInterval = setInterval(show, 60000);
+  }
+
+  check();
+  // Re-check on resize in case orientation changes
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (window.innerWidth >= 768) {
+        // Clean up: remove active class, clear interval
+        trackEl.querySelectorAll('span').forEach((s) => s.classList.remove('ticker-active'));
+        if (trackEl._tickerInterval) { clearInterval(trackEl._tickerInterval); trackEl._tickerInterval = null; }
+      } else {
+        check();
+      }
+    }, 200);
+  });
 }
 
 /* ==========================================================================

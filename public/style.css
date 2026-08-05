@@ -276,8 +276,9 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 
 /* ==========================================================================
    LED TICKER — the stadium board
-   Simple duplicated string. width:max-content keeps both copies on one line;
-   translateX(-50%) shifts by exactly one copy.
+   Desktop: horizontal marquee (two identical spans, translateX(-50%) loop).
+   Mobile (<768px): animation is disabled; JS shows one phrase at a time
+   with a 60s fade cycle, perfectly centered, no overflow.
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
@@ -303,10 +304,33 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 }
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker:hover .ticker-track{animation-play-state:paused}
+
+/* ---- Mobile: static one-phrase-at-a-time ---- */
+@media(max-width:767px){
+  .ticker{padding:16px 20px}
+  .ticker-track{
+    display:block;width:100%;animation:none !important;
+    text-align:center;
+  }
+  .ticker-track span{
+    display:none; /* JS toggles .ticker-active on one at a time */
+    padding:0;
+    font-size:clamp(.85rem,4vw,1.1rem);
+    white-space:normal;word-break:break-word;
+    line-height:1.4;
+  }
+  .ticker-track span.ticker-active{
+    display:block;
+    animation:tickerFade .6s ease;
+  }
+  @keyframes tickerFade{
+    from{opacity:0;transform:translateY(6px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+}
 @media(max-width:560px){
-  .ticker{padding:11px 0}
-  .ticker-track{animation-duration:80s}
-  .ticker-track span{font-size:1rem;padding-right:36px}
+  .ticker{padding:14px 16px}
+  .ticker-track span{font-size:.95rem}
 }
 
 /* ==========================================================================
@@ -669,11 +693,24 @@ textarea{min-height:130px;resize:vertical}
   background:linear-gradient(90deg,var(--blau-lt) 0%,var(--blau) 100%);
   border-top:1px solid rgba(237,187,0,.25);
 }
-@media(max-width:560px){
-  .flyer-panel{padding:16px 18px 20px}
+@media(max-width:767px){
+  .flyer-panel{padding:16px 20px 20px}
   .flyer-crest{display:none}
-  .flyer-row{font-size:.95rem;padding:6px 0 6px 18px}
-  .flyer-viewport{height:68px}
+  .flyer-row{
+    font-size:clamp(.9rem,3.5vw,1.05rem);
+    padding:10px 0 10px 18px;
+    line-height:1.5;
+  }
+  .flyer-viewport{height:72px}
+}
+@media(max-width:560px){
+  .flyer-panel{padding:14px 16px 18px}
+  .flyer-row{font-size:.9rem;padding:8px 0 8px 16px}
+  .flyer-viewport{height:64px}
+}
+@media(max-width:420px){
+  .flyer-row{font-size:.82rem;padding:6px 0 6px 14px}
+  .flyer-viewport{height:56px}
 }
 @media (prefers-reduced-motion: reduce){
   .flyer-track{animation:none}
