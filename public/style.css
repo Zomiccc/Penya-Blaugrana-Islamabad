@@ -276,8 +276,8 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 
 /* ==========================================================================
    LED TICKER — the stadium board
-   Use inline-block, not nested flex, so the text can never wrap or overlap.
-   Two identical spans scroll past; the animation moves by one span width.
+   Two identical spans inside a flex track. The track is width:max-content so
+   it never wraps; the animation shifts by -50% for a seamless loop.
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
@@ -286,15 +286,17 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   padding:14px 0;
 }
 .ticker-track{
-  display:inline-flex;
+  display:flex;
+  width:max-content;
   white-space:nowrap;
   will-change:transform;
   animation:tickerRun 60s linear infinite;
 }
 .ticker-track span{
-  display:inline-block;
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:24px;
   white-space:nowrap;
-  padding-right:60px;
+  padding-right:24px;
   font-family:var(--display);font-weight:700;
   font-size:clamp(1.1rem,3vw,2rem);
   text-transform:uppercase;
@@ -302,8 +304,8 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 }
 .ticker-track span i{font-style:normal;}
 .ticker-track span::after{
-  content:"";display:inline-block;vertical-align:middle;
-  width:13px;height:13px;margin-left:26px;
+  content:"";flex:0 0 auto;
+  width:13px;height:13px;
   background:var(--gold);clip-path:var(--shield);
 }
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -311,8 +313,8 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 @media(max-width:560px){
   .ticker{padding:11px 0}
   .ticker-track{animation-duration:80s}
-  .ticker-track span{font-size:1rem;padding-right:36px}
-  .ticker-track span::after{width:10px;height:10px;margin-left:18px}
+  .ticker-track span{font-size:1rem;gap:16px;padding-right:16px}
+  .ticker-track span::after{width:10px;height:10px}
 }
 
 /* ==========================================================================
@@ -650,17 +652,17 @@ textarea{min-height:130px;resize:vertical}
   animation:livePulse 1.8s ease-in-out infinite;
 }
 .flyer-viewport{
-  height:176px;overflow:hidden;position:relative;
-  mask-image:linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
-  -webkit-mask-image:linear-gradient(to bottom, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  height:64px;overflow:hidden;position:relative;
+  display:flex;align-items:center;
 }
 .flyer-track{
   list-style:none;margin:0;padding:0;
-  display:flex;flex-direction:column;gap:12px;
+  display:flex;flex-direction:column;gap:0;
+  width:100%;
 }
 .flyer-row{
   font-family:var(--display);font-weight:700;
-  font-size:clamp(.9rem,1.6vw,1.1rem);line-height:1.35;
+  font-size:clamp(.95rem,1.8vw,1.2rem);line-height:1.35;
   color:rgba(255,255,255,.92);letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding-left:16px;position:relative;
@@ -675,11 +677,10 @@ textarea{min-height:130px;resize:vertical}
   border-top:1px solid rgba(237,187,0,.25);
 }
 @media(max-width:560px){
-  .flyer-panel{padding:18px 18px 22px}
+  .flyer-panel{padding:16px 18px 20px}
   .flyer-crest{display:none}
-  .flyer-row{font-size:.85rem}
-  .flyer-viewport{height:150px}
-  .flyer-track{gap:10px}
+  .flyer-row{font-size:.9rem}
+  .flyer-viewport{height:56px}
 }
 @media (prefers-reduced-motion: reduce){
   .flyer-track{animation:none}

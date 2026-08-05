@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — realistic rotating supporter ticker
-   Shows 4 names per slide. The first row is visible immediately, the next
-   three fade/slide in at 3s, 6s, 9s. The whole slide lasts 14s.
+   JOIN FLYER — one name at a time
+   Shows a single supporter name. After 30 seconds it fades out and the
+   next name fades in. Loops through the full list.
    ========================================================================== */
 function initFlyerScroll(listEl) {
   const baseItems = Array.from(listEl.children);
@@ -73,11 +73,9 @@ function initFlyerScroll(listEl) {
   const messages = baseItems.map((el) => el.textContent.trim()).filter(Boolean);
   if (!messages.length) return;
 
-  const perSlide = 4;
-  const slides = [];
-  for (let i = 0; i < messages.length; i += perSlide) {
-    slides.push(messages.slice(i, i + perSlide));
-  }
+  // Build a larger pool by repeating the names so the rotation feels alive
+  const pool = [];
+  for (let i = 0; i < 3; i++) pool.push(...messages);
 
   listEl.innerHTML = '';
   listEl.removeAttribute('style');
@@ -86,30 +84,36 @@ function initFlyerScroll(listEl) {
   track.className = 'flyer-track';
   listEl.appendChild(track);
 
-  let current = 0;
+  let idx = 0;
 
-  function renderSlide() {
-    const slide = slides[current];
-    track.innerHTML = '';
-    slide.forEach((msg, i) => {
-      const row = document.createElement('li');
-      row.className = 'flyer-row';
-      row.textContent = msg;
-      row.style.opacity = '0';
-      row.style.transform = 'translateY(18px)';
-      row.style.transition = 'opacity .55s ease, transform .55s ease';
-      track.appendChild(row);
-      setTimeout(() => {
-        row.style.opacity = '1';
-        row.style.transform = 'translateY(0)';
-      }, i * 3000);
-    });
+  function showName() {
+    const row = document.createElement('li');
+    row.className = 'flyer-row';
+    row.textContent = pool[idx % pool.length];
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(16px)';
+    row.style.transition = 'opacity .6s ease, transform .6s ease';
+    track.appendChild(row);
 
-    current = (current + 1) % slides.length;
+    // Force reflow so the transition fires
+    void row.offsetWidth;
+    row.style.opacity = '1';
+    row.style.transform = 'translateY(0)';
+
+    // Remove the previous row once the new one is in place
+    const rows = track.querySelectorAll('.flyer-row');
+    if (rows.length > 1) {
+      const old = rows[0];
+      old.style.opacity = '0';
+      old.style.transform = 'translateY(-16px)';
+      setTimeout(() => old.remove(), 600);
+    }
+
+    idx++;
   }
 
-  renderSlide();
-  setInterval(renderSlide, 14000);
+  showName();
+  setInterval(showName, 30000);
 }
 
 /* ==========================================================================
