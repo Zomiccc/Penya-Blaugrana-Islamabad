@@ -644,7 +644,7 @@ textarea{min-height:130px;resize:vertical}
   animation:livePulse 1.8s ease-in-out infinite;
 }
 .flyer-viewport{
-  height:64px;overflow:hidden;position:relative;
+  height:80px;overflow:hidden;position:relative;
   display:flex;align-items:center;
 }
 .flyer-track{
@@ -654,14 +654,15 @@ textarea{min-height:130px;resize:vertical}
 }
 .flyer-row{
   font-family:var(--display);font-weight:700;
-  font-size:clamp(.95rem,1.8vw,1.2rem);line-height:1.35;
-  color:rgba(255,255,255,.92);letter-spacing:.01em;
+  font-size:clamp(1rem,2vw,1.3rem);line-height:1.5;
+  color:rgba(255,255,255,.95);letter-spacing:.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  padding-left:16px;position:relative;
+  padding:8px 0 8px 20px;position:relative;
+  flex-shrink:0;
 }
 .flyer-row::before{
-  content:"";position:absolute;left:0;top:.52em;width:6px;height:6px;
-  border-radius:50%;background:var(--gold);
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:7px;height:7px;border-radius:50%;background:var(--gold);
 }
 .flyer-strip{
   height:8px;
@@ -671,8 +672,8 @@ textarea{min-height:130px;resize:vertical}
 @media(max-width:560px){
   .flyer-panel{padding:16px 18px 20px}
   .flyer-crest{display:none}
-  .flyer-row{font-size:.9rem}
-  .flyer-viewport{height:56px}
+  .flyer-row{font-size:.95rem;padding:6px 0 6px 18px}
+  .flyer-viewport{height:68px}
 }
 @media (prefers-reduced-motion: reduce){
   .flyer-track{animation:none}

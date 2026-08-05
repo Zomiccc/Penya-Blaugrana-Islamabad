@@ -496,17 +496,29 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 
 // Admin dashboard HTML pages are gated server-side: login.html is always
 // public, everything else under /admin/ requires a valid session cookie.
+// Also handles extensionless URLs (e.g. /admin/dashboard → dashboard.html).
 app.get('/admin/:page', (req, res, next) => {
-  if (req.params.page === 'login.html' || req.params.page === 'login') return next();
+  const page = req.params.page;
+  if (page === 'login.html' || page === 'login') return next();
+
   const token = req.cookies.pbi_admin_session;
   if (!token) return res.redirect('/admin/login.html');
   try {
     jwt.verify(token, JWT_SECRET);
-    next();
   } catch {
     res.clearCookie('pbi_admin_session');
     return res.redirect('/admin/login.html');
   }
+
+  // If the URL has no .html extension, try to serve the .html file directly
+  const filePath = path.join(PUBLIC_DIR, 'admin', page);
+  if (!path.extname(page)) {
+    const htmlPath = filePath + '.html';
+    if (fs.existsSync(htmlPath)) {
+      return res.sendFile(htmlPath);
+    }
+  }
+  next();
 });
 
 app.use(express.static(PUBLIC_DIR));

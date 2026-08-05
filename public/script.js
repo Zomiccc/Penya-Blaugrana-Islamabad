@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — one name at a time, 30s between names
-   Only one row is in the DOM at a time. Each name fades in, stays 30s,
-   then fades out before the next one fades in.
+   JOIN FLYER — one name at a time, 60s per name
+   Only ONE row is ever visible. A name fades in, stays for 60 seconds,
+   then fades out and the next name fades in. Never two names at once.
    ========================================================================== */
 function initFlyerScroll(listEl) {
   const baseItems = Array.from(listEl.children);
@@ -80,46 +80,48 @@ function initFlyerScroll(listEl) {
   track.className = 'flyer-track';
   listEl.appendChild(track);
 
-  // Cycle the original messages 3 times so the rotation never feels empty
+  // Repeat the names so the rotation cycles longer before repeating
   const pool = [];
-  for (let i = 0; i < 3; i++) pool.push(...messages);
+  for (let i = 0; i < 5; i++) pool.push(...messages);
 
   let idx = 0;
-  let currentRow = null;
+
+  function fadeIn(row) {
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(12px)';
+    row.style.transition = 'opacity .5s ease, transform .5s ease';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateY(0)';
+      });
+    });
+  }
+
+  function fadeOut(row, cb) {
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(-12px)';
+    setTimeout(cb, 500);
+  }
 
   function showNext() {
     const msg = pool[idx % pool.length];
     idx++;
 
-    const nextRow = document.createElement('li');
-    nextRow.className = 'flyer-row';
-    nextRow.textContent = msg;
-    nextRow.style.opacity = '0';
-    nextRow.style.transform = 'translateY(10px)';
-    nextRow.style.transition = 'opacity .4s ease, transform .4s ease';
-    track.appendChild(nextRow);
+    const newRow = document.createElement('li');
+    newRow.className = 'flyer-row';
+    newRow.textContent = msg;
+    track.appendChild(newRow);
 
-    if (currentRow) {
-      currentRow.style.opacity = '0';
-      currentRow.style.transform = 'translateY(-10px)';
-      setTimeout(() => {
-        currentRow.remove();
-        currentRow = nextRow;
-      }, 400);
-    } else {
-      currentRow = nextRow;
+    const oldRow = track.querySelector('.flyer-row:not(:last-child)');
+    if (oldRow) {
+      fadeOut(oldRow, () => oldRow.remove());
     }
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        nextRow.style.opacity = '1';
-        nextRow.style.transform = 'translateY(0)';
-      });
-    });
+    fadeIn(newRow);
   }
 
   showNext();
-  setInterval(showNext, 30000);
+  setInterval(showNext, 60000);
 }
 
 /* ==========================================================================

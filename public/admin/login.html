@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Login | Penya Blaugrana Islamabad</title>
-<link rel="stylesheet" href="../style.css">
-<link rel="stylesheet" href="../animations.css">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/animations.css">
 <style>
   body{background:var(--night);display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;position:relative;overflow:hidden}
   .login-tifo{position:fixed;inset:0;z-index:0}
@@ -63,7 +63,7 @@
         btn.textContent = 'Sign In';
         return;
       }
-      window.location.href = '/admin/dashboard.html';
+      window.location.href = '/admin/dashboard';
     } catch {
       err.textContent = 'Network error, please try again.';
       err.style.display = 'block';
@@ -72,7 +72,6 @@
     }
   });
 </script>
-<script src="../animations.js"></script>
-<script src="../animations.js"></script>
+<script src="/animations.js"></script>
 </body>
 </html>
