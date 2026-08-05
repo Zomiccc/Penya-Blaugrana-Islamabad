@@ -32,6 +32,11 @@
   .pricing-row .field{min-width:170px}
   #pricingMsg,#pwMsg{font-family:var(--mono);font-size:.75rem;margin-top:16px;display:none;padding:11px 14px;border-radius:2px}
 
+  .media-form{display:grid;grid-template-columns:160px 1fr;gap:16px 20px;align-items:end}
+  .media-form .field.full{grid-column:1/-1}
+  .media-form button{grid-column:1/-1;justify-self:start}
+  #mediaMsg{font-family:var(--mono);font-size:.75rem;margin-top:8px;display:none;padding:11px 14px;border-radius:2px}
+
   .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
   .toolbar select,.toolbar input{width:auto;min-width:180px;background:rgba(0,0,0,.4);border-color:var(--line);color:var(--chalk)}
   .toolbar select option{background:#0A1024;color:var(--chalk)}
@@ -59,7 +64,7 @@
   .btn-del:hover{background:var(--grana);color:#fff;border-color:var(--grana) !important}
 
   @media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}}
+  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}.media-form{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -160,27 +165,37 @@
   </div>
 
   <div class="panel">
-    <h2>Instagram Feed (Media Page)</h2>
+    <h2>Media Gallery (Media Page)</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
-      The Media page now uses the Elfsight Instagram Feed widget, which is directly embedded with the club's
-      <b>@pbislamabad</b> account. The widget automatically shows new Instagram posts and links to the real posts.
+      No third-party widget or API key — posts you add here show up directly on the Media page.
+      A photo is required; caption, video and link are all optional. If you don't set a link, tapping
+      a photo takes visitors straight to the club's Instagram profile.
     </p>
-    <div style="background:rgba(237,187,0,.1);border:1px solid rgba(237,187,0,.3);border-radius:6px;padding:16px;margin-bottom:20px">
-      <p style="color:var(--chalk);font-size:.88rem;margin:0">
-        <strong>Note:</strong> The Elfsight widget is currently embedded directly in the Media page. If you need to change the widget ID or configuration, you can do so in the Media page HTML. The legacy SnapWidget configuration below is no longer in use.
-      </p>
-    </div>
-    <ol style="color:var(--muted);font-size:.88rem;margin:0 0 22px;padding-left:20px;line-height:1.8">
-      <li>Current widget ID: <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:3px">88e69abf-4036-4c9c-8c15-4a4ad70fced0</code></li>
-      <li>Visit <a href="https://apps.elfsight.com/widget/instagram-feed" target="_blank" style="color:var(--blau)">Elfsight Instagram Feed</a> to configure your widget</li>
-      <li>The widget loads automatically with lazy loading enabled for better performance</li>
-      <li>If the widget fails to load, users see a fallback button to visit your Instagram directly</li>
-    </ol>
-    <form id="instagramForm" style="opacity:0.5;pointer-events:none">
-      <textarea id="instagramEmbed" rows="6" style="font-family:monospace;font-size:.82rem" placeholder="Legacy SnapWidget embed (no longer used)"></textarea>
-      <button type="submit" class="btn blue" style="margin-top:14px" disabled>Save Instagram Feed (Disabled)</button>
+    <form id="mediaForm" class="media-form">
+      <div class="field">
+        <label>Type</label>
+        <select id="mediaType">
+          <option value="photo">Photo</option>
+          <option value="video">Video</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Media URL (required)</label>
+        <input type="url" id="mediaSrc" placeholder="https://pbisb.com/wp-content/uploads/..." required>
+      </div>
+      <div class="field full">
+        <label>Caption (optional)</label>
+        <input type="text" id="mediaCaption" placeholder="A line about this post" maxlength="500">
+      </div>
+      <div class="field full">
+        <label>Link (optional — defaults to Instagram profile)</label>
+        <input type="url" id="mediaLink" placeholder="https://www.instagram.com/p/...">
+      </div>
+      <button type="submit" class="btn blue">Add Post</button>
     </form>
-    <div id="instagramMsg" style="font-size:.85rem;margin-top:12px;display:none;padding:8px 12px;border-radius:6px"></div>
+    <div id="mediaMsg" style="font-size:.85rem;margin-top:12px;display:none;padding:8px 12px;border-radius:6px"></div>
+
+    <div id="mediaList" style="margin-top:26px;display:grid;gap:10px"></div>
   </div>
 
   <div class="panel">

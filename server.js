@@ -159,12 +159,72 @@ app.post('/api/admin/change-password', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------------------------- Media gallery (self-hosted, admin-managed) ----------------------------
+// No third-party widget/API. The admin adds a photo or video URL (plus an
+// optional caption and an optional link) from the dashboard; the Media page
+// fetches this list and renders it directly. Tapping a photo opens its link
+// (or the club's Instagram profile if no link was set); videos play inline.
+const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/pbislamabad';
+const VALID_MEDIA_TYPES = ['photo', 'video'];
+
+app.get('/api/media', (req, res) => {
+  const db = readDb();
+  // Posts are stored in display order (index 0 = first shown). Expose `order`
+  // so the admin UI can show/disable the up/down buttons correctly.
+  const posts = (db.mediaPosts || []).map((p, i) => ({ ...p, order: i }));
+  res.json({ posts });
+});
+
+app.post('/api/admin/media', requireAdmin, async (req, res) => {
+  const { type, src, caption, link } = req.body || {};
+  if (!VALID_MEDIA_TYPES.includes(type)) return res.status(400).json({ error: 'type must be "photo" or "video"' });
+  if (!src || !String(src).trim()) return res.status(400).json({ error: 'A media URL is required' });
+  if (caption && String(caption).length > 500) return res.status(400).json({ error: 'Caption is too long (max 500 characters)' });
+  if (link && String(link).length > 500) return res.status(400).json({ error: 'Link is too long' });
+
+  const post = {
+    id: crypto.randomUUID(),
+    type,
+    src: String(src).trim(),
+    caption: caption ? String(caption).trim() : '',
+    link: link && String(link).trim() ? String(link).trim() : INSTAGRAM_PROFILE_URL,
+    createdAt: new Date().toISOString(),
+  };
+  const updated = await writeDb((db) => {
+    db.mediaPosts = db.mediaPosts || [];
+    db.mediaPosts.push(post);
+    return db;
+  });
+  res.json({ ok: true, post, posts: updated.mediaPosts });
+});
+
+app.delete('/api/admin/media/:id', requireAdmin, async (req, res) => {
+  const updated = await writeDb((db) => {
+    db.mediaPosts = (db.mediaPosts || []).filter((p) => p.id !== req.params.id);
+    return db;
+  });
+  res.json({ ok: true, posts: updated.mediaPosts });
+});
+
+// Reorder a post up (dir: -1) or down (dir: +1) within the gallery.
+app.post('/api/admin/media/:id/move', requireAdmin, async (req, res) => {
+  const dir = Number(req.body && req.body.dir);
+  if (dir !== -1 && dir !== 1) return res.status(400).json({ error: 'dir must be -1 or 1' });
+  const updated = await writeDb((db) => {
+    const posts = db.mediaPosts || [];
+    const i = posts.findIndex((p) => p.id === req.params.id);
+    if (i === -1) return db;
+    const j = i + dir;
+    if (j < 0 || j >= posts.length) return db;
+    [posts[i], posts[j]] = [posts[j], posts[i]];
+    return db;
+  });
+  res.json({ ok: true, posts: updated.mediaPosts });
+});
+
 // ---------------------------- Instagram feed (Legacy SnapWidget embed - DEPRECATED) ----------------------------
-// NOTE: The Media page now uses Elfsight Instagram Feed widget directly embedded in the HTML.
-// These endpoints are kept for backward compatibility but are no longer the primary method.
-// The Media page pulls this at runtime and injects it into the page — that's what makes it
-// "auto update" from the club's Instagram: SnapWidget (or whichever widget service is pasted
-// here) handles the actual Instagram connection and refresh, we just store/serve the snippet.
+// NOTE: The Media page now uses the self-hosted media gallery above instead of
+// any third-party widget. These endpoints are kept only for backward compatibility.
 app.get('/api/instagram-embed', (req, res) => {
   const db = readDb();
   res.json({ embedCode: db.instagramEmbedCode || '' });
@@ -173,8 +233,6 @@ app.get('/api/instagram-embed', (req, res) => {
 app.put('/api/admin/instagram-embed', requireAdmin, async (req, res) => {
   const { embedCode } = req.body || {};
   if (typeof embedCode !== 'string') return res.status(400).json({ error: 'embedCode must be a string' });
-  // Basic guardrail: only allow the kind of markup a widget embed snippet actually needs
-  // (div + script tags pointing at the widget provider) rather than arbitrary HTML.
   if (embedCode.length > 5000) return res.status(400).json({ error: 'Embed code is unexpectedly long — please double check what you pasted.' });
   const updated = await writeDb((db) => { db.instagramEmbedCode = embedCode.trim(); return db; });
   res.json({ embedCode: updated.instagramEmbedCode });

@@ -44,12 +44,13 @@ async function init() {
   });
 
   await Promise.all([
-    loadStats(), loadPricing(), loadMembers(), loadFixtureStatus(),
+    loadStats(), loadPricing(), loadMembers(), loadFixtureStatus(), loadMediaPosts(),
   ]);
 
   document.getElementById('pricingForm').addEventListener('submit', savePricing);
   document.getElementById('pwForm').addEventListener('submit', changePassword);
-  // document.getElementById('instagramForm').addEventListener('submit', saveInstagramEmbed); // DEPRECATED - Elfsight widget now embedded directly
+  document.getElementById('mediaForm').addEventListener('submit', addMediaPost);
+  document.getElementById('mediaType').addEventListener('change', updateMediaPlaceholder);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
@@ -134,25 +135,92 @@ async function clearFixturesCache() {
   }
 }
 
-// DEPRECATED: Instagram embed functionality - no longer used with Elfsight widget
-// async function loadInstagramEmbed() {
-//   const { embedCode } = await api('/api/instagram-embed');
-//   document.getElementById('instagramEmbed').value = embedCode || '';
-// }
+/* ---------------- Media gallery ---------------- */
+function updateMediaPlaceholder() {
+  const type = document.getElementById('mediaType').value;
+  const src = document.getElementById('mediaSrc');
+  src.placeholder = type === 'video'
+    ? 'https://.../clip.mp4 (or YouTube/Vimeo URL)'
+    : 'https://.../photo.jpg';
+}
 
-// async function saveInstagramEmbed(e) {
-//   e.preventDefault();
-//   const msg = document.getElementById('instagramMsg');
-//   try {
-//     await api('/api/admin/instagram-embed', {
-//       method: 'PUT',
-//       body: JSON.stringify({ embedCode: document.getElementById('instagramEmbed').value }),
-//     });
-//     flash(msg, 'Saved — check the Media page to confirm it shows up.', true);
-//   } catch (err) {
-//     flash(msg, err.message, false);
-//   }
-// }
+async function loadMediaPosts() {
+  const list = document.getElementById('mediaList');
+  if (!list) return;
+  try {
+    const { posts } = await api('/api/media');
+    if (!posts.length) {
+      list.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin:0">No posts yet. Add your first post above.</p>';
+      return;
+    }
+    list.innerHTML = posts.map((p) => `
+      <div data-id="${p.id}" style="display:flex;gap:14px;align-items:center;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px">
+        <div style="flex:0 0 80px;height:80px;border-radius:6px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center">
+          ${p.type === 'video'
+            ? `<span style="color:var(--blau);font-size:1.4rem">▶</span>`
+            : `<img src="${escapeHtml(p.src)}" alt="" style="width:100%;height:100%;object-fit:cover">`}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${escapeHtml(p.type)}</div>
+          <div style="color:var(--chalk);font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.caption || '(no caption)')}</div>
+          <div style="color:var(--muted);font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.link || '→ Instagram profile')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn-mark" data-action="media-up" ${p.order === 0 ? 'disabled' : ''}>↑</button>
+          <button class="btn-mark" data-action="media-down">↓</button>
+          <button class="btn-del" data-action="media-delete">Delete</button>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('button[data-action]').forEach((btn) => {
+      btn.addEventListener('click', () => handleMediaAction(btn));
+    });
+  } catch (err) {
+    list.innerHTML = `<p style="color:var(--grana);font-size:.88rem;margin:0">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function addMediaPost(e) {
+  e.preventDefault();
+  const msg = document.getElementById('mediaMsg');
+  const body = {
+    type: document.getElementById('mediaType').value,
+    src: document.getElementById('mediaSrc').value.trim(),
+    caption: document.getElementById('mediaCaption').value.trim(),
+    link: document.getElementById('mediaLink').value.trim(),
+  };
+  if (!body.src) { flash(msg, 'Media URL is required.', false); return; }
+  try {
+    await api('/api/admin/media', { method: 'POST', body: JSON.stringify(body) });
+    flash(msg, 'Post added — it is now live on the Media page.', true);
+    document.getElementById('mediaForm').reset();
+    updateMediaPlaceholder();
+    await loadMediaPosts();
+  } catch (err) {
+    flash(msg, err.message, false);
+  }
+}
+
+async function handleMediaAction(btn) {
+  const card = btn.closest('[data-id]');
+  const id = card.dataset.id;
+  const action = btn.dataset.action;
+  if (action === 'media-delete' && !confirm('Delete this media post?')) return;
+  btn.disabled = true;
+  try {
+    if (action === 'media-delete') {
+      await api(`/api/admin/media/${id}`, { method: 'DELETE' });
+    } else if (action === 'media-up') {
+      await api(`/api/admin/media/${id}/move`, { method: 'POST', body: JSON.stringify({ dir: -1 }) });
+    } else if (action === 'media-down') {
+      await api(`/api/admin/media/${id}/move`, { method: 'POST', body: JSON.stringify({ dir: 1 }) });
+    }
+    await loadMediaPosts();
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+  }
+}
 
 async function savePricing(e) {
   e.preventDefault();
