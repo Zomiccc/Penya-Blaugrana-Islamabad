@@ -310,19 +310,18 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
   .ticker{padding:16px 20px}
   .ticker-track{
     display:block;width:100%;animation:none !important;
-    text-align:center;
+    text-align:center;transform:none !important;
   }
   .ticker-track span{
-    display:none; /* JS toggles .ticker-active on one at a time */
-    padding:0;
+    display:none;padding:0;
     font-size:clamp(.85rem,4vw,1.1rem);
     white-space:normal;word-break:break-word;
     line-height:1.4;
   }
-  .ticker-track span.ticker-active{
-    display:block;
-    animation:tickerFade .6s ease;
-  }
+  /* Fallback: first span always visible even if JS hasn't loaded yet */
+  .ticker-track span:first-child{display:block}
+  /* JS adds .ticker-active to the current phrase */
+  .ticker-track span.ticker-active{display:block;animation:tickerFade .6s ease}
   @keyframes tickerFade{
     from{opacity:0;transform:translateY(6px)}
     to{opacity:1;transform:translateY(0)}
