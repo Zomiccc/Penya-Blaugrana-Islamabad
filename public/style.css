@@ -305,26 +305,31 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker:hover .ticker-track{animation-play-state:paused}
 
-/* ---- Mobile: static one-phrase-at-a-time ---- */
+/* ---- Mobile: one phrase at a time, centered, always visible ---- */
 @media(max-width:767px){
-  .ticker{padding:16px 20px}
+  .ticker{padding:18px 20px;overflow:hidden}
   .ticker-track{
     display:block;width:100%;animation:none !important;
     text-align:center;transform:none !important;
+    position:relative;min-height:1.4em;
   }
   .ticker-track span{
-    display:none;padding:0;
-    font-size:clamp(.85rem,4vw,1.1rem);
+    display:block;padding:0;
+    font-size:clamp(.9rem,4.5vw,1.15rem);
     white-space:normal;word-break:break-word;
     line-height:1.4;
+    /* All spans stacked; only the first is visible by default */
+    position:absolute;top:0;left:0;right:0;
+    opacity:0;transform:translateY(8px);
+    transition:opacity .5s ease,transform .5s ease;
   }
-  /* Fallback: first span always visible even if JS hasn't loaded yet */
-  .ticker-track span:first-child{display:block}
+  /* First span ALWAYS visible — ultimate fallback even if JS never runs */
+  .ticker-track span:first-child{
+    opacity:1;transform:translateY(0);position:relative;
+  }
   /* JS adds .ticker-active to the current phrase */
-  .ticker-track span.ticker-active{display:block;animation:tickerFade .6s ease}
-  @keyframes tickerFade{
-    from{opacity:0;transform:translateY(6px)}
-    to{opacity:1;transform:translateY(0)}
+  .ticker-track span.ticker-active{
+    opacity:1;transform:translateY(0);position:relative;
   }
 }
 @media(max-width:560px){

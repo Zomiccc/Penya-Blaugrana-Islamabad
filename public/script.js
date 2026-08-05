@@ -132,9 +132,10 @@ function initFlyerScroll(listEl) {
 
 /* ==========================================================================
    MOBILE TICKER — one phrase at a time on narrow screens
-   On screens < 768px the CSS disables the horizontal marquee. This function
-   shows one unique phrase at a time for 60s, then fades to the next.
-   Desktop is untouched (the CSS animation runs).
+   On screens < 768px the CSS disables the horizontal marquee and positions
+   all spans stacked (opacity:0). The first span is visible by default via
+   CSS. This function cycles through unique phrases every 60s by toggling
+   the .ticker-active class (opacity:1). Desktop is untouched.
    ========================================================================== */
 function initMobileTicker(trackEl) {
   function check() {
@@ -151,9 +152,11 @@ function initMobileTicker(trackEl) {
     });
     if (!phrases.length) return;
 
+    // If only one phrase, CSS already shows it — nothing to cycle
+    if (phrases.length <= 1) return;
+
     let i = 0;
     function show() {
-      // Remove active from ALL spans, then add to current
       spans.forEach((s) => s.classList.remove('ticker-active'));
       phrases[i].classList.add('ticker-active');
       i = (i + 1) % phrases.length;
