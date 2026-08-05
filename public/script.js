@@ -59,12 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (flyerList) {
     initFlyerScroll(flyerList);
   }
-
-  // Mobile ticker: one phrase at a time, 60s each (index.html)
-  const tickerTrack = document.querySelector('.ticker-track');
-  if (tickerTrack) {
-    initMobileTicker(tickerTrack);
-  }
 });
 
 /* ==========================================================================

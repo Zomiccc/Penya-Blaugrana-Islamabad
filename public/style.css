@@ -276,9 +276,9 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 
 /* ==========================================================================
    LED TICKER — the stadium board
-   Desktop: horizontal marquee (two identical spans, translateX(-50%) loop).
-   Mobile (<768px): animation is disabled; JS shows one phrase at a time
-   with a 60s fade cycle, perfectly centered, no overflow.
+   Horizontal marquee on ALL screen sizes. Two identical sets of spans;
+   translateX(-50%) loops seamlessly. Font size and speed scale down on
+   smaller screens but the scrolling animation never stops.
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
@@ -305,38 +305,21 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker:hover .ticker-track{animation-play-state:paused}
 
-/* ---- Mobile: one phrase at a time, centered, always visible ---- */
+/* ---- Responsive scaling for smaller screens ---- */
 @media(max-width:767px){
-  .ticker{padding:18px 20px;overflow:hidden}
-  .ticker-track{
-    display:block;width:100%;animation:none !important;
-    text-align:center;transform:none !important;
-    position:relative;min-height:1.4em;
-  }
-  .ticker-track span{
-    display:block;padding:0;
-    font-size:clamp(.9rem,4.5vw,1.15rem);
-    white-space:normal;word-break:break-word;
-    line-height:1.4;
-    position:absolute;top:0;left:0;right:0;
-    opacity:0;transform:translateY(8px);
-    transition:opacity .5s ease,transform .5s ease;
-  }
-  /* Fallback: first span visible before JS loads */
-  .ticker-track span:first-child{
-    opacity:1;transform:translateY(0);position:relative;
-  }
-  /* Once JS is active, it controls visibility — override the first-child fallback */
-  .ticker-track.ticker-js span:first-child{
-    opacity:0;transform:translateY(8px);position:absolute;
-  }
-  .ticker-track.ticker-js span.ticker-active{
-    opacity:1;transform:translateY(0);position:relative;
-  }
+  .ticker{padding:12px 0}
+  .ticker-track{animation-duration:45s}
+  .ticker-track span{font-size:1.1rem;padding-right:40px}
 }
 @media(max-width:560px){
-  .ticker{padding:14px 16px}
-  .ticker-track span{font-size:.95rem}
+  .ticker{padding:10px 0}
+  .ticker-track{animation-duration:40s}
+  .ticker-track span{font-size:.95rem;padding-right:30px;letter-spacing:.01em}
+}
+@media(max-width:380px){
+  .ticker{padding:9px 0}
+  .ticker-track{animation-duration:35s}
+  .ticker-track span{font-size:.85rem;padding-right:24px}
 }
 
 /* ==========================================================================
