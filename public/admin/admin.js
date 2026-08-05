@@ -51,6 +51,19 @@ async function init() {
   document.getElementById('pwForm').addEventListener('submit', changePassword);
   document.getElementById('mediaForm').addEventListener('submit', addMediaPost);
   document.getElementById('mediaType').addEventListener('change', updateMediaPlaceholder);
+  const mediaFileInput = document.getElementById('mediaFile');
+  if (mediaFileInput) {
+    mediaFileInput.addEventListener('change', () => {
+      const f = mediaFileInput.files[0];
+      if (!f) return;
+      // Auto-detect type from the file
+      const isVideo = f.type.startsWith('video/');
+      document.getElementById('mediaType').value = isVideo ? 'video' : 'photo';
+      // Clear the URL field since we'll upload the file
+      document.getElementById('mediaSrc').value = '';
+      document.getElementById('mediaSrc').required = false;
+    });
+  }
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
@@ -183,18 +196,47 @@ async function loadMediaPosts() {
 async function addMediaPost(e) {
   e.preventDefault();
   const msg = document.getElementById('mediaMsg');
+  const fileInput = document.getElementById('mediaFile');
+  const file = fileInput && fileInput.files[0];
+  const urlField = document.getElementById('mediaSrc');
+
+  // If a file was selected, upload it first and use the returned URL
+  if (file) {
+    const progress = document.getElementById('uploadProgress');
+    if (progress) progress.style.display = 'block';
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/media/upload', {
+        method: 'POST',
+        body: fd,
+      });
+      if (res.status === 401) { window.location.href = '/admin/login.html'; return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      urlField.value = data.url;
+      if (progress) { progress.textContent = 'Upload complete!'; progress.style.color = '#0a7d43'; }
+    } catch (err) {
+      if (progress) { progress.style.display = 'none'; }
+      flash(msg, 'Upload failed: ' + err.message, false);
+      return;
+    }
+  }
+
   const body = {
     type: document.getElementById('mediaType').value,
-    src: document.getElementById('mediaSrc').value.trim(),
+    src: urlField.value.trim(),
     caption: document.getElementById('mediaCaption').value.trim(),
     link: document.getElementById('mediaLink').value.trim(),
   };
-  if (!body.src) { flash(msg, 'Media URL is required.', false); return; }
+  if (!body.src) { flash(msg, 'Media URL or file is required.', false); return; }
   try {
     await api('/api/admin/media', { method: 'POST', body: JSON.stringify(body) });
     flash(msg, 'Post added — it is now live on the Media page.', true);
     document.getElementById('mediaForm').reset();
     updateMediaPlaceholder();
+    const progress = document.getElementById('uploadProgress');
+    if (progress) progress.style.display = 'none';
     await loadMediaPosts();
   } catch (err) {
     flash(msg, err.message, false);

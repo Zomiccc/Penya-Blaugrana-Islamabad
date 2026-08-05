@@ -1,11 +1,13 @@
 require('dotenv').config();
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
+const multer = require('multer');
 const { readDb, writeDb } = require('./lib/db');
 const { sendJoinConfirmation, sendPaymentReceipt } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
@@ -173,6 +175,37 @@ app.get('/api/media', (req, res) => {
   // so the admin UI can show/disable the up/down buttons correctly.
   const posts = (db.mediaPosts || []).map((p, i) => ({ ...p, order: i }));
   res.json({ posts });
+});
+
+// ---------------------------- Media upload (file from admin) ----------------------------
+// Admins can upload a photo/video file from their computer. The file is saved
+// to public/uploads/ and a URL is returned that can be used as the media src.
+const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOAD_DIR,
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase().slice(0, 10) || '.jpg';
+      cb(null, `${crypto.randomUUID()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = /\.(jpg|jpeg|png|gif|webp|avif|mp4|webm|mov)$/i;
+    if (allowed.test(path.extname(file.originalname))) cb(null, true);
+    else cb(new Error('Only image (jpg, png, gif, webp, avif) and video (mp4, webm, mov) files are allowed'));
+  },
+});
+
+app.post('/api/admin/media/upload', requireAdmin, (req, res) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || 'Upload failed' });
+    if (!req.file) return res.status(400).json({ error: 'No file received' });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url, filename: req.file.filename, size: req.file.size });
+  });
 });
 
 app.post('/api/admin/media', requireAdmin, async (req, res) => {

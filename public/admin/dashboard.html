@@ -171,7 +171,7 @@
       A photo is required; caption, video and link are all optional. If you don't set a link, tapping
       a photo takes visitors straight to the club's Instagram profile.
     </p>
-    <form id="mediaForm" class="media-form">
+    <form id="mediaForm" class="media-form" enctype="multipart/form-data">
       <div class="field">
         <label>Type</label>
         <select id="mediaType">
@@ -182,6 +182,11 @@
       <div class="field">
         <label>Media URL (required)</label>
         <input type="url" id="mediaSrc" placeholder="https://pbisb.com/wp-content/uploads/..." required>
+      </div>
+      <div class="field full">
+        <label>Or upload a file from your computer</label>
+        <input type="file" id="mediaFile" accept="image/*,video/*" style="padding:8px 0;font-size:.85rem">
+        <div id="uploadProgress" style="font-size:.78rem;color:var(--muted);margin-top:6px;display:none">Uploading…</div>
       </div>
       <div class="field full">
         <label>Caption (optional)</label>
