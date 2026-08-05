@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   JOIN FLYER — one name at a time
-   Shows a single supporter name. After 30 seconds it fades out and the
-   next name fades in. Loops through the full list.
+   JOIN FLYER — one name at a time, 30s between names
+   Only one row is in the DOM at a time. Each name fades in, stays 30s,
+   then fades out before the next one fades in.
    ========================================================================== */
 function initFlyerScroll(listEl) {
   const baseItems = Array.from(listEl.children);
@@ -73,10 +73,6 @@ function initFlyerScroll(listEl) {
   const messages = baseItems.map((el) => el.textContent.trim()).filter(Boolean);
   if (!messages.length) return;
 
-  // Build a larger pool by repeating the names so the rotation feels alive
-  const pool = [];
-  for (let i = 0; i < 3; i++) pool.push(...messages);
-
   listEl.innerHTML = '';
   listEl.removeAttribute('style');
 
@@ -84,36 +80,46 @@ function initFlyerScroll(listEl) {
   track.className = 'flyer-track';
   listEl.appendChild(track);
 
+  // Cycle the original messages 3 times so the rotation never feels empty
+  const pool = [];
+  for (let i = 0; i < 3; i++) pool.push(...messages);
+
   let idx = 0;
+  let currentRow = null;
 
-  function showName() {
-    const row = document.createElement('li');
-    row.className = 'flyer-row';
-    row.textContent = pool[idx % pool.length];
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(16px)';
-    row.style.transition = 'opacity .6s ease, transform .6s ease';
-    track.appendChild(row);
+  function showNext() {
+    const msg = pool[idx % pool.length];
+    idx++;
 
-    // Force reflow so the transition fires
-    void row.offsetWidth;
-    row.style.opacity = '1';
-    row.style.transform = 'translateY(0)';
+    const nextRow = document.createElement('li');
+    nextRow.className = 'flyer-row';
+    nextRow.textContent = msg;
+    nextRow.style.opacity = '0';
+    nextRow.style.transform = 'translateY(10px)';
+    nextRow.style.transition = 'opacity .4s ease, transform .4s ease';
+    track.appendChild(nextRow);
 
-    // Remove the previous row once the new one is in place
-    const rows = track.querySelectorAll('.flyer-row');
-    if (rows.length > 1) {
-      const old = rows[0];
-      old.style.opacity = '0';
-      old.style.transform = 'translateY(-16px)';
-      setTimeout(() => old.remove(), 600);
+    if (currentRow) {
+      currentRow.style.opacity = '0';
+      currentRow.style.transform = 'translateY(-10px)';
+      setTimeout(() => {
+        currentRow.remove();
+        currentRow = nextRow;
+      }, 400);
+    } else {
+      currentRow = nextRow;
     }
 
-    idx++;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        nextRow.style.opacity = '1';
+        nextRow.style.transform = 'translateY(0)';
+      });
+    });
   }
 
-  showName();
-  setInterval(showName, 30000);
+  showNext();
+  setInterval(showNext, 30000);
 }
 
 /* ==========================================================================

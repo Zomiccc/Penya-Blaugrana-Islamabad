@@ -276,8 +276,8 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 
 /* ==========================================================================
    LED TICKER — the stadium board
-   Two identical spans inside a flex track. The track is width:max-content so
-   it never wraps; the animation shifts by -50% for a seamless loop.
+   Simple duplicated string. width:max-content keeps both copies on one line;
+   translateX(-50%) shifts by exactly one copy.
    ========================================================================== */
 .ticker{
   position:relative;overflow:hidden;
@@ -294,27 +294,19 @@ nav.main-nav a:hover::after,nav.main-nav a.active::after{width:100%}
 }
 .ticker-track span{
   flex:0 0 auto;
-  display:flex;align-items:center;gap:24px;
   white-space:nowrap;
-  padding-right:24px;
+  padding-right:60px;
   font-family:var(--display);font-weight:700;
   font-size:clamp(1.1rem,3vw,2rem);
   text-transform:uppercase;
   letter-spacing:.02em;color:var(--gold);
-}
-.ticker-track span i{font-style:normal;}
-.ticker-track span::after{
-  content:"";flex:0 0 auto;
-  width:13px;height:13px;
-  background:var(--gold);clip-path:var(--shield);
 }
 @keyframes tickerRun{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker:hover .ticker-track{animation-play-state:paused}
 @media(max-width:560px){
   .ticker{padding:11px 0}
   .ticker-track{animation-duration:80s}
-  .ticker-track span{font-size:1rem;gap:16px;padding-right:16px}
-  .ticker-track span::after{width:10px;height:10px}
+  .ticker-track span{font-size:1rem;padding-right:36px}
 }
 
 /* ==========================================================================
