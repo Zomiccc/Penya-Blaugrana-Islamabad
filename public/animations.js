@@ -162,15 +162,26 @@ function initScrollReveal() {
     return;
   }
 
+  // threshold:0 fires as soon as a single pixel is visible — this matters for
+  // very tall sections (e.g. the privacy/statutes body, which can be several
+  // viewports tall). A higher area-ratio threshold like 0.12 can never be
+  // reached for content that tall, so it would stay invisible forever.
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
       entry.target.classList.add('is-visible');
       observer.unobserve(entry.target);
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -70px 0px' });
+  }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
 
   targets.forEach((el) => observer.observe(el));
+
+  // Safety net: if any target is somehow never observed as visible (e.g. an
+  // extremely tall or oddly-positioned element), force it visible after a
+  // short delay so content can never be stuck invisible.
+  setTimeout(() => {
+    targets.forEach((el) => el.classList.add('is-visible'));
+  }, 2500);
 }
 
 /* ==========================================================================
