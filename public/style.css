@@ -738,10 +738,10 @@ textarea{min-height:130px;resize:vertical}
   max-width:860px;margin:0 auto;
   background:linear-gradient(155deg,var(--blau) 0%,var(--blau-dk) 100%);color:#fff;
   padding:56px 52px;border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-paper);position:relative;overflow:hidden;
+  border-left:8px solid var(--gold);
+  box-shadow:var(--shadow-paper);position:relative;
 }
-.statutes-body::before{content:"";position:absolute;top:0;left:0;bottom:0;width:8px;background:var(--gold)}
-.statutes-body h2{color:var(--gold);font-size:1.7rem;margin-top:52px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.2)}
+.statutes-body h2{color:var(--gold);font-size:1.7rem;line-height:1.25;margin-top:52px;padding-bottom:12px;padding-top:.15em;border-bottom:1px solid rgba(255,255,255,.2)}
 .statutes-body h2:first-child{margin-top:0}
 .statutes-body h5{margin-top:26px;color:var(--gold);font-family:var(--mono);letter-spacing:.14em}
 .statutes-body p,.statutes-body ul,.statutes-body ol,.statutes-body li{color:rgba(255,255,255,.88)}
