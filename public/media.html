@@ -41,39 +41,6 @@
 }
 .insta-panel-head a.follow:hover{color:var(--chalk);border-color:var(--chalk)}
 .instagram-widget-container{max-width:1200px;margin:0 auto;isolation:isolate}
-
-/* Self-hosted media grid — no third-party widget, admin-managed from the dashboard */
-.media-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.media-tile{
-  position:relative;aspect-ratio:1/1;overflow:hidden;border-radius:3px;
-  background:var(--night);border:1px solid var(--line);display:block;
-}
-.media-tile img,.media-tile video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s cubic-bezier(.16,.84,.44,1)}
-.media-tile:hover img,.media-tile:hover video{transform:scale(1.05)}
-.media-tile .play-badge{
-  position:absolute;top:10px;right:10px;width:26px;height:26px;background:rgba(4,6,15,.7);
-  border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;
-}
-.media-tile .play-badge svg{width:11px;height:11px;fill:#fff;margin-left:1px}
-.media-tile .link-badge{
-  position:absolute;top:10px;right:10px;width:28px;height:28px;background:rgba(4,6,15,.75);
-  border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);
-  text-decoration:none;z-index:2;
-}
-.media-tile .link-badge svg{width:13px;height:13px;fill:currentColor}
-.media-tile .caption-veil{
-  position:absolute;inset:auto 0 0 0;padding:16px 12px 10px;
-  background:linear-gradient(180deg,transparent,rgba(4,6,15,.9));
-  opacity:0;transition:opacity .3s ease;font-size:.72rem;color:var(--chalk-dim);line-height:1.35;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:none;
-}
-.media-tile:hover .caption-veil{opacity:1}
-.media-empty{
-  grid-column:1/-1;text-align:center;padding:60px 24px;color:var(--muted-lt);font-size:.92rem;
-  background:rgba(0,0,0,.25);border:1px dashed var(--line);border-radius:3px;
-}
-@media(max-width:900px){.media-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:560px){.media-grid{grid-template-columns:repeat(2,1fr);gap:6px}}
 @media(max-width:900px){
   .insta-panel{padding:60px 24px}
   .insta-panel-head{margin-bottom:40px}
@@ -132,9 +99,9 @@
         <a class="follow" href="https://www.instagram.com/pbislamabad" target="_blank" rel="noopener">Follow us →</a>
       </div>
       <div class="instagram-widget-container">
-        <div class="media-grid" id="mediaGrid">
-          <p class="loading-msg">Loading latest posts…</p>
-        </div>
+        <!-- Elfsight Instagram Feed | Untitled Instagram Feed -->
+        <script src="https://elfsightcdn.com/platform.js" async></script>
+        <div class="elfsight-app-88e69abf-4036-4c9c-8c15-4a4ad70fced0" data-elfsight-app-lazy></div>
       </div>
     </div>
 
@@ -191,6 +158,5 @@
 
 <script src="script.js"></script>
 <script src="animations.js"></script>
-<script src="media-feed.js"></script>
 </body>
 </html>

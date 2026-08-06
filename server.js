@@ -7,7 +7,6 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
-const multer = require('multer');
 const { readDb, writeDb } = require('./lib/db');
 const { sendJoinConfirmation, sendPaymentReceipt } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
@@ -159,100 +158,6 @@ app.post('/api/admin/change-password', requireAdmin, async (req, res) => {
   const newHash = await bcrypt.hash(newPassword, 10);
   await writeDb((d) => { d.admin.passwordHash = newHash; return d; });
   res.json({ ok: true });
-});
-
-// ---------------------------- Media gallery (self-hosted, admin-managed) ----------------------------
-// No third-party widget/API. The admin adds a photo or video URL (plus an
-// optional caption and an optional link) from the dashboard; the Media page
-// fetches this list and renders it directly. Tapping a photo opens its link
-// (or the club's Instagram profile if no link was set); videos play inline.
-const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/pbislamabad';
-const VALID_MEDIA_TYPES = ['photo', 'video'];
-
-app.get('/api/media', (req, res) => {
-  const db = readDb();
-  // Posts are stored in display order (index 0 = first shown). Expose `order`
-  // so the admin UI can show/disable the up/down buttons correctly.
-  const posts = (db.mediaPosts || []).map((p, i) => ({ ...p, order: i }));
-  res.json({ posts });
-});
-
-// ---------------------------- Media upload (file from admin) ----------------------------
-// Admins can upload a photo/video file from their computer. The file is saved
-// to public/uploads/ and a URL is returned that can be used as the media src.
-const UPLOAD_DIR = path.join(__dirname, 'public', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: UPLOAD_DIR,
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase().slice(0, 10) || '.jpg';
-      cb(null, `${crypto.randomUUID()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
-  fileFilter: (_req, file, cb) => {
-    const allowed = /\.(jpg|jpeg|png|gif|webp|avif|mp4|webm|mov)$/i;
-    if (allowed.test(path.extname(file.originalname))) cb(null, true);
-    else cb(new Error('Only image (jpg, png, gif, webp, avif) and video (mp4, webm, mov) files are allowed'));
-  },
-});
-
-app.post('/api/admin/media/upload', requireAdmin, (req, res) => {
-  upload.single('file')(req, res, (err) => {
-    if (err) return res.status(400).json({ error: err.message || 'Upload failed' });
-    if (!req.file) return res.status(400).json({ error: 'No file received' });
-    const url = `/uploads/${req.file.filename}`;
-    res.json({ url, filename: req.file.filename, size: req.file.size });
-  });
-});
-
-app.post('/api/admin/media', requireAdmin, async (req, res) => {
-  const { type, src, caption, link } = req.body || {};
-  if (!VALID_MEDIA_TYPES.includes(type)) return res.status(400).json({ error: 'type must be "photo" or "video"' });
-  if (!src || !String(src).trim()) return res.status(400).json({ error: 'A media URL is required' });
-  if (caption && String(caption).length > 500) return res.status(400).json({ error: 'Caption is too long (max 500 characters)' });
-  if (link && String(link).length > 500) return res.status(400).json({ error: 'Link is too long' });
-
-  const post = {
-    id: crypto.randomUUID(),
-    type,
-    src: String(src).trim(),
-    caption: caption ? String(caption).trim() : '',
-    link: link && String(link).trim() ? String(link).trim() : INSTAGRAM_PROFILE_URL,
-    createdAt: new Date().toISOString(),
-  };
-  const updated = await writeDb((db) => {
-    db.mediaPosts = db.mediaPosts || [];
-    db.mediaPosts.push(post);
-    return db;
-  });
-  res.json({ ok: true, post, posts: updated.mediaPosts });
-});
-
-app.delete('/api/admin/media/:id', requireAdmin, async (req, res) => {
-  const updated = await writeDb((db) => {
-    db.mediaPosts = (db.mediaPosts || []).filter((p) => p.id !== req.params.id);
-    return db;
-  });
-  res.json({ ok: true, posts: updated.mediaPosts });
-});
-
-// Reorder a post up (dir: -1) or down (dir: +1) within the gallery.
-app.post('/api/admin/media/:id/move', requireAdmin, async (req, res) => {
-  const dir = Number(req.body && req.body.dir);
-  if (dir !== -1 && dir !== 1) return res.status(400).json({ error: 'dir must be -1 or 1' });
-  const updated = await writeDb((db) => {
-    const posts = db.mediaPosts || [];
-    const i = posts.findIndex((p) => p.id === req.params.id);
-    if (i === -1) return db;
-    const j = i + dir;
-    if (j < 0 || j >= posts.length) return db;
-    [posts[i], posts[j]] = [posts[j], posts[i]];
-    return db;
-  });
-  res.json({ ok: true, posts: updated.mediaPosts });
 });
 
 // ---------------------------- Instagram feed (Legacy SnapWidget embed - DEPRECATED) ----------------------------

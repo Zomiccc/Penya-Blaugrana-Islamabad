@@ -32,11 +32,6 @@
   .pricing-row .field{min-width:170px}
   #pricingMsg,#pwMsg{font-family:var(--mono);font-size:.75rem;margin-top:16px;display:none;padding:11px 14px;border-radius:2px}
 
-  .media-form{display:grid;grid-template-columns:160px 1fr;gap:16px 20px;align-items:end}
-  .media-form .field.full{grid-column:1/-1}
-  .media-form button{grid-column:1/-1;justify-self:start}
-  #mediaMsg{font-family:var(--mono);font-size:.75rem;margin-top:8px;display:none;padding:11px 14px;border-radius:2px}
-
   .toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
   .toolbar select,.toolbar input{width:auto;min-width:180px;background:rgba(0,0,0,.4);border-color:var(--line);color:var(--chalk)}
   .toolbar select option{background:#0A1024;color:var(--chalk)}
@@ -64,7 +59,7 @@
   .btn-del:hover{background:var(--grana);color:#fff;border-color:var(--grana) !important}
 
   @media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr}}
-  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}.media-form{grid-template-columns:1fr}}
+  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}}
 </style>
 </head>
 <body>
@@ -162,45 +157,6 @@
         </tbody>
       </table></div>
     </div>
-  </div>
-
-  <div class="panel">
-    <h2>Media Gallery (Media Page)</h2>
-    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
-      No third-party widget or API key — posts you add here show up directly on the Media page.
-      A photo is required; caption, video and link are all optional. If you don't set a link, tapping
-      a photo takes visitors straight to the club's Instagram profile.
-    </p>
-    <form id="mediaForm" class="media-form" enctype="multipart/form-data">
-      <div class="field">
-        <label>Type</label>
-        <select id="mediaType">
-          <option value="photo">Photo</option>
-          <option value="video">Video</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Media URL (required)</label>
-        <input type="url" id="mediaSrc" placeholder="https://pbisb.com/wp-content/uploads/..." required>
-      </div>
-      <div class="field full">
-        <label>Or upload a file from your computer</label>
-        <input type="file" id="mediaFile" accept="image/*,video/*" style="padding:8px 0;font-size:.85rem">
-        <div id="uploadProgress" style="font-size:.78rem;color:var(--muted);margin-top:6px;display:none">Uploading…</div>
-      </div>
-      <div class="field full">
-        <label>Caption (optional)</label>
-        <input type="text" id="mediaCaption" placeholder="A line about this post" maxlength="500">
-      </div>
-      <div class="field full">
-        <label>Link (optional — defaults to Instagram profile)</label>
-        <input type="url" id="mediaLink" placeholder="https://www.instagram.com/p/...">
-      </div>
-      <button type="submit" class="btn blue">Add Post</button>
-    </form>
-    <div id="mediaMsg" style="font-size:.85rem;margin-top:12px;display:none;padding:8px 12px;border-radius:6px"></div>
-
-    <div id="mediaList" style="margin-top:26px;display:grid;gap:10px"></div>
   </div>
 
   <div class="panel">
