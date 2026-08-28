@@ -14,24 +14,24 @@
    never exposed to the browser. The frontend only ever hits our own
    /api/fixtures endpoints, which read from the cache file.
    ========================================================================== */
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
-const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || '';
+const FOOTBALL_DATA_BASE = "https://api.football-data.org/v4";
+const FOOTBALL_DATA_API_KEY = process.env.FOOTBALL_DATA_API_KEY || "";
 const BARCA_TEAM_ID = 81; // FC Barcelona in Football-Data's registry
 
-const CACHE_PATH = path.join(__dirname, '..', '..', 'data', 'fixtures.json');
+const CACHE_PATH = path.join(__dirname, "..", "..", "data", "fixtures.json");
 
 function defaultCache() {
   return {
     lastSync: null,
     nextSync: null,
-    apiStatus: 'ok', // 'ok' | 'error'
+    apiStatus: "ok", // 'ok' | 'error'
     lastError: null,
     matches: [],
     venueCache: {}, // { [teamId]: { venue, city } }
-    homeVenue: { venue: 'Spotify Camp Nou', city: 'Barcelona' },
+    homeVenue: { venue: "Spotify Camp Nou", city: "Barcelona" },
   };
 }
 
@@ -45,12 +45,12 @@ function ensureCacheFile() {
 function readCache() {
   ensureCacheFile();
   try {
-    const raw = fs.readFileSync(CACHE_PATH, 'utf-8');
+    const raw = fs.readFileSync(CACHE_PATH, "utf-8");
     const c = JSON.parse(raw);
     // Backfill fields so older cache files don't break
     if (!c.venueCache) c.venueCache = {};
     if (!c.homeVenue) c.homeVenue = defaultCache().homeVenue;
-    if (!c.apiStatus) c.apiStatus = 'ok';
+    if (!c.apiStatus) c.apiStatus = "ok";
     return c;
   } catch {
     return defaultCache();
@@ -65,104 +65,353 @@ function writeCache(cache) {
 /* ---------------------------- Football-Data API client ---------------------------- */
 async function footballDataFetch(pathname) {
   if (!FOOTBALL_DATA_API_KEY) {
-    const err = new Error('FOOTBALL_DATA_API_KEY is not set in .env — cannot fetch fixtures from Football-Data.org.');
-    err.code = 'NO_API_KEY';
+    const err = new Error(
+      "FOOTBALL_DATA_API_KEY is not set in .env — cannot fetch fixtures from Football-Data.org."
+    );
+
+    err.code = "NO_API_KEY";
+
     throw err;
   }
-  const res = await fetch(`${FOOTBALL_DATA_BASE}${pathname}`, {
-    headers: { 'X-Auth-Token': FOOTBALL_DATA_API_KEY },
-  });
+
+  const res = await fetch(
+    `${FOOTBALL_DATA_BASE}${pathname}`,
+    {
+      headers: {
+        "X-Auth-Token": FOOTBALL_DATA_API_KEY,
+        "X-Unfold-Goals": "true",
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (res.status === 429) {
-    const err = new Error('Football-Data.org rate limit exceeded (429)');
-    err.code = 'RATE_LIMITED';
+    const err = new Error(
+      "Football-Data.org rate limit exceeded (429)"
+    );
+
+    err.code = "RATE_LIMITED";
+
     throw err;
   }
+
   if (res.status === 403) {
-    const err = new Error('Football-Data.org rejected the API key (403) — check FOOTBALL_DATA_API_KEY');
-    err.code = 'UNAUTHORIZED';
+    const err = new Error(
+      "Football-Data.org rejected the API key (403) — check FOOTBALL_DATA_API_KEY"
+    );
+
+    err.code = "UNAUTHORIZED";
+
     throw err;
   }
+
   if (!res.ok) {
-    const err = new Error(`Football-Data.org returned HTTP ${res.status}`);
-    err.code = 'HTTP_ERROR';
+    const err = new Error(
+      `Football-Data.org returned HTTP ${res.status}`
+    );
+
+    err.code = "HTTP_ERROR";
+
     throw err;
   }
+
   return res.json();
 }
 
 /** Fetch Barcelona's own team record (gives us the home venue). */
 async function fetchBarcaTeam() {
-  const data = await footballDataFetch(`/teams/${BARCA_TEAM_ID}`);
+  const data = await footballDataFetch(
+    `/teams/${BARCA_TEAM_ID}`
+  );
+
   return {
+    id: data.id ?? BARCA_TEAM_ID,
+
+    name: data.name || "FC Barcelona",
+
     venue: data.venue || null,
-    city: (data.address && String(data.address).split('\n')[0]) || null,
+
+    city:
+      (data.address &&
+        String(data.address).split("\n")[0]) ||
+      null,
+
+    runningCompetitions:
+      Array.isArray(data.runningCompetitions)
+        ? data.runningCompetitions
+        : [],
   };
 }
+
+function getLeagueSeasonYear(competition) {
+  /*
+   * Football-Data.org returns the current season like:
+   *
+   * {
+   *   id: 759,
+   *   startDate: "2026-08-01",
+   *   endDate: "2027-05-31"
+   * }
+   *
+   * The API's season filter expects the starting year:
+   *
+   * 2026
+   */
+
+  const startDate =
+    competition?.currentSeason?.startDate;
+
+  if (!startDate) {
+    throw new Error(
+      "League competition does not contain currentSeason.startDate."
+    );
+  }
+
+  const seasonYear =
+    Number(
+      String(startDate).slice(0, 4)
+    );
+
+  if (
+    !Number.isInteger(seasonYear)
+  ) {
+    throw new Error(
+      `Invalid league season start date: ${startDate}`
+    );
+  }
+
+  return seasonYear;
+}
+
+async function fetchCompetition(
+  competitionCode
+) {
+  return footballDataFetch(
+    `/competitions/${encodeURIComponent(
+      competitionCode
+    )}`
+  );
+}
+
 
 /** Fetch an opponent's team record for their venue (used for away fixtures). */
 async function fetchTeamVenue(teamId) {
   const data = await footballDataFetch(`/teams/${teamId}`);
   return {
     venue: data.venue || null,
-    city: (data.address && String(data.address).split('\n')[0]) || null,
+    city: (data.address && String(data.address).split("\n")[0]) || null,
   };
 }
 
 /* ---------------------------- Normalisation ---------------------------- */
-function normalizeMatches(rawMatches) {
-  return rawMatches
-    .map((m) => {
-      const isHome = m.homeTeam.id === BARCA_TEAM_ID;
+function normalizeMatches(matches) {
+  return matches
+    .map((match) => {
+      const homeTeam = match.homeTeam || {};
+      const awayTeam = match.awayTeam || {};
+      const fullTime = match.score?.fullTime || {};
+
+      const isBarcaHome =
+        Number(homeTeam.id) === Number(BARCA_TEAM_ID);
+
+      const isBarcaAway =
+        Number(awayTeam.id) === Number(BARCA_TEAM_ID);
+
+      const goals = Array.isArray(match.goals)
+        ? match.goals.map((goal) => ({
+            minute: Number.isInteger(goal.minute)
+              ? goal.minute
+              : null,
+
+            injuryTime:
+              Number.isInteger(goal.injuryTime)
+                ? goal.injuryTime
+                : null,
+
+            scorer:
+              goal.scorer?.name ||
+              "Unknown scorer",
+
+            teamId:
+              goal.team?.id ??
+              null,
+
+            teamName:
+              goal.team?.name ||
+              "",
+            
+            type:
+              goal.type ||
+              "REGULAR",
+          }))
+        : [];
+
       return {
-        id: m.id,
-        competition: m.competition ? m.competition.name : 'Match',
-        competitionCode: m.competition ? m.competition.code : '',
-        competitionEmblem: m.competition ? m.competition.emblem : null,
-        matchday: m.matchday ?? null,
-        stage: m.stage || null,
-        isHome,
-        homeTeam: m.homeTeam.name,
-        awayTeam: m.awayTeam.name,
-        homeCrest: m.homeTeam.crest || null,
-        awayCrest: m.awayTeam.crest || null,
-        opponent: isHome ? m.awayTeam.name : m.homeTeam.name,
-        opponentShort: isHome ? (m.awayTeam.shortName || m.awayTeam.name) : (m.homeTeam.shortName || m.homeTeam.name),
-        opponentId: isHome ? m.awayTeam.id : m.homeTeam.id,
-        utcDate: m.utcDate,
-        kickoff: m.utcDate, // ISO string, keep name simple for the frontend
-        status: m.status, // SCHEDULED | TIMED | LIVE | FINISHED | ...
-        venue: null, // resolved below
-        city: null,
+        id: match.id,
+
+        utcDate: match.utcDate,
+
+        status: match.status,
+
+        minute: match.minute ?? null,
+
+        injuryTime:
+          match.injuryTime ?? null,
+
+        competitionId:
+          match.competition?.id ??
+          null,
+
+        competition:
+          match.competition?.name ??
+          null,
+
+        competitionCode:
+          match.competition?.code ??
+          null,
+
+        competitionEmblem:
+          match.competition?.emblem ??
+          null,
+
+        season:
+          match.season ??
+          null,
+
+        matchday:
+          match.matchday ??
+          null,
+
+        stage:
+          match.stage ??
+          null,
+
+        group:
+          match.group ??
+          null,
+
+        venue:
+          match.venue ??
+          null,
+
+        city:
+          match.city ??
+          null,
+
+        homeTeamId:
+          homeTeam.id ??
+          null,
+
+        homeTeam:
+          homeTeam.name ||
+          "Home Team",
+
+        homeCrest:
+          homeTeam.crest ||
+          null,
+
+        awayTeamId:
+          awayTeam.id ??
+          null,
+
+        awayTeam:
+          awayTeam.name ||
+          "Away Team",
+
+        awayCrest:
+          awayTeam.crest ||
+          null,
+
+        isHome:
+          isBarcaHome,
+
+        isAway:
+          isBarcaAway,
+
+        isBarcaMatch:
+          isBarcaHome ||
+          isBarcaAway,
+
         score: {
-          home: m.score && m.score.fullTime ? m.score.fullTime.home : null,
-          away: m.score && m.score.fullTime ? m.score.fullTime.away : null,
+          home:
+            Number.isInteger(fullTime.home)
+              ? fullTime.home
+              : null,
+
+          away:
+            Number.isInteger(fullTime.away)
+              ? fullTime.away
+              : null,
         },
-        lastUpdated: m.lastUpdated || null,
+
+        goals,
       };
     })
-    .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+    .filter(
+      (match) =>
+        match.homeTeamId != null &&
+        match.awayTeamId != null
+    );
 }
 
 /** Attach resolved venues to matches using the venue cache (home matches use Camp Nou). */
 function attachVenues(matches, cache) {
-  return matches.map((m) => {
-    if (m.isHome) {
-      m.venue = cache.homeVenue.venue || 'Spotify Camp Nou';
-      m.city = cache.homeVenue.city || 'Barcelona';
-    } else {
-      const v = cache.venueCache[m.opponentId];
-      if (v) {
-        m.venue = v.venue || 'Venue TBC';
-        m.city = v.city || '';
-      } else {
-        m.venue = 'Venue TBC';
-        m.city = '';
-      }
+  return matches.map((match) => {
+    /*
+     * Best source:
+     * the venue supplied directly by the match.
+     */
+    if (match.venue) {
+      return match;
     }
-    return m;
+
+    /*
+     * Barcelona home fallback.
+     */
+    if (
+      Number(match.homeTeamId) ===
+      Number(BARCA_TEAM_ID)
+    ) {
+      return {
+        ...match,
+        venue:
+          cache.homeVenue?.venue ||
+          "Spotify Camp Nou",
+
+        city:
+          cache.homeVenue?.city ||
+          "Barcelona",
+      };
+    }
+
+    /*
+     * For all other matches, the home team's
+     * cached venue is the correct venue.
+     */
+    const homeVenue =
+      cache.venueCache?.[match.homeTeamId];
+
+    if (homeVenue) {
+      return {
+        ...match,
+        venue:
+          homeVenue.venue ||
+          "Venue TBC",
+
+        city:
+          homeVenue.city ||
+          "",
+      };
+    }
+
+    return {
+      ...match,
+      venue: "Venue TBC",
+      city: "",
+    };
   });
 }
+
 
 /* ---------------------------- Main sync ---------------------------- */
 /**
@@ -176,51 +425,294 @@ async function syncFixtures() {
   const cache = readCache();
 
   try {
-    const [matchesData, barcaTeam] = await Promise.all([
-      footballDataFetch(`/teams/${BARCA_TEAM_ID}/matches?status=SCHEDULED`),
-      fetchBarcaTeam(),
-    ]);
+    /*
+     * 1. Load Barcelona.
+     */
+    const barcaTeam =
+      await fetchBarcaTeam();
 
-    if (barcaTeam.venue) cache.homeVenue = barcaTeam;
+    if (barcaTeam.venue) {
+      cache.homeVenue = {
+        venue:
+          barcaTeam.venue,
 
-    // Resolve venues for any opponents we haven't seen yet.
-    // Football-Data v4 doesn't include venue on matches, so we fetch the
-    // opponent team records ONCE and cache them forever afterwards.
-    const matches = normalizeMatches(matchesData.matches || []);
-    const unseenOpponentIds = [
-      ...new Set(matches.filter((m) => !m.isHome).map((m) => m.opponentId)),
-    ].filter((id) => !cache.venueCache[id]);
-
-    // Pace the team-record requests so we stay inside the free tier's
-    // per-minute rate limit (10 req/min). Typical first sync: 1 (matches) +
-    // 1 (barca) + ~14 opponents ≈ 16 requests; we space venue lookups ~1.2s
-    // apart so they spread across the minute window.
-    for (const id of unseenOpponentIds) {
-      try {
-        const v = await fetchTeamVenue(id);
-        cache.venueCache[id] = v;
-      } catch (err) {
-        if (err.code === 'RATE_LIMITED') break; // stop trying — next sync will retry
-        console.error('[fixtures] failed to resolve venue for team', id, err.message);
-      }
-      await new Promise((r) => setTimeout(r, 1200));
+        city:
+          barcaTeam.city ||
+          "Barcelona",
+      };
     }
 
-    const withVenues = attachVenues(matches, cache);
+    /*
+     * 2. Find Barcelona's current league.
+     */
+    const league =
+      Array.isArray(
+        barcaTeam.runningCompetitions
+      )
+        ? barcaTeam.runningCompetitions.find(
+            (competition) =>
+              String(
+                competition.type || ""
+              ).toUpperCase() ===
+              "LEAGUE"
+          )
+        : null;
 
-    cache.matches = withVenues;
-    cache.lastSync = new Date().toISOString();
-    cache.apiStatus = 'ok';
-    cache.lastError = null;
+    if (!league?.code) {
+      throw new Error(
+        "Could not determine Barcelona's current league competition."
+      );
+    }
+
+    /*
+     * 3. Fetch the competition itself.
+     */
+    const competitionData =
+      await footballDataFetch(
+        `/competitions/${encodeURIComponent(
+          league.code
+        )}`
+      );
+
+    /*
+     * 4. Read its current season.
+     */
+    const currentSeason =
+      competitionData?.currentSeason;
+
+    if (!currentSeason?.startDate) {
+      throw new Error(
+        `Could not determine current season for ${league.code}.`
+      );
+    }
+
+    const seasonYear =
+      Number(
+        String(
+          currentSeason.startDate
+        ).slice(0, 4)
+      );
+
+    if (
+      !Number.isInteger(
+        seasonYear
+      )
+    ) {
+      throw new Error(
+        `Invalid season start date: ${currentSeason.startDate}`
+      );
+    }
+
+    /*
+     * 5. Save competition + season.
+     */
+    cache.competition = {
+      id:
+        competitionData.id ??
+        league.id ??
+        null,
+
+      code:
+        competitionData.code ||
+        league.code,
+
+      name:
+        competitionData.name ||
+        league.name ||
+        "League",
+
+      type:
+        competitionData.type ||
+        league.type ||
+        "LEAGUE",
+
+      emblem:
+        competitionData.emblem ||
+        league.emblem ||
+        null,
+
+      season: {
+        id:
+          currentSeason.id ??
+          null,
+
+        startDate:
+          currentSeason.startDate,
+
+        endDate:
+          currentSeason.endDate,
+
+        currentMatchday:
+          currentSeason.currentMatchday ??
+          null,
+      },
+    };
+
+    /*
+     * 6. Fetch ALL matches for the
+     * current league season.
+     */
+    const matchesData =
+  await footballDataFetch(
+    `/competitions/${encodeURIComponent(
+      league.code
+    )}/matches?season=${seasonYear}`
+  );
+
+/*
+ * The competition endpoint returns every match
+ * in the league.
+ *
+ * We only want matches involving Barcelona.
+ */
+const barcaMatches =
+  (matchesData.matches || []).filter(
+    (match) => {
+      const homeTeamId =
+        Number(match.homeTeam?.id);
+
+      const awayTeamId =
+        Number(match.awayTeam?.id);
+
+      return (
+        homeTeamId ===
+          Number(BARCA_TEAM_ID) ||
+        awayTeamId ===
+          Number(BARCA_TEAM_ID)
+      );
+    }
+  );
+
+/*
+ * Debug information.
+ */
+
+
+/*
+ * Normalize ONLY Barcelona's matches.
+ */
+const matches =
+  normalizeMatches(
+    barcaMatches
+  );
+
+
+    /*
+     * 8. Venue resolution.
+     * Keep the version from the previous fix here.
+     */
+
+    const teamIdsNeedingVenue = [
+      ...new Set(
+        matches
+          .filter(
+            (match) =>
+              !match.venue
+          )
+          .map(
+            (match) =>
+              match.homeTeamId
+          )
+          .filter(Boolean)
+      ),
+    ].filter(
+      (teamId) =>
+        !cache.venueCache?.[teamId]
+    );
+
+    for (
+      const teamId of
+        teamIdsNeedingVenue
+    ) {
+      try {
+        const venue =
+          await fetchTeamVenue(
+            teamId
+          );
+
+        if (venue) {
+          cache.venueCache[
+            teamId
+          ] = venue;
+        }
+      } catch (err) {
+        if (
+          err.code ===
+          "RATE_LIMITED"
+        ) {
+          console.warn(
+            "[fixtures] venue lookup rate limited; stopping venue resolution"
+          );
+
+          break;
+        }
+
+        console.error(
+          "[fixtures] failed to resolve venue for team",
+          teamId,
+          err.message
+        );
+      }
+
+      await new Promise(
+        (resolve) =>
+          setTimeout(
+            resolve,
+            1200
+          )
+      );
+    }
+
+    /*
+     * 9. Attach venues.
+     */
+    const withVenues =
+      attachVenues(
+        matches,
+        cache
+      );
+
+    /*
+     * 10. Save ALL matches.
+     */
+    cache.matches =
+      withVenues;
+
+    cache.lastSync =
+      new Date().toISOString();
+
+    cache.apiStatus =
+      "ok";
+
+    cache.lastError =
+      null;
 
     writeCache(cache);
+
+    console.log(
+      `[fixtures] synced ${cache.matches.length} ${competitionData.name} matches for season ${seasonYear}`
+    );
+
     return cache;
+
   } catch (err) {
-    console.error('[fixtures] sync failed:', err.message);
-    cache.apiStatus = 'error';
-    cache.lastError = err.message;
-    cache.lastSync = cache.lastSync || null;
+    console.error(
+      "[fixtures] sync failed:",
+      err.message
+    );
+
+    cache.apiStatus =
+      "error";
+
+    cache.lastError =
+      err.message;
+
+    cache.lastSync =
+      cache.lastSync ||
+      null;
+
     writeCache(cache);
+
     throw err;
   }
 }
@@ -254,6 +746,80 @@ module.exports = {
   getCachedFixtures,
   clearFixturesCache,
   updateNextSync,
+  getFixtureResult,
   CACHE_PATH,
   BARCA_TEAM_ID,
 };
+async function getFixtureResult(
+  fixtureId
+) {
+  const data =
+    await footballDataFetch(
+      `/matches/${encodeURIComponent(
+        fixtureId
+      )}`
+    );
+
+  const fullTime =
+    data.score?.fullTime ||
+    {};
+
+  const goals =
+    Array.isArray(data.goals)
+      ? data.goals.map(
+          (goal) => ({
+            minute:
+              Number.isInteger(
+                goal.minute
+              )
+                ? goal.minute
+                : null,
+
+            injuryTime:
+              Number.isInteger(
+                goal.injuryTime
+              )
+                ? goal.injuryTime
+                : null,
+
+            scorer:
+              goal.scorer
+                ?.name ||
+              "Unknown scorer",
+
+            teamId:
+              goal.team?.id ??
+              null,
+
+            teamName:
+              goal.team?.name ||
+              "",
+          })
+        )
+      : [];
+
+  return {
+    id: data.id,
+
+    status:
+      data.status,
+
+    score: {
+      home:
+        Number.isInteger(
+          fullTime.home
+        )
+          ? fullTime.home
+          : null,
+
+      away:
+        Number.isInteger(
+          fullTime.away
+        )
+          ? fullTime.away
+          : null,
+    },
+
+    goals,
+  };
+}

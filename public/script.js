@@ -1,61 +1,72 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const burger = document.querySelector('.hamburger');
-  const nav = document.querySelector('.main-nav');
+document.addEventListener("DOMContentLoaded", () => {
+  let fixturesListElement = null;
+  const burger = document.querySelector(".hamburger");
+  const nav = document.querySelector(".main-nav");
   if (burger && nav) {
     // Create backdrop element
-    const backdrop = document.createElement('div');
-    backdrop.className = 'nav-backdrop';
-    backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;pointer-events:none;';
+    const backdrop = document.createElement("div");
+    backdrop.className = "nav-backdrop";
+    backdrop.style.cssText =
+      "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;pointer-events:none;";
     document.body.appendChild(backdrop);
 
     const setMenu = (open) => {
-      nav.classList.toggle('open', open);
-      burger.classList.toggle('open', open);
-      burger.setAttribute('aria-expanded', String(open));
-      burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-      
+      nav.classList.toggle("open", open);
+      burger.classList.toggle("open", open);
+      burger.setAttribute("aria-expanded", String(open));
+      burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+
       // Toggle backdrop
       if (open) {
-        backdrop.style.opacity = '1';
-        backdrop.style.visibility = 'visible';
-        backdrop.style.pointerEvents = 'auto';
-        document.body.style.overflow = 'hidden';
+        backdrop.style.opacity = "1";
+        backdrop.style.visibility = "visible";
+        backdrop.style.pointerEvents = "auto";
+        document.body.style.overflow = "hidden";
       } else {
-        backdrop.style.opacity = '0';
-        backdrop.style.visibility = 'hidden';
-        backdrop.style.pointerEvents = 'none';
-        document.body.style.overflow = '';
+        backdrop.style.opacity = "0";
+        backdrop.style.visibility = "hidden";
+        backdrop.style.pointerEvents = "none";
+        document.body.style.overflow = "";
       }
     };
     setMenu(false);
-    
+
     // Close menu when clicking backdrop
-    backdrop.addEventListener('click', () => setMenu(false));
-    
-    burger.addEventListener('click', () => setMenu(!nav.classList.contains('open')));
-    burger.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMenu(!nav.classList.contains('open')); }
+    backdrop.addEventListener("click", () => setMenu(false));
+
+    burger.addEventListener("click", () =>
+      setMenu(!nav.classList.contains("open")),
+    );
+    burger.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setMenu(!nav.classList.contains("open"));
+      }
     });
-    nav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
+    nav
+      .querySelectorAll("a")
+      .forEach((a) => a.addEventListener("click", () => setMenu(false)));
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setMenu(false);
+    });
   }
 
-  const countdownEl = document.getElementById('countdown');
-  const scrollEl = document.getElementById('fixtureScroll');
-  const nextStripEl = document.getElementById('nextMatchStrip');
-  const venueLineEl = document.getElementById('venueLine');
+  const countdownEl = document.getElementById("countdown");
+  const scrollEl = document.getElementById("fixtureScroll");
+  const nextStripEl = document.getElementById("nextMatchStrip");
+  const venueLineEl = document.getElementById("venueLine");
   if (countdownEl || scrollEl) {
     initLiveFixtures({ countdownEl, scrollEl, nextStripEl, venueLineEl });
   }
 
   // Fixtures page (fixtures.html) — render the full list
-  const fixturesListEl = document.getElementById('fixturesList');
+  const fixturesListEl = document.getElementById("fixturesList");
   if (fixturesListEl) {
     initFixturesPage(fixturesListEl);
   }
 
   // Join flyer vertical scroller (index.html)
-  const flyerList = document.getElementById('flyerList');
+  const flyerList = document.getElementById("flyerList");
   if (flyerList) {
     initFlyerScroll(flyerList);
   }
@@ -73,11 +84,11 @@ function initFlyerScroll(listEl) {
   const messages = baseItems.map((el) => el.textContent.trim()).filter(Boolean);
   if (!messages.length) return;
 
-  listEl.innerHTML = '';
-  listEl.removeAttribute('style');
+  listEl.innerHTML = "";
+  listEl.removeAttribute("style");
 
-  const track = document.createElement('div');
-  track.className = 'flyer-track';
+  const track = document.createElement("div");
+  track.className = "flyer-track";
   listEl.appendChild(track);
 
   // Repeat the names so the rotation cycles longer before repeating
@@ -87,20 +98,20 @@ function initFlyerScroll(listEl) {
   let idx = 0;
 
   function fadeIn(row) {
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(12px)';
-    row.style.transition = 'opacity .5s ease, transform .5s ease';
+    row.style.opacity = "0";
+    row.style.transform = "translateY(12px)";
+    row.style.transition = "opacity .5s ease, transform .5s ease";
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        row.style.opacity = '1';
-        row.style.transform = 'translateY(0)';
+        row.style.opacity = "1";
+        row.style.transform = "translateY(0)";
       });
     });
   }
 
   function fadeOut(row, cb) {
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(-12px)';
+    row.style.opacity = "0";
+    row.style.transform = "translateY(-12px)";
     setTimeout(cb, 500);
   }
 
@@ -108,12 +119,12 @@ function initFlyerScroll(listEl) {
     const msg = pool[idx % pool.length];
     idx++;
 
-    const newRow = document.createElement('li');
-    newRow.className = 'flyer-row';
+    const newRow = document.createElement("li");
+    newRow.className = "flyer-row";
     newRow.textContent = msg;
     track.appendChild(newRow);
 
-    const oldRow = track.querySelector('.flyer-row:not(:last-child)');
+    const oldRow = track.querySelector(".flyer-row:not(:last-child)");
     if (oldRow) {
       fadeOut(oldRow, () => oldRow.remove());
     }
@@ -134,7 +145,7 @@ function initFlyerScroll(listEl) {
 function initMobileTicker(trackEl) {
   function check() {
     if (window.innerWidth >= 768) return;
-    const spans = Array.from(trackEl.querySelectorAll('span'));
+    const spans = Array.from(trackEl.querySelectorAll("span"));
     if (!spans.length) return;
 
     // Collect unique phrases (track has duplicates for desktop marquee)
@@ -142,7 +153,10 @@ function initMobileTicker(trackEl) {
     const seen = new Set();
     spans.forEach((s) => {
       const text = s.textContent.trim();
-      if (text && !seen.has(text)) { seen.add(text); phrases.push(s); }
+      if (text && !seen.has(text)) {
+        seen.add(text);
+        phrases.push(s);
+      }
     });
     if (!phrases.length) return;
 
@@ -150,12 +164,12 @@ function initMobileTicker(trackEl) {
     if (phrases.length <= 1) return;
 
     // Mark the track as JS-controlled so CSS overrides the first-child fallback
-    trackEl.classList.add('ticker-js');
+    trackEl.classList.add("ticker-js");
 
     let i = 0;
     function show() {
-      spans.forEach((s) => s.classList.remove('ticker-active'));
-      phrases[i].classList.add('ticker-active');
+      spans.forEach((s) => s.classList.remove("ticker-active"));
+      phrases[i].classList.add("ticker-active");
       i = (i + 1) % phrases.length;
     }
     show();
@@ -165,14 +179,19 @@ function initMobileTicker(trackEl) {
 
   check();
   let resizeTimer;
-  window.addEventListener('resize', () => {
+  window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       if (window.innerWidth >= 768) {
         // Desktop: remove JS control, let CSS marquee run
-        trackEl.classList.remove('ticker-js');
-        trackEl.querySelectorAll('span').forEach((s) => s.classList.remove('ticker-active'));
-        if (trackEl._tickerInterval) { clearInterval(trackEl._tickerInterval); trackEl._tickerInterval = null; }
+        trackEl.classList.remove("ticker-js");
+        trackEl
+          .querySelectorAll("span")
+          .forEach((s) => s.classList.remove("ticker-active"));
+        if (trackEl._tickerInterval) {
+          clearInterval(trackEl._tickerInterval);
+          trackEl._tickerInterval = null;
+        }
       } else {
         check();
       }
@@ -191,17 +210,17 @@ let countdownTimer = null;
 
 async function initLiveFixtures(refs) {
   try {
-    const res = await fetch('/api/fixtures/next');
+    const res = await fetch("/api/fixtures/next");
     const data = await res.json();
     const nextEvent = data.next;
-    if (!nextEvent) throw new Error('No upcoming event returned');
+    if (!nextEvent) throw new Error("No upcoming event returned");
 
     renderCountdown(refs, nextEvent);
     renderNextStrip(refs, nextEvent);
     renderVenueLine(refs, nextEvent);
     renderFixtureCard(refs, nextEvent);
   } catch (err) {
-    console.warn('Live fixture fetch failed, showing fallback state:', err);
+    console.warn("Live fixture fetch failed, showing fallback state:", err);
     renderFallback(refs);
   }
 }
@@ -211,11 +230,16 @@ function toDate(event) {
 }
 
 function formatPKT(date) {
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long',
-    hour: '2-digit', minute: '2-digit',
-    timeZone: 'Asia/Karachi',
-  }).format(date) + ' PKT';
+  return (
+    new Intl.DateTimeFormat("en-GB", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Karachi",
+    }).format(date) + " PKT"
+  );
 }
 
 function renderCountdown(refs, event) {
@@ -229,10 +253,22 @@ function renderCountdown(refs, event) {
     const h = Math.floor((diff % 86400000) / 3600000);
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
-    refs.countdownEl.querySelector('.d').textContent = String(d).padStart(2, '0');
-    refs.countdownEl.querySelector('.h').textContent = String(h).padStart(2, '0');
-    refs.countdownEl.querySelector('.m').textContent = String(m).padStart(2, '0');
-    refs.countdownEl.querySelector('.s').textContent = String(s).padStart(2, '0');
+    refs.countdownEl.querySelector(".d").textContent = String(d).padStart(
+      2,
+      "0",
+    );
+    refs.countdownEl.querySelector(".h").textContent = String(h).padStart(
+      2,
+      "0",
+    );
+    refs.countdownEl.querySelector(".m").textContent = String(m).padStart(
+      2,
+      "0",
+    );
+    refs.countdownEl.querySelector(".s").textContent = String(s).padStart(
+      2,
+      "0",
+    );
     if (diff <= 0 && countdownTimer) clearInterval(countdownTimer);
   }
   tick();
@@ -244,22 +280,21 @@ function renderNextStrip(refs, event) {
   if (!refs.nextStripEl) return;
   const isHome = event.isHome;
   const opponent = event.opponent;
-  refs.nextStripEl.innerHTML =
-    `Next up: FC Barcelona ${isHome ? 'host' : 'travel to'} <b>${opponent}</b>, ${formatPKT(toDate(event))}`;
+  refs.nextStripEl.innerHTML = `Next up: FC Barcelona ${isHome ? "host" : "travel to"} <b>${opponent}</b>, ${formatPKT(toDate(event))}`;
 }
 
 function renderVenueLine(refs, event) {
   if (!refs.venueLineEl) return;
-  const venue = event.venue || 'Venue to be confirmed';
-  const city = event.city ? `, ${event.city}` : '';
-  refs.venueLineEl.innerHTML = `Match venue: <span>${venue}${city}</span> · ${event.competition || ''}`;
+  const venue = event.venue || "Venue to be confirmed";
+  const city = event.city ? `, ${event.city}` : "";
+  refs.venueLineEl.innerHTML = `Match venue: <span>${venue}${city}</span> · ${event.competition || ""}`;
 }
 
 function renderFixtureCard(refs, event) {
   if (!refs.scrollEl) return;
   const kickoff = toDate(event);
-  const card = document.createElement('div');
-  card.className = 'fixture-card';
+  const card = document.createElement("div");
+  card.className = "fixture-card";
   card.innerHTML = `
     <div class="teams">
       <img src="${event.homeCrest || fallbackBadge(event.homeTeam)}" alt="${event.homeTeam}">
@@ -268,95 +303,333 @@ function renderFixtureCard(refs, event) {
     </div>
     <div class="names"><span>${event.homeTeam}</span><span>${event.awayTeam}</span></div>
     <div class="meta">${formatPKT(kickoff)}</div>
-    <div class="meta comp">${event.competition || 'Match'}</div>
-    <div class="meta venue-tag">${event.venue || 'Venue TBC'}${event.city ? ', ' + event.city : ''}</div>
+    <div class="meta comp">${event.competition || "Match"}</div>
+    <div class="meta venue-tag">${event.venue || "Venue TBC"}${event.city ? ", " + event.city : ""}</div>
     <span class="mini-countdown" data-target="${kickoff.toISOString()}">Loading…</span>
   `;
-  refs.scrollEl.innerHTML = '';
+  refs.scrollEl.innerHTML = "";
   refs.scrollEl.appendChild(card);
 
-  const miniEl = card.querySelector('.mini-countdown');
+  const miniEl = card.querySelector(".mini-countdown");
   function tickMini() {
     const diff = Math.max(0, kickoff - new Date());
     const d = Math.floor(diff / 86400000);
     const h = Math.floor((diff % 86400000) / 3600000);
-    miniEl.textContent = diff > 0 ? `Kicks off in ${d}d ${h}h` : 'Match day!';
+    miniEl.textContent = diff > 0 ? `Kicks off in ${d}d ${h}h` : "Match day!";
   }
   tickMini();
   setInterval(tickMini, 60000);
 }
 
 function fallbackBadge(teamName) {
-  const initials = encodeURIComponent((teamName || '?').slice(0, 3).toUpperCase());
+  const initials = encodeURIComponent(
+    (teamName || "?").slice(0, 3).toUpperCase(),
+  );
   return `https://placehold.co/64x64/004D98/ffffff?text=${initials}`;
 }
 
 function renderFallback(refs) {
-  if (refs.nextStripEl) refs.nextStripEl.textContent = 'Fixture data temporarily unavailable. Check back shortly.';
-  if (refs.venueLineEl) refs.venueLineEl.textContent = '';
+  if (refs.nextStripEl)
+    refs.nextStripEl.textContent =
+      "Fixture data temporarily unavailable. Check back shortly.";
+  if (refs.venueLineEl) refs.venueLineEl.textContent = "";
   if (refs.scrollEl) {
-    refs.scrollEl.innerHTML = '<p class="loading-msg">Could not load live fixtures right now. Please refresh, or check FCBarcelona.com for the latest schedule.</p>';
+    refs.scrollEl.innerHTML =
+      '<p class="loading-msg">Could not load live fixtures right now. Please refresh, or check FCBarcelona.com for the latest schedule.</p>';
   }
   if (refs.countdownEl) {
-    ['d', 'h', 'm', 's'].forEach(cls => {
-      const el = refs.countdownEl.querySelector('.' + cls);
-      if (el) el.textContent = '--';
+    ["d", "h", "m", "s"].forEach((cls) => {
+      const el = refs.countdownEl.querySelector("." + cls);
+      if (el) el.textContent = "--";
     });
   }
 }
+function scheduleFixtureRefresh(match) {
+  const kickoff = toDate(match);
 
+  if (match.status === "FINISHED") return;
+
+  const RESULT_DELAY = 90 * 60 * 1000;
+
+  const elapsed = Date.now() - kickoff.getTime();
+
+  const delay = Math.max(0, RESULT_DELAY - elapsed);
+
+  setTimeout(async () => {
+    try {
+      const res = await fetch("/api/fixtures");
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+
+      const updatedMatch = (data.matches || []).find(
+        (m) => Number(m.id) === Number(match.id),
+      );
+
+      if (!updatedMatch) return;
+
+      const card = document.querySelector(`[data-fixture-id="${match.id}"]`);
+
+      if (!card) return;
+
+      if (updatedMatch.status === "FINISHED") {
+        card.outerHTML = fixtureCardHTML(updatedMatch);
+      }
+    } catch (err) {
+      console.warn(
+        `[fixtures] post-match refresh failed for ${match.id}:`,
+        err.message,
+      );
+    }
+  }, delay);
+}
 /* ==========================================================================
    FIXTURES PAGE (fixtures.html)
    Renders at least the next 10 fixtures as premium cards with live countdowns.
    ========================================================================== */
 async function initFixturesPage(listEl) {
   try {
-    const res = await fetch('/api/fixtures');
+    fixturesListElement = listEl;
+
+    const res = await fetch("/api/fixtures");
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-    const matches = (data.matches || []).slice(0, 10);
+
+    const matches = (data.matches || [])
+      .slice()
+      .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+console.log("Fetched fixtures:", data);
     if (!matches.length) {
-      listEl.innerHTML = '<p class="loading-msg">No upcoming fixtures right now. Check back soon.</p>';
+      listEl.innerHTML =
+        '<p class="loading-msg">No league fixtures available right now.</p>';
+
       return;
     }
-    listEl.innerHTML = matches.map((m) => fixtureCardHTML(m)).join('');
-    // Start live countdowns on each card
-    matches.forEach((m) => {
-      const el = listEl.querySelector(`[data-fixture-id="${m.id}"] .fixture-countdown`);
-      if (el) startCardCountdown(el, toDate(m));
+
+    listEl.innerHTML = matches.map((match) => fixtureCardHTML(match)).join("");
+
+    /*
+     * Start countdown only for matches
+     * that are not finished.
+     */
+    matches.forEach((match) => {
+      const el = listEl.querySelector(
+        `[data-fixture-id="${match.id}"] .fixture-countdown`,
+      );
+
+      if (el && match.status !== "FINISHED") {
+        startCardCountdown(el, toDate(match));
+      }
+    });
+
+    /*
+     * Schedule post-match refresh only
+     * for unfinished matches.
+     */
+    matches.forEach((match) => {
+      if (match.status !== "FINISHED") {
+        scheduleFixtureRefresh(match);
+      }
     });
   } catch (err) {
-    console.warn('Fixtures page failed:', err);
-    listEl.innerHTML = '<p class="loading-msg">Could not load fixtures right now. Please refresh.</p>';
+    console.warn("Fixtures page failed:", err);
+
+    listEl.innerHTML =
+      '<p class="loading-msg">Could not load league fixtures right now. Please refresh.</p>';
   }
 }
 
 function fixtureCardHTML(m) {
   const kickoff = toDate(m);
   const isHome = m.isHome;
+
+  const isFinished = m.status === "FINISHED";
+
+  const hasScore =
+    Number.isInteger(m.score?.home) && Number.isInteger(m.score?.away);
+
   return `
-    <article class="fixture-card premium" data-fixture-id="${m.id}">
+    <article
+      class="fixture-card premium"
+      data-fixture-id="${m.id}"
+    >
+
       <div class="fixture-top">
-        <span class="fixture-comp">${m.competitionEmblem ? `<img src="${m.competitionEmblem}" alt="">` : ''}${m.competition || 'Match'}</span>
-        <span class="fixture-haw">${isHome ? 'HOME' : 'AWAY'}</span>
+
+        <span class="fixture-comp">
+          ${
+            m.competitionEmblem
+              ? `<img
+                   src="${m.competitionEmblem}"
+                   alt=""
+                 >`
+              : ""
+          }
+
+          ${m.competition || "Match"}
+        </span>
+        <span class="fixture-haw">
+          ${m.isHome ? "BARÇA HOME" : m.isAway ? "BARÇA AWAY" : "LEAGUE"}
+        </span>
+
       </div>
+
       <div class="teams">
+
         <div class="team">
-          <img src="${m.homeCrest || fallbackBadge(m.homeTeam)}" alt="${m.homeTeam}">
+          <img
+            src="${m.homeCrest || fallbackBadge(m.homeTeam)}"
+            alt="${m.homeTeam}"
+          >
+
           <span>${m.homeTeam}</span>
         </div>
-        <span class="vs">VS</span>
+
+        <span class="vs">
+          ${isFinished && hasScore ? `${m.score.home} – ${m.score.away}` : "VS"}
+        </span>
+
         <div class="team">
-          <img src="${m.awayCrest || fallbackBadge(m.awayTeam)}" alt="${m.awayTeam}">
+          <img
+            src="${m.awayCrest || fallbackBadge(m.awayTeam)}"
+            alt="${m.awayTeam}"
+          >
+
           <span>${m.awayTeam}</span>
         </div>
+
       </div>
+
       <div class="fixture-meta">
-        <div class="meta">${formatPKT(kickoff)}</div>
-        <div class="meta venue-tag">${m.venue || 'Venue TBC'}${m.city ? ', ' + m.city : ''}</div>
-        ${m.matchday ? `<div class="meta">Matchday ${m.matchday}</div>` : ''}
+
+        <div class="meta">
+          ${formatPKT(kickoff)}
+        </div>
+
+        <div class="meta venue-tag">
+          ${m.venue || "Venue TBC"}
+
+          ${m.city ? ", " + m.city : ""}
+        </div>
+
+        ${
+          m.matchday
+            ? `
+              <div class="meta">
+                Matchday ${m.matchday}
+              </div>
+            `
+            : ""
+        }
+
       </div>
-      <div class="fixture-countdown" data-target="${kickoff.toISOString()}">Loading…</div>
+
+      ${
+        isFinished && hasScore
+          ? finishedMatchHTML(m)
+          : `
+              <div
+                class="fixture-countdown"
+                data-target="${kickoff.toISOString()}"
+              >
+                Loading…
+              </div>
+            `
+      }
+
     </article>
+  `;
+}
+
+function finishedMatchHTML(m) {
+  const homeScore = Number.isInteger(m.score?.home) ? m.score.home : "-";
+
+  const awayScore = Number.isInteger(m.score?.away) ? m.score.away : "-";
+
+  const goals = Array.isArray(m.goals) ? m.goals : [];
+
+  const goalRows = goals.length
+    ? goals
+        .slice()
+        .sort((a, b) => {
+          const aMinute = Number.isInteger(a.minute) ? a.minute : 999;
+          const bMinute = Number.isInteger(b.minute) ? b.minute : 999;
+
+          return aMinute - bMinute;
+        })
+        .map((goal) => {
+          const minute = Number.isInteger(goal.minute)
+            ? `${goal.minute}${Number.isInteger(goal.injuryTime) && goal.injuryTime > 0 ? `+${goal.injuryTime}` : ""}'`
+            : "—";
+
+          return `
+            <div class="goal-row">
+              <span class="goal-minute">${minute}</span>
+              <span class="goal-scorer">${goal.scorer || "Unknown scorer"}</span>
+              <span class="goal-team">${goal.teamName || ""}</span>
+            </div>
+          `;
+        })
+        .join("")
+    : `
+        <div class="no-goals">
+          No goal details available.
+        </div>
+      `;
+
+  return `
+    <div class="fixture-result">
+
+      <div class="fixture-result-label">
+        FULL TIME
+      </div>
+
+      <div class="fixture-result-score">
+
+        <div class="fixture-result-team">
+          <img
+            src="${m.homeCrest || fallbackBadge(m.homeTeam)}"
+            alt="${m.homeTeam}"
+          >
+          <span>${m.homeTeam}</span>
+        </div>
+
+        <div class="fixture-result-numbers">
+          <span class="fixture-result-number">${homeScore}</span>
+          <span class="fixture-result-separator">–</span>
+          <span class="fixture-result-number">${awayScore}</span>
+        </div>
+
+        <div class="fixture-result-team">
+          <img
+            src="${m.awayCrest || fallbackBadge(m.awayTeam)}"
+            alt="${m.awayTeam}"
+          >
+          <span>${m.awayTeam}</span>
+        </div>
+
+      </div>
+
+      <div class="fixture-result-status">
+        MATCH FINISHED
+      </div>
+
+      <div class="goal-events">
+
+        <div class="goal-events-title">
+          GOALS
+        </div>
+
+        ${goalRows}
+
+      </div>
+
+    </div>
   `;
 }
 
@@ -368,8 +641,134 @@ function startCardCountdown(el, target) {
     const m = Math.floor((diff % 3600000) / 60000);
     const s = Math.floor((diff % 60000) / 1000);
     el.innerHTML = `${d} Days · ${h} Hours · ${m} Minutes · ${s} Seconds`;
-    if (diff <= 0) { el.textContent = 'Match day!'; clearInterval(timer); }
+    if (diff <= 0) {
+      el.textContent = "Match day!";
+      clearInterval(timer);
+    }
   }
   tick();
   const timer = setInterval(tick, 1000);
+}
+
+async function fetchFixtureResultAfterExpectedEnd(card, match) {
+  try {
+    const res = await fetch(
+      `/api/fixtures/${encodeURIComponent(match.id)}/result`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+
+    const result = await res.json();
+
+    const finished =
+      result.status === "FINISHED" &&
+      result.score &&
+      Number.isInteger(result.score.home) &&
+      Number.isInteger(result.score.away);
+
+    if (finished) {
+      renderFixtureResult(card, match, result);
+      return;
+    }
+
+    /*
+     * The match has not finished yet.
+     *
+     * This is normally caused by:
+     * - delayed kickoff
+     * - extra stoppage time
+     * - match interruption
+     * - unusual game circumstances
+     *
+     * We now wait another 5 minutes before checking again.
+     */
+    setTimeout(
+      () => {
+        fetchFixtureResultAfterExpectedEnd(card, match);
+      },
+      5 * 60 * 1000,
+    );
+  } catch (err) {
+    console.warn(
+      `[fixtures] result lookup failed for ${match.id}:`,
+      err.message,
+    );
+
+    /*
+     * If our own server/API request fails, don't hammer it.
+     * Retry after 5 minutes.
+     */
+    setTimeout(
+      () => {
+        fetchFixtureResultAfterExpectedEnd(card, match);
+      },
+      5 * 60 * 1000,
+    );
+  }
+}
+
+function renderFixtureResult(card, match, result) {
+  const slot = card.querySelector(".fixture-result-slot");
+
+  if (!slot) return;
+
+  const homeScore = result.score?.home;
+  const awayScore = result.score?.away;
+
+  if (!Number.isInteger(homeScore) || !Number.isInteger(awayScore)) {
+    return;
+  }
+
+  slot.innerHTML = `
+    <div class="fixture-result">
+      <div class="fixture-result-label">
+        Full Time
+      </div>
+
+      <div class="fixture-result-score">
+
+        <div class="fixture-result-team">
+          <img
+            src="${match.homeCrest || fallbackBadge(match.homeTeam)}"
+            alt="${match.homeTeam}"
+          >
+          <span>${match.homeTeam}</span>
+        </div>
+
+        <div class="fixture-result-numbers">
+          <span class="fixture-result-number">
+            ${homeScore}
+          </span>
+
+          <span class="fixture-result-separator">
+            –
+          </span>
+
+          <span class="fixture-result-number">
+            ${awayScore}
+          </span>
+        </div>
+
+        <div class="fixture-result-team">
+          <img
+            src="${match.awayCrest || fallbackBadge(match.awayTeam)}"
+            alt="${match.awayTeam}"
+          >
+          <span>${match.awayTeam}</span>
+        </div>
+
+      </div>
+
+      <div class="fixture-result-status">
+        Match Finished
+      </div>
+    </div>
+  `;
 }

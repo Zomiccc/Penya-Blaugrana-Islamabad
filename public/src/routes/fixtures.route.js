@@ -6,7 +6,7 @@
    data/fixtures.json (populated by the scheduler in src/jobs/fixtureSync.job.js).
    ========================================================================== */
 const express = require('express');
-const { getCachedFixtures } = require('../services/fixture.service');
+const { getCachedFixtures, getFixtureResult } = require('../services/fixture.service');
 const { syncNow, clearCache } = require('../jobs/fixtureSync.job');
 
 /**
@@ -43,6 +43,38 @@ function buildFixturesRouter(requireAdmin) {
       next: upcoming[0] || null,
     });
   });
+
+/**
+ * GET /api/fixtures/:id/result
+ * Public — fetches the latest status and full-time score for one fixture.
+ *
+ * This is intentionally separate from GET /api/fixtures because the normal
+ * fixture cache is primarily used for scheduled fixtures.
+ */
+router.get('/api/fixtures/:id/result', async (req, res) => {
+  try {
+    const fixtureId = Number(req.params.id);
+
+    if (!Number.isInteger(fixtureId) || fixtureId <= 0) {
+      return res.status(400).json({
+        error: 'Invalid fixture id',
+      });
+    }
+
+    const result = await getFixtureResult(fixtureId);
+
+    res.json(result);
+  } catch (err) {
+    console.warn(
+      '[fixtures] result lookup failed:',
+      err.message
+    );
+
+    res.status(502).json({
+      error: 'Could not fetch match result.',
+    });
+  }
+});
 
   /**
    * GET /api/admin/fixtures/status
