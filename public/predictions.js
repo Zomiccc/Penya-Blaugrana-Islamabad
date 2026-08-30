@@ -198,6 +198,13 @@
 
     const closed = data.deadline && new Date(data.deadline) <= new Date();
 
+    // Title: "Match Week N" — uses the matchday of the first fixture in the window.
+    const weekTitle = $('weekTitle');
+    if (weekTitle) {
+      const md = fixtures[0].matchday;
+      weekTitle.textContent = Number.isInteger(md) ? `Match Week ${md}` : 'Match Week';
+    }
+
     list.innerHTML = fixtures.map((f) => {
       const disabled = f.locked || closed ? 'disabled' : '';
       const home = f.myPrediction ? f.myPrediction.homeGoals : '';
@@ -251,8 +258,10 @@
 
       const home = homeEl.value.trim();
       const away = awayEl.value.trim();
+      // Skip empty rows — members can predict anywhere from 1 to all matches.
+      if (home === '' && away === '') continue;
       if (home === '' || away === '') {
-        return flash(msg, 'Fill in a score for every open match before submitting.');
+        return flash(msg, 'Fill in both scores for each match you want to predict, or leave both blank.');
       }
       const h = Number(home);
       const a = Number(away);
@@ -262,7 +271,7 @@
       payload.push({ fixtureId: row.dataset.fixtureId, homeGoals: h, awayGoals: a });
     }
 
-    if (!payload.length) return flash(msg, 'Nothing new to submit — your predictions are already locked in.');
+    if (!payload.length) return flash(msg, 'Enter at least one score before submitting.');
 
     const summary = payload.length === 1 ? 'this prediction' : `these ${payload.length} predictions`;
     if (!confirm(`Submit ${summary}?\n\nOnce submitted they are permanent — they cannot be edited or deleted by anyone, including admins.`)) {

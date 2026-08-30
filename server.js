@@ -144,7 +144,7 @@ function requireMember(req, res, next) {
     return res.status(401).json({ error: 'Membership not found' });
   }
   if (member.status !== 'paid') {
-    return res.status(403).json({ error: 'Only paid members can access the Predictor League' });
+    return res.status(403).json({ error: 'Only paid members can access the Match Predictions' });
   }
   req.member = member;
   next();
@@ -452,7 +452,7 @@ app.get('/api/admin/dashboard-stats', requireAdmin, (req, res) => {
 });
 
 /* ==========================================================================
-   MEMBER AUTH (Predictor League)
+   MEMBER AUTH (Match Predictions)
    Paid members set a password using a 6-digit code emailed to the address on
    their membership record. That email round-trip is what proves ownership —
    without it, anyone knowing a member's email could claim their account.
@@ -592,7 +592,7 @@ app.get('/api/member/me', requireMember, (req, res) => {
 });
 
 /* ==========================================================================
-   PREDICTOR LEAGUE
+   Match Predictions
    Rules live in lib/predictor.js. Two guarantees are enforced here:
 
    - IMMUTABILITY: the only write path refuses to touch an existing prediction.
@@ -625,6 +625,7 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
         utcDate: m.utcDate,
         competition: m.competition,
         competitionEmblem: m.competitionEmblem,
+        matchday: m.matchday ?? null,
         homeTeam: m.homeTeam,
         homeCrest: m.homeCrest,
         awayTeam: m.awayTeam,

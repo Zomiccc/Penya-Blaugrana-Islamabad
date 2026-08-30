@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Predictor League | Penya Blaugrana Islamabad</title>
-<meta name="description" content="The Penya Blaugrana Islamabad Predictor League — predict every Barça scoreline and climb the members' league table.">
+<title>Match Predictions | Penya Blaugrana Islamabad</title>
+<meta name="description" content="The Penya Blaugrana Islamabad Match Predictions — predict every Barça scoreline and climb the members' league table.">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="animations.css">
 <style>
@@ -92,12 +92,12 @@
   }
   .score-input{display:flex;align-items:center;gap:8px}
   .score-input input{
-    width:56px;background:rgba(0,0,0,.5);border:1px solid var(--line);color:var(--chalk);
+    width:56px;background:rgba(0,0,0,.5);border:1px solid var(--gold);color:var(--chalk);
     padding:10px 6px;border-radius:2px;text-align:center;
     font-family:var(--display);font-size:1.25rem;font-weight:700;
   }
-  .score-input input:focus{outline:none;border-color:var(--gold)}
-  .score-input input:disabled{opacity:.75;cursor:not-allowed;border-color:rgba(237,187,0,.35);color:var(--gold)}
+  .score-input input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+  .score-input input:disabled{opacity:.85;cursor:not-allowed;border-color:var(--gold);color:var(--gold)}
   .score-input .dash{color:var(--muted);font-family:var(--mono)}
   .pred-when{
     font-family:var(--mono);font-size:.62rem;color:var(--muted-lt);text-align:right;
@@ -220,7 +220,7 @@
       <a href="about.html">About us</a>
       <a href="join.html">Join us</a>
       <a href="fixtures.html">Fixtures</a>
-      <a href="predictions.html" class="active">Predictor</a>
+      <a href="predictions.html" class="active">Match Predictions</a>
       <a href="media.html">Media</a>
       <a href="statutes.html">Statutes</a>
       <a href="contact.html">Contact</a>
@@ -236,8 +236,8 @@
   <div class="tifo" aria-hidden="true"></div>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="container">
-    <h1>Predictor <em>League</em></h1>
-    <p>Call every Barça scoreline before kickoff and climb the members' table. Members only — and once you submit, your picks are sealed.</p>
+    <h1>Match <em>Predictions</em></h1>
+    <p>Make your match predictions here. Once you submit, your picks are locked and cannot be changed.</p>
   </div>
 </section>
 
@@ -248,7 +248,8 @@
     <div class="gate" id="gate" hidden>
       <div class="gate-card">
         <h2>Members only</h2>
-        <p class="lede">The Predictor League is open to paid members of Penya Blaugrana Islamabad.</p>
+        <p class="lede">Match Predictions is open to paid members of Penya Blaugrana Islamabad.</p>
+
 
         <div class="gate-tabs">
           <button class="gate-tab active" type="button" data-tab="login">Log in</button>
@@ -269,8 +270,7 @@
           </div>
           <button class="btn gold" type="submit"><span>Log in</span></button>
           <p class="gate-hint">
-            First time here, or forgotten your password?
-            <a data-tab-link="setup">Set a password</a> with a code emailed to you.
+            <a data-tab-link="setup">Set a password</a> with a code emailed to you. Not a member yet? <a href="join.html">Become a member</a>.
           </p>
         </form>
 
@@ -286,7 +286,7 @@
             <input type="text" id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
           </div>
           <div class="field">
-            <label for="setupPassword">Choose a password (min 8 characters)</label>
+            <label for="setupPassword">Set a password (min 8 characters)</label>
             <input type="password" id="setupPassword" autocomplete="new-password" minlength="8">
           </div>
           <button class="btn gold" type="submit"><span>Set password &amp; log in</span></button>
@@ -309,7 +309,7 @@
         <div>
           <div class="panel" style="margin-bottom:26px">
             <div class="panel-head">
-              <h3>This week's fixtures</h3>
+              <h3 id="weekTitle">Match Week</h3>
               <div class="deadline-row" id="deadlineRow" hidden>
                 <span class="deadline-label">Predictions close in</span>
                 <div class="clock" id="deadlineClock"></div>
@@ -318,9 +318,7 @@
             <div class="lock-note">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.5 3.8 10.3 9 11.5 5.2-1.2 9-6 9-11.5V5l-9-4Zm0 6a2.5 2.5 0 0 1 2.5 2.5V11h.5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h.5V9.5A2.5 2.5 0 0 1 12 7Zm0 1.5a1 1 0 0 0-1 1V11h2V9.5a1 1 0 0 0-1-1Z"/></svg>
               <span>
-                Predictions lock when the first match of the set kicks off. Once you submit, your picks
-                are permanent — nobody can change them, not even an admin. Other members' picks stay
-                hidden until each match kicks off.
+                Predictions lock when the first match of the week kicks off. Once you submit your predictions they are permanently locked and cannot be changed. Other members' predictions are hidden until the first match of the week kicks off.
               </span>
             </div>
             <div class="panel-body">
@@ -409,7 +407,7 @@
           <li><a href="about.html">About us</a></li>
           <li><a href="join.html">Join us</a></li>
           <li><a href="fixtures.html">Fixtures</a></li>
-          <li><a href="predictions.html">Predictor League</a></li>
+          <li><a href="predictions.html">Match Predictions</a></li>
           <li><a href="media.html">Media</a></li>
           <li><a href="statutes.html">Statutes</a></li>
           <li><a href="contact.html">Contact us</a></li>
