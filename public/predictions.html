@@ -90,7 +90,7 @@
     font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;
     color:var(--chalk);line-height:1.3;
   }
-  .score-input{display:flex;align-items:center;gap:8px}
+  .score-input{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
   .score-input input{
     width:56px;background:rgba(0,0,0,.5);border:1px solid var(--gold);color:var(--chalk);
     padding:10px 6px;border-radius:2px;text-align:center;
@@ -205,9 +205,9 @@
     .lock-note{margin:0 16px 18px}
     .pred-row{grid-template-columns:1fr auto;gap:10px 12px;padding:14px 0}
     .pred-team.away{flex-direction:row;text-align:left}
-    .score-input{grid-column:2;grid-row:1/3;flex-direction:column}
+    .score-input{grid-column:2;grid-row:1/3;flex-direction:row;flex-wrap:nowrap;white-space:nowrap}
     .pred-when{grid-column:1/-1;text-align:left;min-width:0}
-    .score-input input{width:50px}
+    .score-input input{width:46px;flex-shrink:0}
     .gate-card{padding:30px 20px}
   }
 </style>
