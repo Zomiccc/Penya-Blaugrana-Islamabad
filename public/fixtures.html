@@ -310,7 +310,7 @@
      Native overflow scrolling does the swiping (touch + trackpad); the arrows
      are a desktop convenience. Cards keep chronological order, oldest first.
      ========================================================================== */
-  .results-block{margin-top:70px}
+  .results-block{margin-top:0;margin-bottom:36px}
   .results-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
   .results-head h3{margin:0;font-size:clamp(1.5rem,2.6vw,2.05rem)}
   .rail-nav{display:flex;gap:8px;margin-left:auto}
@@ -345,7 +345,7 @@
     flex:0 0 330px;width:330px;scroll-snap-align:start;
   }
   @media(max-width:600px){
-    .results-block{margin-top:54px}
+    .results-block{margin-top:0;margin-bottom:28px}
     .rail-nav{display:none} /* touch devices just swipe */
     .results-rail{gap:14px}
     .results-rail > .fixture-card{flex-basis:82%;width:82%}
@@ -391,11 +391,6 @@
   <div class="container">
     <h2 style="max-width:16ch">Barça matches</h2>
 
-    <!-- Upcoming fixtures — unchanged responsive grid -->
-    <div class="fixtures-grid" id="fixturesList">
-      <p class="loading-msg">Loading fixtures…</p>
-    </div>
-
     <!-- Results — horizontal swipeable rail, earliest match first -->
     <section class="results-block" id="resultsBlock" hidden>
       <div class="results-head">
@@ -408,6 +403,11 @@
       <p class="results-hint">Oldest first — swipe or drag to see later results</p>
       <div class="results-rail" id="resultsRail"></div>
     </section>
+
+    <!-- Upcoming fixtures — responsive grid -->
+    <div class="fixtures-grid" id="fixturesList">
+      <p class="loading-msg">Loading fixtures…</p>
+    </div>
   </div>
 </section>
 
