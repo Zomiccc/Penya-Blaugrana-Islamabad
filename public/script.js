@@ -496,6 +496,22 @@ function initResultsRail(blockEl, railEl) {
   sync();
 }
 
+/* Short competition tag: "Primera Division" -> "LALIGA", etc.
+   Falls back to the competitionCode or the first word of the name. */
+function competitionTag(m) {
+  const name = (m.competition || "").toLowerCase();
+  const code = m.competitionCode || "";
+  if (name.includes("primera") || name.includes("liga") || code === "PD") return "LALIGA";
+  if (name.includes("champions") || code === "CL") return "UCL";
+  if (name.includes("europa") || code === "EL") return "UEL";
+  if (name.includes("conference") || code === "ECL") return "UECL";
+  if (name.includes("super") || code === "SC") return "SUPERCUP";
+  if (name.includes("club world") || code === "CWC") return "CWC";
+  if (name.includes("copa") || name.includes("rey") || code === "CDR") return "COPA";
+  if (code) return code;
+  return (m.competition || "MATCH").split(" ")[0].toUpperCase();
+}
+
 function fixtureCardHTML(m) {
   const kickoff = toDate(m);
   const isHome = m.isHome;
@@ -530,6 +546,8 @@ function fixtureCardHTML(m) {
         </span>
 
       </div>
+
+      <span class="fixture-tag">${competitionTag(m)}</span>
 
       <div class="teams">
 
