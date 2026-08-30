@@ -270,6 +270,94 @@
     }
   ],
   "mediaPosts": [],
-  "predictions": [],
-  "memberAuthCodes": []
+  "predictions": [
+    {
+      "id": "0802b5cc-a3b0-4231-a2ac-a3c24bdd2667",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564657,
+      "homeGoals": 1,
+      "awayGoals": 2,
+      "createdAt": "2026-08-30T19:42:57.291Z"
+    },
+    {
+      "id": "bc5cb055-16d5-41cd-8227-0a185738ea50",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564650,
+      "homeGoals": 2,
+      "awayGoals": 0,
+      "createdAt": "2026-08-30T19:42:57.291Z"
+    },
+    {
+      "id": "b7740480-38b9-47f6-8098-6927bdc5c56d",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564682,
+      "homeGoals": 3,
+      "awayGoals": 1,
+      "createdAt": "2026-08-30T19:42:57.291Z"
+    },
+    {
+      "id": "ec8f424c-95fb-4bb2-bd21-e0c666b72c0b",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564667,
+      "homeGoals": 0,
+      "awayGoals": 2,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "89340e93-4f6f-4757-8e20-e3bfceaa5d8b",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564663,
+      "homeGoals": 1,
+      "awayGoals": 0,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "548c6c94-5c99-4b34-9035-b0406142851f",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564660,
+      "homeGoals": 2,
+      "awayGoals": 1,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "b7ee31d0-4323-41ec-a920-d466afa448b9",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564662,
+      "homeGoals": 3,
+      "awayGoals": 2,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "39d0a91a-b850-46ea-b38c-f154f89f2cb8",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564659,
+      "homeGoals": 0,
+      "awayGoals": 0,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "ff26bd1e-4334-41b8-b3ff-f20ace91ab9e",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564664,
+      "homeGoals": 1,
+      "awayGoals": 1,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    },
+    {
+      "id": "34dd4984-4d41-4a85-a046-9b78829f33ac",
+      "memberId": "8a8c96cf-1c43-4e2c-bb2d-1a2a702c3d78",
+      "fixtureId": 564666,
+      "homeGoals": 2,
+      "awayGoals": 2,
+      "createdAt": "2026-08-30T19:42:57.292Z"
+    }
+  ],
+  "memberAuthCodes": [
+    {
+      "memberId": "96745360-2876-4931-9c89-c7f8a676ed18",
+      "codeHash": "$2a$10$2ubAPQPHCv54AC9d0SrPqOr9sq1hmd5kEjLQMvif6AfdIjHjm/H2q",
+      "expiresAt": "2026-08-30T20:33:02.625Z",
+      "used": false
+    }
+  ]
 }
