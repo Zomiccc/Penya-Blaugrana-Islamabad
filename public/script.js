@@ -429,14 +429,15 @@ async function initFixturesPage(listEl) {
       ? upcoming.map((match) => fixtureCardHTML(match)).join("")
       : '<p class="loading-msg">No upcoming fixtures scheduled right now.</p>';
 
-    // ---- Results rail (latest first, older matches to the left) ----
+    // ---- Results rail (oldest on left, latest on far right; starts
+    //      scrolled to the end so the latest result is shown first) ----
     const railEl = document.getElementById("resultsRail");
     const blockEl = document.getElementById("resultsBlock");
     if (railEl && blockEl) {
       if (results.length) {
-        // Sort latest first so the most recent result is the first card visible.
+        // Chronological: oldest first (left), latest last (right).
         const sorted = [...results].sort(
-          (a, b) => new Date(b.utcDate) - new Date(a.utcDate)
+          (a, b) => new Date(a.utcDate) - new Date(b.utcDate)
         );
         blockEl.hidden = false;
         railEl.innerHTML = sorted.map((match) => fixtureCardHTML(match)).join("");
@@ -495,8 +496,9 @@ function initResultsRail(blockEl, railEl) {
   railEl.addEventListener("scroll", sync, { passive: true });
   window.addEventListener("resize", sync);
 
-  // Start at the latest result (leftmost = most recent) and set arrow states.
-  railEl.scrollLeft = 0;
+  // Start at the far right (latest result) so the most recent match
+  // is visible on load. Swipe/scroll left to see older matches.
+  railEl.scrollLeft = railEl.scrollWidth;
   sync();
 }
 
