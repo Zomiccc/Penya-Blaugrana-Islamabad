@@ -427,25 +427,6 @@ app.delete('/api/admin/members/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
-// TEMP: admin-set member password (for testing when email quota is exhausted).
-// TODO: remove this endpoint once email is working again.
-app.post('/api/admin/members/set-password', requireAdmin, async (req, res) => {
-  const email = normalizeEmail(req.body?.email);
-  const password = String(req.body?.password || '');
-  if (!email || !password || password.length < 6) {
-    return res.status(400).json({ error: 'email and password (min 6 chars) are required' });
-  }
-  const hash = await bcrypt.hash(password, 10);
-  const member = await writeDb((db) => {
-    const m = db.members.find((x) => normalizeEmail(x.email) === email && x.status === 'paid');
-    if (!m) return null;
-    m.passwordHash = hash;
-    return db;
-  });
-  if (!member) return res.status(404).json({ error: 'No paid member with that email' });
-  res.json({ ok: true, email });
-});
-
 app.get('/api/admin/members/export.csv', requireAdmin, (req, res) => {
   const db = readDb();
   const cols = ['id', 'firstName', 'lastName', 'email', 'contactNumber', 'country',
