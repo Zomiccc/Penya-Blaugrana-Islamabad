@@ -57,6 +57,22 @@
     return `<img src="${escapeHtml(src)}" alt="" loading="lazy">`;
   }
 
+  function compTag(f) {
+    const name = (f.competition || '').toLowerCase();
+    const code = f.competitionCode || '';
+    let tag;
+    if (name.includes('primera') || name.includes('liga') || code === 'PD') tag = 'LALIGA';
+    else if (name.includes('champions') || code === 'CL') tag = 'UCL';
+    else if (name.includes('europa') || code === 'EL') tag = 'UEL';
+    else if (name.includes('conference') || code === 'ECL') tag = 'UECL';
+    else if (name.includes('super') || code === 'SC') tag = 'SUPERCUP';
+    else if (name.includes('club world') || code === 'CWC') tag = 'CWC';
+    else if (name.includes('copa') || name.includes('rey') || code === 'CDR') tag = 'COPA';
+    else if (code) tag = code;
+    else tag = (f.competition || 'MATCH').split(' ')[0].toUpperCase();
+    return `<span class="pred-comp-tag">${escapeHtml(tag)}</span>`;
+  }
+
   /* ---------------------------- gate (auth) ---------------------------- */
   function showTab(tab) {
     document.querySelectorAll('.gate-tab').forEach((b) => {
@@ -229,6 +245,7 @@
             <span>${escapeHtml(f.awayTeam)}</span>
           </div>
           <div class="pred-when">
+            ${compTag(f)}
             ${escapeHtml(fmtKickoff(f.utcDate))}
             ${f.locked ? '<span class="pred-locked-tag">Locked</span>' : ''}
           </div>

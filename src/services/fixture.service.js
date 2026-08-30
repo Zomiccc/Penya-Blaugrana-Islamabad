@@ -452,7 +452,7 @@ async function syncFixtures() {
         `/teams/${BARCA_TEAM_ID}/matches?limit=100`
       );
 
-    const allMatches =
+    const barcaMatches =
       (matchesData.matches || []).filter(
         (match) => {
           const homeTeamId =
@@ -471,11 +471,56 @@ async function syncFixtures() {
       );
 
     /*
-     * 3. Normalize all matches (competition info is embedded per match).
+     * 2b. Fetch ALL matches from each competition Barça is in
+     *     (not just Barça's) so the predictor can cover every match
+     *     in the gameweek. We use each competition's current season
+     *     and a date window from now to ~4 months ahead.
+     */
+    const now = new Date();
+    const dateFrom = now.toISOString().slice(0, 10);
+    const dateTo = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const competitions = (barcaTeam.runningCompetitions || []);
+    const allCompMatches = [];
+
+    for (const comp of competitions) {
+      if (!comp.code) continue;
+      try {
+        // Get the competition's current season start year
+        const compData = await footballDataFetch(
+          `/competitions/${encodeURIComponent(comp.code)}`
+        );
+        const seasonYear = compData?.currentSeason?.startDate
+          ? Number(String(compData.currentSeason.startDate).slice(0, 4))
+          : null;
+
+        let url = `/competitions/${encodeURIComponent(comp.code)}/matches`;
+        const params = [];
+        if (seasonYear) params.push(`season=${seasonYear}`);
+        params.push(`dateFrom=${dateFrom}`);
+        params.push(`dateTo=${dateTo}`);
+        url += `?${params.join("&")}`;
+
+        const compMatchesData = await footballDataFetch(url);
+        const compMatches = (compMatchesData.matches || []).filter((m) => {
+          const hid = Number(m.homeTeam?.id);
+          const aid = Number(m.awayTeam?.id);
+          // Skip Barça matches — already fetched above
+          return hid !== Number(BARCA_TEAM_ID) && aid !== Number(BARCA_TEAM_ID);
+        });
+        allCompMatches.push(...compMatches);
+        console.log(`[fixtures] fetched ${compMatches.length} non-Barça matches from ${comp.code} (season ${seasonYear})`);
+      } catch (err) {
+        console.warn(`[fixtures] could not fetch all matches for ${comp.code} (non-fatal):`, err.message);
+      }
+    }
+
+    /*
+     * 3. Normalize all matches (Barça + other competitions).
      */
     const matches =
       normalizeMatches(
-        allMatches
+        [...barcaMatches, ...allCompMatches]
       );
 
     /*

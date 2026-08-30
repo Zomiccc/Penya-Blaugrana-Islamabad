@@ -22,12 +22,17 @@ function buildFixturesRouter(requireAdmin) {
 
   /**
    * GET /api/fixtures
-   * Public — returns the cached fixture list only.
+   * Public — returns the cached fixture list (Barça matches only).
+   * Other matches are stored in the cache for the predictor but not shown
+   * on the public fixtures page.
    * Never touches Football-Data.org.
    */
   router.get("/api/fixtures", (req, res) => {
     const data = getCachedFixtures();
-    res.json(data);
+    res.json({
+      ...data,
+      matches: (data.matches || []).filter((m) => m.isBarcaMatch),
+    });
   });
 
   /**
@@ -41,6 +46,7 @@ function buildFixturesRouter(requireAdmin) {
     const upcoming = (data.matches || [])
       .filter(
         (m) =>
+          m.isBarcaMatch &&
           new Date(m.utcDate) > now &&
           !["FINISHED", "POSTPONED", "CANCELLED"].includes(m.status),
       )

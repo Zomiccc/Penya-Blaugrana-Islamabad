@@ -624,6 +624,7 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
         id: m.id,
         utcDate: m.utcDate,
         competition: m.competition,
+        competitionCode: m.competitionCode ?? null,
         competitionEmblem: m.competitionEmblem,
         matchday: m.matchday ?? null,
         homeTeam: m.homeTeam,
