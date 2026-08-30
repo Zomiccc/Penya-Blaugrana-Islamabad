@@ -475,6 +475,9 @@ async function syncFixtures() {
      *     (not just Barça's) so the predictor can cover every match
      *     in the gameweek. We use each competition's current season
      *     and a date window from now to ~4 months ahead.
+     *
+     *     If the API is rate-limited, we keep the existing non-Barça
+     *     matches from the cache so the predictor still has them.
      */
     const now = new Date();
     const dateFrom = now.toISOString().slice(0, 10);
@@ -482,6 +485,7 @@ async function syncFixtures() {
 
     const competitions = (barcaTeam.runningCompetitions || []);
     const allCompMatches = [];
+    let nonBarcaFetchFailed = false;
 
     for (const comp of competitions) {
       if (!comp.code) continue;
@@ -511,17 +515,43 @@ async function syncFixtures() {
         allCompMatches.push(...compMatches);
         console.log(`[fixtures] fetched ${compMatches.length} non-Barça matches from ${comp.code} (season ${seasonYear})`);
       } catch (err) {
+        nonBarcaFetchFailed = true;
         console.warn(`[fixtures] could not fetch all matches for ${comp.code} (non-fatal):`, err.message);
+      }
+    }
+
+    /*
+     * If the non-Barça fetch was rate-limited, keep the existing non-Barça
+     * matches from the cache so the predictor still has all matches.
+     */
+    let finalRawMatches = [...barcaMatches, ...allCompMatches];
+    if (nonBarcaFetchFailed) {
+      const existingNonBarca = (cache.matches || []).filter((m) => !m.isBarcaMatch);
+      if (existingNonBarca.length) {
+        console.log(`[fixtures] keeping ${existingNonBarca.length} existing non-Barça matches from cache`);
+        // Merge: use existing non-Barça + fresh Barça matches (dedup by id)
+        const barcaIds = new Set(barcaMatches.map((m) => m.id));
+        // Convert existing normalized matches back to a form normalizeMatches can handle
+        // Actually they're already normalized — just use them directly
+        finalRawMatches = null; // signal to use merge path
       }
     }
 
     /*
      * 3. Normalize all matches (Barça + other competitions).
      */
-    const matches =
-      normalizeMatches(
-        [...barcaMatches, ...allCompMatches]
-      );
+    let matches;
+    if (finalRawMatches === null) {
+      // Merge path: fresh Barça matches (normalized) + existing non-Barça from cache
+      const freshBarca = normalizeMatches(barcaMatches);
+      const existingNonBarca = (cache.matches || []).filter((m) => !m.isBarcaMatch);
+      // Dedup by id (prefer fresh Barça data)
+      const freshIds = new Set(freshBarca.map((m) => m.id));
+      const kept = existingNonBarca.filter((m) => !freshIds.has(m.id));
+      matches = [...freshBarca, ...kept];
+    } else {
+      matches = normalizeMatches(finalRawMatches);
+    }
 
     /*
      * 4. Update the cache competition field from the league
