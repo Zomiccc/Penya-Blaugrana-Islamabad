@@ -26,7 +26,8 @@
       "stripeSessionId": null,
       "createdAt": "2026-08-01T18:44:46.438Z",
       "paidAt": "2026-08-01T19:17:38.590Z",
-      "manualOverride": true
+      "manualOverride": true,
+      "passwordHash": "$2a$10$EhlFvCZVv0zxXghp2Kxba.MhbhBhuW63DyfQsfdXjn5gJLpS4Bkfu"
     },
     {
       "id": "d5c0baf7-7c33-49dc-b182-366b6a19e947",
