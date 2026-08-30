@@ -426,7 +426,7 @@ async function syncFixtures() {
 
   try {
     /*
-     * 1. Load Barcelona.
+     * 1. Load Barcelona (gives us the home venue + running competitions).
      */
     const barcaTeam =
       await fetchBarcaTeam();
@@ -443,7 +443,44 @@ async function syncFixtures() {
     }
 
     /*
-     * 2. Find Barcelona's current league.
+     * 2. Fetch ALL Barcelona matches across every competition
+     *    (La Liga, Champions League, Copa del Rey, Supercopa, etc.)
+     *    in a single API call.
+     */
+    const matchesData =
+      await footballDataFetch(
+        `/teams/${BARCA_TEAM_ID}/matches?limit=100`
+      );
+
+    const allMatches =
+      (matchesData.matches || []).filter(
+        (match) => {
+          const homeTeamId =
+            Number(match.homeTeam?.id);
+
+          const awayTeamId =
+            Number(match.awayTeam?.id);
+
+          return (
+            homeTeamId ===
+              Number(BARCA_TEAM_ID) ||
+            awayTeamId ===
+              Number(BARCA_TEAM_ID)
+          );
+        }
+      );
+
+    /*
+     * 3. Normalize all matches (competition info is embedded per match).
+     */
+    const matches =
+      normalizeMatches(
+        allMatches
+      );
+
+    /*
+     * 4. Update the cache competition field from the league
+     *    (for backwards compat with admin dashboard).
      */
     const league =
       Array.isArray(
@@ -458,148 +495,71 @@ async function syncFixtures() {
           )
         : null;
 
-    if (!league?.code) {
-      throw new Error(
-        "Could not determine Barcelona's current league competition."
-      );
+    if (league?.code) {
+      try {
+        const competitionData =
+          await footballDataFetch(
+            `/competitions/${encodeURIComponent(
+              league.code
+            )}`
+          );
+
+        const currentSeason =
+          competitionData?.currentSeason;
+
+        if (currentSeason?.startDate) {
+          cache.competition = {
+            id:
+              competitionData.id ??
+              league.id ??
+              null,
+
+            code:
+              competitionData.code ||
+              league.code,
+
+            name:
+              competitionData.name ||
+              league.name ||
+              "League",
+
+            type:
+              competitionData.type ||
+              league.type ||
+              "LEAGUE",
+
+            emblem:
+              competitionData.emblem ||
+              league.emblem ||
+              null,
+
+            season: {
+              id:
+                currentSeason.id ??
+                null,
+
+              startDate:
+                currentSeason.startDate,
+
+              endDate:
+                currentSeason.endDate,
+
+              currentMatchday:
+                currentSeason.currentMatchday ??
+                null,
+            },
+          };
+        }
+      } catch (err) {
+        console.warn(
+          "[fixtures] could not fetch league competition details (non-fatal):",
+          err.message
+        );
+      }
     }
 
     /*
-     * 3. Fetch the competition itself.
-     */
-    const competitionData =
-      await footballDataFetch(
-        `/competitions/${encodeURIComponent(
-          league.code
-        )}`
-      );
-
-    /*
-     * 4. Read its current season.
-     */
-    const currentSeason =
-      competitionData?.currentSeason;
-
-    if (!currentSeason?.startDate) {
-      throw new Error(
-        `Could not determine current season for ${league.code}.`
-      );
-    }
-
-    const seasonYear =
-      Number(
-        String(
-          currentSeason.startDate
-        ).slice(0, 4)
-      );
-
-    if (
-      !Number.isInteger(
-        seasonYear
-      )
-    ) {
-      throw new Error(
-        `Invalid season start date: ${currentSeason.startDate}`
-      );
-    }
-
-    /*
-     * 5. Save competition + season.
-     */
-    cache.competition = {
-      id:
-        competitionData.id ??
-        league.id ??
-        null,
-
-      code:
-        competitionData.code ||
-        league.code,
-
-      name:
-        competitionData.name ||
-        league.name ||
-        "League",
-
-      type:
-        competitionData.type ||
-        league.type ||
-        "LEAGUE",
-
-      emblem:
-        competitionData.emblem ||
-        league.emblem ||
-        null,
-
-      season: {
-        id:
-          currentSeason.id ??
-          null,
-
-        startDate:
-          currentSeason.startDate,
-
-        endDate:
-          currentSeason.endDate,
-
-        currentMatchday:
-          currentSeason.currentMatchday ??
-          null,
-      },
-    };
-
-    /*
-     * 6. Fetch ALL matches for the
-     * current league season.
-     */
-    const matchesData =
-  await footballDataFetch(
-    `/competitions/${encodeURIComponent(
-      league.code
-    )}/matches?season=${seasonYear}`
-  );
-
-/*
- * The competition endpoint returns every match
- * in the league.
- *
- * We only want matches involving Barcelona.
- */
-const barcaMatches =
-  (matchesData.matches || []).filter(
-    (match) => {
-      const homeTeamId =
-        Number(match.homeTeam?.id);
-
-      const awayTeamId =
-        Number(match.awayTeam?.id);
-
-      return (
-        homeTeamId ===
-          Number(BARCA_TEAM_ID) ||
-        awayTeamId ===
-          Number(BARCA_TEAM_ID)
-      );
-    }
-  );
-
-/*
- * Debug information.
- */
-
-
-/*
- * Normalize ONLY Barcelona's matches.
- */
-const matches =
-  normalizeMatches(
-    barcaMatches
-  );
-
-
-    /*
-     * 8. Venue resolution.
-     * Keep the version from the previous fix here.
+     * 5. Venue resolution for away matches missing a venue.
      */
 
     const teamIdsNeedingVenue = [
@@ -690,7 +650,7 @@ const matches =
     writeCache(cache);
 
     console.log(
-      `[fixtures] synced ${cache.matches.length} ${competitionData.name} matches for season ${seasonYear}`
+      `[fixtures] synced ${cache.matches.length} Barcelona matches across all competitions`
     );
 
     return cache;
