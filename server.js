@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
-const { readDb, writeDb } = require('./lib/db');
+const { readDb, writeDb, initDb } = require('./lib/db');
 const { sendJoinConfirmation, sendPaymentReceipt, sendMemberAuthCode } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
 const { startFixtureSync } = require('./src/jobs/fixtureSync.job');
@@ -851,8 +851,19 @@ app.use((req, res) => res.status(404).sendFile(path.join(PUBLIC_DIR, '404.html')
   if (err) res.status(404).send('Not found');
 }));
 
-app.listen(PORT, () => {
-  console.log(`Penya Blaugrana Islamabad server running on http://localhost:${PORT}`);
-  // Start the fixture sync scheduler (fires an immediate sync at boot).
-  startFixtureSync();
+async function start() {
+  // Initialize the database (PostgreSQL in production, JSON file locally).
+  // Must happen before any route that calls readDb()/writeDb().
+  await initDb();
+
+  app.listen(PORT, () => {
+    console.log(`Penya Blaugrana Islamabad server running on http://localhost:${PORT}`);
+    // Start the fixture sync scheduler (fires an immediate sync at boot).
+    startFixtureSync();
+  });
+}
+
+start().catch((err) => {
+  console.error('[fatal] Failed to start server:', err);
+  process.exit(1);
 });
