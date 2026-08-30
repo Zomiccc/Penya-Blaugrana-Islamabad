@@ -141,6 +141,8 @@ strong,b{font-weight:700}
 .btn.blue{--btn-bg:var(--blau);--btn-line:var(--blau);--btn-wipe:var(--grana)}
 .btn.gold{--btn-bg:var(--gold);--btn-fg:var(--ink);--btn-line:var(--gold);--btn-wipe:var(--grana)}
 .btn.gold:hover{color:#fff}
+.btn.grana{--btn-bg:var(--grana);--btn-fg:#fff;--btn-line:var(--grana);--btn-wipe:var(--blau)}
+.btn:disabled{opacity:.55;cursor:not-allowed;pointer-events:none}
 /* on the paper sections a ghost button needs dark ink, not chalk */
 .section-alt .btn.alt{--btn-fg:var(--ink);--btn-line:rgba(4,6,15,.35)}
 

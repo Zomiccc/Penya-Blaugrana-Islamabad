@@ -28,6 +28,7 @@ login.json
 *.zip
 *.tar
 *.gz
+*.session-backup
 public/wp-content/wp-content/ai1wm-backups/
 public/wp-content/wp-content/updraft/
 public/wp-content/wp-content/wpvivid_staging/

@@ -8,9 +8,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
 const { readDb, writeDb } = require('./lib/db');
-const { sendJoinConfirmation, sendPaymentReceipt } = require('./lib/mailer');
+const { sendJoinConfirmation, sendPaymentReceipt, sendMemberAuthCode } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
 const { startFixtureSync } = require('./src/jobs/fixtureSync.job');
+const { getCachedFixtures } = require('./src/services/fixture.service');
+const predictor = require('./lib/predictor');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,6 +105,59 @@ function requireAdmin(req, res, next) {
 }
 function cookieOptions() {
   return { httpOnly: true, sameSite: 'lax', secure: IS_PROD, maxAge: 8 * 60 * 60 * 1000 };
+}
+
+// ---------------------------- Member auth helpers ----------------------------
+// Members are a separate audience from the admin: their session is a different
+// cookie with a different role claim, so an admin token can never be used as a
+// member token (or vice versa).
+const MEMBER_COOKIE = 'pbi_member_session';
+
+function signMemberSession(memberId) {
+  return jwt.sign({ memberId, role: 'member' }, JWT_SECRET, { expiresIn: '30d' });
+}
+function memberCookieOptions() {
+  return { httpOnly: true, sameSite: 'lax', secure: IS_PROD, maxAge: 30 * 24 * 60 * 60 * 1000 };
+}
+
+/**
+ * Guard for member-only routes. Re-reads the member on every request so that a
+ * membership that lapses (status flipped off 'paid') immediately loses access,
+ * even if they still hold a valid cookie.
+ */
+function requireMember(req, res, next) {
+  const token = req.cookies[MEMBER_COOKIE];
+  if (!token) return res.status(401).json({ error: 'Please log in to continue' });
+
+  let payload;
+  try {
+    payload = jwt.verify(token, JWT_SECRET);
+  } catch {
+    res.clearCookie(MEMBER_COOKIE);
+    return res.status(401).json({ error: 'Your session expired — please log in again' });
+  }
+  if (payload.role !== 'member') return res.status(401).json({ error: 'Not a member session' });
+
+  const member = readDb().members.find((m) => m.id === payload.memberId);
+  if (!member) {
+    res.clearCookie(MEMBER_COOKIE);
+    return res.status(401).json({ error: 'Membership not found' });
+  }
+  if (member.status !== 'paid') {
+    return res.status(403).json({ error: 'Only paid members can access the Predictor League' });
+  }
+  req.member = member;
+  next();
+}
+
+function publicMember(member) {
+  return {
+    id: member.id,
+    firstName: member.firstName,
+    lastName: member.lastName,
+    email: member.email,
+    membershipType: member.membershipType,
+  };
 }
 
 // ---------------------------- Fixtures (Football-Data.org, cached) ----------------------------
@@ -394,6 +449,366 @@ app.get('/api/admin/dashboard-stats', requireAdmin, (req, res) => {
   const kids = db.members.filter((m) => m.membershipType === 'kids').length;
   const revenue = db.members.filter((m) => m.status === 'paid').reduce((sum, m) => sum + (m.amount || 0), 0);
   res.json({ total, paid, pending, adults, kids, revenue, currency: db.pricing.currency });
+});
+
+/* ==========================================================================
+   MEMBER AUTH (Predictor League)
+   Paid members set a password using a 6-digit code emailed to the address on
+   their membership record. That email round-trip is what proves ownership —
+   without it, anyone knowing a member's email could claim their account.
+   ========================================================================== */
+const CODE_TTL_MINUTES = 15;
+const memberAuthAttempts = new Map(); // email -> {count, resetAt}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+function findPaidMemberByEmail(db, email) {
+  const needle = normalizeEmail(email);
+  return db.members.find((m) => normalizeEmail(m.email) === needle && m.status === 'paid');
+}
+function throttled(key, max = 8, windowMs = 15 * 60 * 1000) {
+  const now = Date.now();
+  const entry = memberAuthAttempts.get(key);
+  if (entry && entry.count >= max && now < entry.resetAt) return true;
+  memberAuthAttempts.set(key, {
+    count: entry && now < entry.resetAt ? entry.count + 1 : 1,
+    resetAt: entry && now < entry.resetAt ? entry.resetAt : now + windowMs,
+  });
+  return false;
+}
+
+// Ask for a code to set or reset a password.
+// Always answers 200 so this endpoint can't be used to discover which emails
+// belong to paid members.
+app.post('/api/member/request-code', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const genericOk = {
+    ok: true,
+    message: 'If that email belongs to a paid member, a 6-digit code is on its way.',
+  };
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+  if (throttled(`code:${email}`)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again in a few minutes.' });
+  }
+
+  const member = findPaidMemberByEmail(readDb(), email);
+  if (!member) return res.json(genericOk);
+
+  const code = String(crypto.randomInt(100000, 1000000));
+  const codeHash = await bcrypt.hash(code, 10);
+  const expiresAt = new Date(Date.now() + CODE_TTL_MINUTES * 60 * 1000).toISOString();
+
+  await writeDb((db) => {
+    // One live code per member: drop any previous ones plus anything expired.
+    db.memberAuthCodes = (db.memberAuthCodes || []).filter(
+      (c) => c.memberId !== member.id && new Date(c.expiresAt) > new Date(),
+    );
+    db.memberAuthCodes.push({ memberId: member.id, codeHash, expiresAt, used: false });
+    return db;
+  });
+
+  sendMemberAuthCode(member, code, CODE_TTL_MINUTES).catch((err) => {
+    console.error('[mailer] failed to send member auth code:', err.message);
+  });
+  res.json(genericOk);
+});
+
+// Redeem the code and set a password. Logs the member straight in.
+app.post('/api/member/set-password', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const code = String(req.body?.code || '').trim();
+  const password = String(req.body?.password || '');
+
+  if (!email || !code || !password) {
+    return res.status(400).json({ error: 'Email, code and new password are all required' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  if (throttled(`set:${email}`)) {
+    return res.status(429).json({ error: 'Too many attempts. Please try again in a few minutes.' });
+  }
+
+  const db = readDb();
+  const member = findPaidMemberByEmail(db, email);
+  const invalid = { error: 'That code is invalid or has expired. Please request a new one.' };
+  if (!member) return res.status(400).json(invalid);
+
+  const entry = (db.memberAuthCodes || []).find(
+    (c) => c.memberId === member.id && !c.used && new Date(c.expiresAt) > new Date(),
+  );
+  if (!entry) return res.status(400).json(invalid);
+  if (!(await bcrypt.compare(code, entry.codeHash))) return res.status(400).json(invalid);
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await writeDb((d) => {
+    const m = d.members.find((x) => x.id === member.id);
+    if (m) m.passwordHash = passwordHash;
+    // Codes are single-use: consume this one and sweep expired ones.
+    d.memberAuthCodes = (d.memberAuthCodes || []).filter(
+      (c) => c.memberId !== member.id && new Date(c.expiresAt) > new Date(),
+    );
+    return d;
+  });
+
+  memberAuthAttempts.delete(`set:${email}`);
+  res.cookie(MEMBER_COOKIE, signMemberSession(member.id), memberCookieOptions());
+  res.json({ ok: true, member: publicMember(member) });
+});
+
+app.post('/api/member/login', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || '');
+  if (!email || !password) return res.status(400).json({ error: 'Email and password are required' });
+  if (throttled(`login:${email}`)) {
+    return res.status(429).json({ error: 'Too many attempts. Please try again in a few minutes.' });
+  }
+
+  const member = findPaidMemberByEmail(readDb(), email);
+  // Same message either way so we don't leak which emails are paid members.
+  const invalid = { error: 'Incorrect email or password' };
+  if (!member) return res.status(401).json(invalid);
+  if (!member.passwordHash) {
+    return res.status(409).json({
+      error: 'No password set yet for this membership. Request a code to set one.',
+      needsPassword: true,
+    });
+  }
+  if (!(await bcrypt.compare(password, member.passwordHash))) return res.status(401).json(invalid);
+
+  memberAuthAttempts.delete(`login:${email}`);
+  res.cookie(MEMBER_COOKIE, signMemberSession(member.id), memberCookieOptions());
+  res.json({ ok: true, member: publicMember(member) });
+});
+
+app.post('/api/member/logout', (req, res) => {
+  res.clearCookie(MEMBER_COOKIE);
+  res.json({ ok: true });
+});
+
+app.get('/api/member/me', requireMember, (req, res) => {
+  res.json({ member: publicMember(req.member) });
+});
+
+/* ==========================================================================
+   PREDICTOR LEAGUE
+   Rules live in lib/predictor.js. Two guarantees are enforced here:
+
+   - IMMUTABILITY: the only write path refuses to touch an existing prediction.
+     There is deliberately no update or delete route anywhere in this app, for
+     members OR admin, so a stored prediction can never be altered.
+   - PRIVACY: other members' predictions are filtered out server-side until
+     that match has kicked off, so they are never sent to the browser early.
+   ========================================================================== */
+function fixtureMatches() {
+  return getCachedFixtures().matches || [];
+}
+
+// The prediction table: next 10 upcoming fixtures, the deadline, and the
+// member's own already-locked predictions.
+app.get('/api/predictions/window', requireMember, (req, res) => {
+  const matches = fixtureMatches();
+  const now = new Date();
+  const window = predictor.getPredictionWindow(matches, now);
+  const deadline = predictor.getDeadline(matches, now);
+  const mine = readDb().predictions.filter((p) => p.memberId === req.member.id);
+  const myByFixture = new Map(mine.map((p) => [String(p.fixtureId), p]));
+
+  res.json({
+    deadline: deadline ? deadline.toISOString() : null,
+    points: predictor.POINTS,
+    fixtures: window.map((m) => {
+      const existing = myByFixture.get(String(m.id));
+      return {
+        id: m.id,
+        utcDate: m.utcDate,
+        competition: m.competition,
+        competitionEmblem: m.competitionEmblem,
+        homeTeam: m.homeTeam,
+        homeCrest: m.homeCrest,
+        awayTeam: m.awayTeam,
+        awayCrest: m.awayCrest,
+        // A fixture is only editable if the member has no prediction for it yet.
+        locked: Boolean(existing),
+        myPrediction: existing
+          ? { homeGoals: existing.homeGoals, awayGoals: existing.awayGoals }
+          : null,
+      };
+    }),
+  });
+});
+
+// Submit predictions for the whole set at once. Append-only.
+app.post('/api/predictions', requireMember, async (req, res) => {
+  const submitted = Array.isArray(req.body?.predictions) ? req.body.predictions : null;
+  if (!submitted || !submitted.length) {
+    return res.status(400).json({ error: 'No predictions submitted' });
+  }
+
+  const matches = fixtureMatches();
+  const now = new Date();
+  const deadline = predictor.getDeadline(matches, now);
+  if (!deadline) {
+    return res.status(409).json({ error: 'There are no upcoming fixtures to predict right now.' });
+  }
+  if (now >= deadline) {
+    return res.status(409).json({
+      error: 'Predictions are closed — the first match of this set has already kicked off.',
+    });
+  }
+
+  const window = predictor.getPredictionWindow(matches, now);
+  const windowById = new Map(window.map((m) => [String(m.id), m]));
+  const existing = readDb().predictions;
+  const alreadyPredicted = new Set(
+    existing.filter((p) => p.memberId === req.member.id).map((p) => String(p.fixtureId)),
+  );
+
+  const toInsert = [];
+  const seen = new Set();
+  for (const row of submitted) {
+    const fixtureId = String(row?.fixtureId ?? '');
+    const homeGoals = Number(row?.homeGoals);
+    const awayGoals = Number(row?.awayGoals);
+
+    const match = windowById.get(fixtureId);
+    if (!match) {
+      return res.status(400).json({ error: 'One of those matches is not open for predictions.' });
+    }
+    if (seen.has(fixtureId)) {
+      return res.status(400).json({ error: 'Duplicate prediction for the same match.' });
+    }
+    seen.add(fixtureId);
+
+    // Immutability: never overwrite. Skip anything already locked in so a
+    // resubmission of the page can add the new fixtures without error.
+    if (alreadyPredicted.has(fixtureId)) continue;
+
+    for (const goals of [homeGoals, awayGoals]) {
+      if (!Number.isInteger(goals) || goals < 0 || goals > 20) {
+        return res.status(400).json({ error: 'Scores must be whole numbers between 0 and 20.' });
+      }
+    }
+    if (predictor.hasKickedOff(match, now)) {
+      return res.status(409).json({ error: `${match.homeTeam} v ${match.awayTeam} has already kicked off.` });
+    }
+
+    toInsert.push({
+      id: crypto.randomUUID(),
+      memberId: req.member.id,
+      fixtureId: match.id,
+      homeGoals,
+      awayGoals,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  if (!toInsert.length) {
+    return res.status(409).json({
+      error: 'Those predictions are already locked in and cannot be changed.',
+    });
+  }
+
+  await writeDb((db) => {
+    // Re-check inside the write lock so two concurrent submits can't both slip
+    // a prediction in for the same fixture.
+    const locked = new Set(
+      db.predictions.filter((p) => p.memberId === req.member.id).map((p) => String(p.fixtureId)),
+    );
+    for (const row of toInsert) {
+      if (!locked.has(String(row.fixtureId))) db.predictions.push(row);
+    }
+    return db;
+  });
+
+  res.json({ ok: true, saved: toInsert.length });
+});
+
+// The member's own predictions, with points once matches finish.
+app.get('/api/predictions/me', requireMember, (req, res) => {
+  const matches = fixtureMatches();
+  const matchById = new Map(matches.map((m) => [String(m.id), m]));
+  const mine = readDb()
+    .predictions.filter((p) => p.memberId === req.member.id)
+    .map((p) => {
+      const match = matchById.get(String(p.fixtureId));
+      const finished = predictor.hasFinalScore(match);
+      const points = finished ? predictor.scorePrediction(p, match) : null;
+      return {
+        fixtureId: p.fixtureId,
+        homeTeam: match?.homeTeam || 'Unknown',
+        awayTeam: match?.awayTeam || 'Unknown',
+        utcDate: match?.utcDate || null,
+        homeGoals: p.homeGoals,
+        awayGoals: p.awayGoals,
+        actual: finished ? { home: match.score.home, away: match.score.away } : null,
+        points,
+        outcome: points === null ? null : predictor.scoreLabel(points),
+        createdAt: p.createdAt,
+      };
+    })
+    .sort((a, b) => new Date(a.utcDate || 0) - new Date(b.utcDate || 0));
+
+  const total = mine.reduce((sum, p) => sum + (p.points || 0), 0);
+  res.json({ predictions: mine, totalPoints: total });
+});
+
+// Everyone's predictions — but ONLY for matches that have already kicked off.
+// The filter is here, server-side, so unstarted predictions never leave the box.
+app.get('/api/predictions/all', requireMember, (req, res) => {
+  const db = readDb();
+  const now = new Date();
+  const matches = fixtureMatches();
+  const matchById = new Map(matches.map((m) => [String(m.id), m]));
+  const nameById = new Map(
+    db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
+  );
+
+  const revealed = matches
+    .filter((m) => predictor.hasKickedOff(m, now))
+    .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))
+    .map((match) => {
+      const finished = predictor.hasFinalScore(match);
+      const rows = db.predictions
+        .filter((p) => String(p.fixtureId) === String(match.id))
+        .map((p) => {
+          const points = finished ? predictor.scorePrediction(p, match) : null;
+          return {
+            member: nameById.get(p.memberId) || 'Former member',
+            isMe: p.memberId === req.member.id,
+            homeGoals: p.homeGoals,
+            awayGoals: p.awayGoals,
+            points,
+            outcome: points === null ? null : predictor.scoreLabel(points),
+          };
+        })
+        .sort((a, b) => (b.points || 0) - (a.points || 0) || a.member.localeCompare(b.member));
+
+      return {
+        fixtureId: match.id,
+        utcDate: match.utcDate,
+        homeTeam: match.homeTeam,
+        homeCrest: match.homeCrest,
+        awayTeam: match.awayTeam,
+        awayCrest: match.awayCrest,
+        status: match.status,
+        actual: finished ? { home: match.score.home, away: match.score.away } : null,
+        predictions: rows,
+      };
+    })
+    .filter((m) => m.predictions.length);
+
+  res.json({ matches: revealed });
+});
+
+app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
+  const db = readDb();
+  const table = predictor.buildLeaderboard(db.predictions, db.members, fixtureMatches());
+  res.json({
+    leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
+    points: predictor.POINTS,
+  });
 });
 
 // ---------------------------- Static hosting ----------------------------

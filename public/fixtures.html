@@ -298,6 +298,52 @@
   }
   .fixtures-note{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:30px;text-align:center}
   @media(max-width:600px){.fixtures-grid{grid-template-columns:1fr}}
+
+  /* ==========================================================================
+     RESULTS RAIL — finished matches as a horizontal, swipeable carousel.
+     Native overflow scrolling does the swiping (touch + trackpad); the arrows
+     are a desktop convenience. Cards keep chronological order, oldest first.
+     ========================================================================== */
+  .results-block{margin-top:70px}
+  .results-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .results-head h3{margin:0;font-size:clamp(1.5rem,2.6vw,2.05rem)}
+  .rail-nav{display:flex;gap:8px;margin-left:auto}
+  .rail-btn{
+    width:40px;height:40px;flex-shrink:0;cursor:pointer;
+    background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--gold);
+    border-radius:2px;font-size:1.4rem;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    transition:border-color .25s ease,background .25s ease,opacity .25s ease;
+  }
+  .rail-btn:hover:not(:disabled){border-color:rgba(237,187,0,.5);background:rgba(237,187,0,.1)}
+  .rail-btn:disabled{opacity:.3;cursor:default}
+  .results-hint{
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin:8px 0 22px;
+  }
+  .results-rail{
+    display:flex;gap:22px;
+    overflow-x:auto;overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scroll-behavior:smooth;
+    padding:4px 4px 20px;margin:0 -4px;
+    scrollbar-width:thin;scrollbar-color:var(--gold) rgba(255,255,255,.08);
+  }
+  .results-rail::-webkit-scrollbar{height:8px}
+  .results-rail::-webkit-scrollbar-track{background:rgba(255,255,255,.06);border-radius:4px}
+  .results-rail::-webkit-scrollbar-thumb{background:rgba(237,187,0,.55);border-radius:4px}
+  .results-rail::-webkit-scrollbar-thumb:hover{background:var(--gold)}
+  /* Fixed-width cards are what make the row scroll rather than squash */
+  .results-rail > .fixture-card{
+    flex:0 0 330px;width:330px;scroll-snap-align:start;
+  }
+  @media(max-width:600px){
+    .results-block{margin-top:54px}
+    .rail-nav{display:none} /* touch devices just swipe */
+    .results-rail{gap:14px}
+    .results-rail > .fixture-card{flex-basis:82%;width:82%}
+  }
 </style>
 </head>
 <body>
@@ -314,6 +360,7 @@
       <a href="about.html">About us</a>
       <a href="join.html">Join us</a>
       <a href="fixtures.html" class="active">Fixtures</a>
+      <a href="predictions.html">Predictor</a>
       <a href="media.html">Media</a>
       <a href="statutes.html">Statutes</a>
       <a href="contact.html">Contact</a>
@@ -337,9 +384,24 @@
 <section class="fixtures-page">
   <div class="container">
     <h2 style="max-width:16ch">Barça matches</h2>
+
+    <!-- Upcoming fixtures — unchanged responsive grid -->
     <div class="fixtures-grid" id="fixturesList">
       <p class="loading-msg">Loading fixtures…</p>
     </div>
+
+    <!-- Results — horizontal swipeable rail, earliest match first -->
+    <section class="results-block" id="resultsBlock" hidden>
+      <div class="results-head">
+        <h3>Results</h3>
+        <div class="rail-nav">
+          <button type="button" class="rail-btn" id="resultsPrev" aria-label="Scroll results left">‹</button>
+          <button type="button" class="rail-btn" id="resultsNext" aria-label="Scroll results right">›</button>
+        </div>
+      </div>
+      <p class="results-hint">Oldest first — swipe or drag to see later results</p>
+      <div class="results-rail" id="resultsRail"></div>
+    </section>
   </div>
 </section>
 
@@ -369,6 +431,7 @@
           <li><a href="about.html">About us</a></li>
           <li><a href="join.html">Join us</a></li>
           <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="predictions.html">Predictor League</a></li>
           <li><a href="media.html">Media</a></li>
           <li><a href="statutes.html">Statutes</a></li>
           <li><a href="contact.html">Contact us</a></li>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Predictor League | Penya Blaugrana Islamabad</title>
+<meta name="description" content="The Penya Blaugrana Islamabad Predictor League — predict every Barça scoreline and climb the members' league table.">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="animations.css">
+<style>
+  .pred-page{padding:60px 0 90px}
+
+  /* ---------- Gate (login / set password) ---------- */
+  .gate{max-width:520px;margin:0 auto}
+  .gate-card{
+    background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:40px 34px;position:relative;overflow:hidden;
+  }
+  .gate-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--senyera-rule)}
+  .gate-card h2{font-size:1.6rem;margin-bottom:8px}
+  .gate-card .lede{color:var(--muted-lt);font-size:.92rem;margin-bottom:26px}
+  .gate-tabs{display:flex;gap:0;margin-bottom:26px;border-bottom:1px solid var(--line)}
+  .gate-tab{
+    flex:1;background:none;border:none;cursor:pointer;padding:12px 8px;
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);border-bottom:2px solid transparent;transition:color .25s ease,border-color .25s ease;
+  }
+  .gate-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+  .gate .field{margin-bottom:18px}
+  .gate label{
+    display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted-lt);margin-bottom:7px;
+  }
+  .gate input{
+    width:100%;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);
+    padding:13px 14px;border-radius:2px;font-family:var(--body);font-size:1rem;
+  }
+  .gate input:focus{outline:none;border-color:var(--gold)}
+  .gate .btn{width:100%;justify-content:center;margin-top:6px}
+  .gate-hint{font-size:.82rem;color:var(--muted);margin-top:16px;line-height:1.5}
+  .gate-hint a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .msg{
+    font-family:var(--mono);font-size:.72rem;line-height:1.5;margin-bottom:18px;
+    padding:11px 14px;border-radius:2px;display:none;
+  }
+  .msg.err{display:block;background:rgba(165,0,68,.12);color:#ff7da6;border-left:3px solid var(--grana)}
+  .msg.ok{display:block;background:rgba(0,150,80,.12);color:#5fdc9a;border-left:3px solid #0a7d43}
+
+  /* ---------- Layout ---------- */
+  .pred-layout{display:grid;grid-template-columns:1fr 340px;gap:26px;align-items:start;margin-top:34px}
+  .panel{
+    background:var(--night-2);border:1px solid var(--line);border-radius:var(--radius-lg);
+    position:relative;overflow:hidden;
+  }
+  .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--senyera-rule)}
+  .panel-head{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:22px 24px;border-bottom:1px solid var(--line);
+  }
+  .panel-head h3{margin:0;font-size:1.15rem}
+  .panel-body{padding:24px}
+
+  /* ---------- Deadline / status ---------- */
+  .deadline-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-left:auto}
+  .deadline-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-lt)}
+  .clock{display:flex;gap:6px}
+  .clock .unit{
+    background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:2px;
+    padding:7px 9px;text-align:center;min-width:46px;
+  }
+  .clock .num{display:block;font-family:var(--display);font-size:1.05rem;font-weight:700;color:var(--gold);line-height:1}
+  .clock .lbl{display:block;font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;color:var(--muted);margin-top:3px}
+  .lock-note{
+    display:flex;align-items:flex-start;gap:10px;margin:0 24px 22px;
+    background:rgba(0,0,0,.35);border:1px solid var(--line);border-left:3px solid var(--gold);
+    padding:13px 15px;border-radius:2px;font-size:.86rem;color:var(--chalk-dim);line-height:1.5;
+  }
+  .lock-note svg{width:16px;height:16px;fill:var(--gold);flex-shrink:0;margin-top:2px}
+
+  /* ---------- Prediction rows ---------- */
+  .pred-row{
+    display:grid;grid-template-columns:1fr auto 1fr auto;gap:14px;align-items:center;
+    padding:16px 0;border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .pred-row:last-child{border-bottom:none}
+  .pred-team{display:flex;align-items:center;gap:11px;min-width:0}
+  .pred-team.away{flex-direction:row-reverse;text-align:right}
+  .pred-team img{width:34px;height:34px;object-fit:contain;flex-shrink:0}
+  .pred-team span{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--chalk);line-height:1.3;
+  }
+  .score-input{display:flex;align-items:center;gap:8px}
+  .score-input input{
+    width:56px;background:rgba(0,0,0,.5);border:1px solid var(--line);color:var(--chalk);
+    padding:10px 6px;border-radius:2px;text-align:center;
+    font-family:var(--display);font-size:1.25rem;font-weight:700;
+  }
+  .score-input input:focus{outline:none;border-color:var(--gold)}
+  .score-input input:disabled{opacity:.75;cursor:not-allowed;border-color:rgba(237,187,0,.35);color:var(--gold)}
+  .score-input .dash{color:var(--muted);font-family:var(--mono)}
+  .pred-when{
+    font-family:var(--mono);font-size:.62rem;color:var(--muted-lt);text-align:right;
+    line-height:1.4;min-width:88px;
+  }
+  .pred-locked-tag{
+    display:inline-block;margin-top:4px;font-family:var(--mono);font-size:.54rem;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--gold);border:1px solid rgba(237,187,0,.4);
+    padding:2px 6px;border-radius:2px;
+  }
+  .submit-bar{margin-top:24px}
+  .submit-bar .btn{width:100%;justify-content:center}
+  .submit-foot{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);text-align:center;margin-top:12px;
+  }
+
+  /* ---------- League table ---------- */
+  .lt-table{width:100%;border-collapse:collapse;font-size:.86rem}
+  .lt-table th{
+    font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted-lt);text-align:left;padding:0 8px 11px;border-bottom:1px solid var(--line);font-weight:700;
+  }
+  .lt-table th.num,.lt-table td.num{text-align:right}
+  .lt-table td{padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.06);color:var(--chalk-dim)}
+  .lt-table tr:last-child td{border-bottom:none}
+  .lt-table tr.me td{color:var(--gold);font-weight:700;background:rgba(237,187,0,.06)}
+  .lt-rank{font-family:var(--mono);color:var(--muted);width:26px}
+  .lt-total{font-family:var(--display);font-size:1.05rem;font-weight:700;color:var(--gold)}
+
+  /* ---------- Points key ---------- */
+  .points-key{list-style:none;margin:0;padding:0}
+  .points-key li{
+    display:flex;align-items:center;gap:11px;padding:11px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);font-size:.88rem;color:var(--chalk-dim);
+  }
+  .points-key li:last-child{border-bottom:none}
+  .points-key .star{color:var(--gold);flex-shrink:0}
+  .points-key .pts{
+    margin-left:auto;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--gold);white-space:nowrap;
+  }
+
+  /* ---------- Revealed predictions ---------- */
+  .reveal-match{border:1px solid var(--line);border-radius:2px;margin-bottom:16px;overflow:hidden}
+  .reveal-match:last-child{margin-bottom:0}
+  .reveal-head{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    background:rgba(0,0,0,.3);padding:13px 16px;border-bottom:1px solid var(--line);
+  }
+  .reveal-head .rm-teams{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;color:var(--chalk);letter-spacing:.04em}
+  .reveal-head .rm-score{font-family:var(--display);font-size:1.15rem;font-weight:700;color:var(--gold);margin-left:auto}
+  .reveal-head .rm-live{
+    font-family:var(--mono);font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--grana);border:1px solid rgba(165,0,68,.5);padding:2px 7px;border-radius:2px;
+  }
+  .reveal-body{padding:6px 16px 12px}
+  .reveal-row{
+    display:flex;align-items:center;gap:12px;padding:9px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);font-size:.86rem;color:var(--chalk-dim);
+  }
+  .reveal-row:last-child{border-bottom:none}
+  .reveal-row.me{color:var(--gold);font-weight:700}
+  .reveal-row .rr-pred{font-family:var(--display);font-size:1rem;font-weight:700;margin-left:auto}
+  .reveal-row .rr-pts{
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;
+    min-width:82px;text-align:right;
+  }
+  .rr-pts.p3{color:#5fdc9a}
+  .rr-pts.p1{color:var(--gold)}
+  .rr-pts.p0{color:var(--muted)}
+
+  .empty-note{color:var(--muted-lt);font-size:.9rem;margin:0;line-height:1.6}
+  .who-bar{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted-lt);margin-bottom:8px;
+  }
+  .who-bar strong{color:var(--gold)}
+  .who-bar button{
+    margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted-lt);
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
+    padding:7px 13px;border-radius:2px;cursor:pointer;transition:color .25s ease,border-color .25s ease;
+  }
+  .who-bar button:hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  .my-total{
+    display:flex;align-items:baseline;gap:10px;
+    background:rgba(0,0,0,.3);border:1px solid var(--line);border-left:3px solid var(--gold);
+    padding:15px 18px;border-radius:2px;margin-bottom:22px;
+  }
+  .my-total .n{font-family:var(--display);font-size:2rem;font-weight:700;color:var(--gold);line-height:1}
+  .my-total .t{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-lt)}
+
+  @media(max-width:960px){
+    .pred-layout{grid-template-columns:1fr}
+  }
+  @media(max-width:600px){
+    .panel-head{padding:18px 16px}
+    .panel-body{padding:18px 16px}
+    .lock-note{margin:0 16px 18px}
+    .pred-row{grid-template-columns:1fr auto;gap:10px 12px;padding:14px 0}
+    .pred-team.away{flex-direction:row;text-align:left}
+    .score-input{grid-column:2;grid-row:1/3;flex-direction:column}
+    .pred-when{grid-column:1/-1;text-align:left;min-width:0}
+    .score-input input{width:50px}
+    .gate-card{padding:30px 20px}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="index.html">
+      <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1.png" alt="Penya Blaugrana Islamabad crest">
+      <span class="word">Penya Blaugrana<span>Islamabad</span></span>
+    </a>
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About us</a>
+      <a href="join.html">Join us</a>
+      <a href="fixtures.html">Fixtures</a>
+      <a href="predictions.html" class="active">Predictor</a>
+      <a href="media.html">Media</a>
+      <a href="statutes.html">Statutes</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn" href="join.html"><span>Join us</span></a>
+      <div class="hamburger" role="button" tabindex="0" aria-label="Open menu"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+</header>
+
+<section class="page-hero">
+  <div class="tifo" aria-hidden="true"></div>
+  <div class="hero-veil" aria-hidden="true"></div>
+  <div class="container">
+    <h1>Predictor <em>League</em></h1>
+    <p>Call every Barça scoreline before kickoff and climb the members' table. Members only — and once you submit, your picks are sealed.</p>
+  </div>
+</section>
+
+<section class="pred-page">
+  <div class="container">
+
+    <!-- ============ GATE: shown until the member is logged in ============ -->
+    <div class="gate" id="gate" hidden>
+      <div class="gate-card">
+        <h2>Members only</h2>
+        <p class="lede">The Predictor League is open to paid members of Penya Blaugrana Islamabad.</p>
+
+        <div class="gate-tabs">
+          <button class="gate-tab active" type="button" data-tab="login">Log in</button>
+          <button class="gate-tab" type="button" data-tab="setup">Set password</button>
+        </div>
+
+        <div class="msg" id="gateMsg"></div>
+
+        <!-- Log in -->
+        <form id="loginForm">
+          <div class="field">
+            <label for="loginEmail">Email on your membership</label>
+            <input type="email" id="loginEmail" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" autocomplete="current-password" required>
+          </div>
+          <button class="btn gold" type="submit"><span>Log in</span></button>
+          <p class="gate-hint">
+            First time here, or forgotten your password?
+            <a data-tab-link="setup">Set a password</a> with a code emailed to you.
+          </p>
+        </form>
+
+        <!-- Set / reset password -->
+        <form id="setupForm" hidden>
+          <div class="field">
+            <label for="setupEmail">Email on your membership</label>
+            <input type="email" id="setupEmail" autocomplete="email" required>
+          </div>
+          <button class="btn" type="button" id="requestCodeBtn"><span>Email me a code</span></button>
+          <div class="field" style="margin-top:22px">
+            <label for="setupCode">6-digit code from your email</label>
+            <input type="text" id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+          </div>
+          <div class="field">
+            <label for="setupPassword">Choose a password (min 8 characters)</label>
+            <input type="password" id="setupPassword" autocomplete="new-password" minlength="8">
+          </div>
+          <button class="btn gold" type="submit"><span>Set password &amp; log in</span></button>
+          <p class="gate-hint">
+            Not a member yet? <a href="join.html">Join the Penya</a> — the league opens to you as soon as your membership is paid.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ LEAGUE: shown once logged in ============ -->
+    <div id="league" hidden>
+      <div class="who-bar">
+        <span>Signed in as <strong id="whoName">—</strong></span>
+        <button type="button" id="logoutBtn">Log out</button>
+      </div>
+
+      <div class="pred-layout">
+        <!-- ---- Left column ---- -->
+        <div>
+          <div class="panel" style="margin-bottom:26px">
+            <div class="panel-head">
+              <h3>This week's fixtures</h3>
+              <div class="deadline-row" id="deadlineRow" hidden>
+                <span class="deadline-label">Predictions close in</span>
+                <div class="clock" id="deadlineClock"></div>
+              </div>
+            </div>
+            <div class="lock-note">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.5 3.8 10.3 9 11.5 5.2-1.2 9-6 9-11.5V5l-9-4Zm0 6a2.5 2.5 0 0 1 2.5 2.5V11h.5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h.5V9.5A2.5 2.5 0 0 1 12 7Zm0 1.5a1 1 0 0 0-1 1V11h2V9.5a1 1 0 0 0-1-1Z"/></svg>
+              <span>
+                Predictions lock when the first match of the set kicks off. Once you submit, your picks
+                are permanent — nobody can change them, not even an admin. Other members' picks stay
+                hidden until each match kicks off.
+              </span>
+            </div>
+            <div class="panel-body">
+              <div class="msg" id="predMsg"></div>
+              <div id="predList"><p class="empty-note">Loading fixtures…</p></div>
+              <div class="submit-bar" id="submitBar" hidden>
+                <button class="btn grana" type="button" id="submitBtn"><span>Submit &amp; lock predictions</span></button>
+                <p class="submit-foot">Once submitted, predictions cannot be edited</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>All predictions</h3>
+            </div>
+            <div class="panel-body">
+              <p class="empty-note" style="margin-bottom:18px">
+                Revealed only after each match kicks off.
+              </p>
+              <div id="revealList"><p class="empty-note">Loading…</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- Right column ---- -->
+        <div>
+          <div class="panel" style="margin-bottom:26px">
+            <div class="panel-head"><h3>My points</h3></div>
+            <div class="panel-body">
+              <div class="my-total">
+                <span class="n" id="myTotal">0</span>
+                <span class="t">points<br>total</span>
+              </div>
+              <div id="myList"><p class="empty-note">No predictions yet.</p></div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-bottom:26px">
+            <div class="panel-head"><h3>League table</h3></div>
+            <div class="panel-body">
+              <div id="leaderboard"><p class="empty-note">Loading…</p></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>How points work</h3></div>
+            <div class="panel-body">
+              <ul class="points-key">
+                <li><span class="star">★</span> Exact score <span class="pts">3 points</span></li>
+                <li><span class="star">★</span> Correct result (win/draw/lose) <span class="pts">1 point</span></li>
+                <li><span class="star">★</span> Wrong result <span class="pts">0 points</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="https://pbisb.com/wp-content/uploads/2025/08/WhatsApp-Image-2025-08-16-at-13.14.56-1-252x300.png" alt="Penya Blaugrana Islamabad crest">
+        <h4>Penya Blaugrana Islamabad</h4>
+        <p>Pakistan's first FC Barcelona supporters' club. Everyone's welcome on match day.</p>
+        <div class="social-row">
+          <a href="https://www.facebook.com/share/1Z1SkPohB7/" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12"/></svg></a>
+          <a href="https://www.tiktok.com/@pbislamabad" aria-label="TikTok"><svg viewBox="0 0 24 24"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48"/></svg></a>
+          <a href="https://www.instagram.com/pbislamabad" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2c-2.72 0-3.06.01-4.12.06-1.06.05-1.79.22-2.43.47-.66.26-1.22.6-1.77 1.16-.56.55-.9 1.11-1.16 1.77-.25.64-.42 1.37-.47 2.43C2 8.94 2 9.28 2 12s.01 3.06.06 4.12c.05 1.06.22 1.79.47 2.43.26.66.6 1.22 1.16 1.77.55.56 1.11.9 1.77 1.16.64.25 1.37.42 2.43.47C8.94 22 9.28 22 12 22s3.06-.01 4.12-.06c1.06-.05 1.79-.22 2.43-.47.66-.26 1.22-.6 1.77-1.16.56-.55.9-1.11 1.16-1.77.25-.64.42-1.37.47-2.43.05-1.06.06-1.4.06-4.12s-.01-3.06-.06-4.12c-.05-1.06-.22-1.79-.47-2.43a4.9 4.9 0 0 0-1.16-1.77 4.9 4.9 0 0 0-1.77-1.16c-.64-.25-1.37-.42-2.43-.47C15.06 2.01 14.72 2 12 2m0 1.8c2.67 0 2.99.01 4.04.06.98.04 1.5.21 1.86.34.47.18.8.4 1.15.75.35.35.57.68.75 1.15.13.36.29.88.34 1.86.05 1.05.06 1.37.06 4.04s-.01 2.99-.06 4.04c-.04.98-.21 1.5-.34 1.86-.18.47-.4.8-.75 1.15-.35.35-.68.57-1.15.75-.36.13-.88.29-1.86.34-1.05.05-1.37.06-4.04.06s-2.99-.01-4.04-.06c-.98-.04-1.5-.21-1.86-.34a3.1 3.1 0 0 1-1.15-.75 3.1 3.1 0 0 1-.75-1.15c-.13-.36-.29-.88-.34-1.86C3.81 14.99 3.8 14.67 3.8 12s.01-2.99.06-4.04c.04-.98.21-1.5.34-1.86.18-.47.4-.8.75-1.15.35-.35.68-.57 1.15-.75.36-.13.88-.29 1.86-.34C9.01 3.81 9.33 3.8 12 3.8m0 3.06a5.14 5.14 0 1 0 0 10.28 5.14 5.14 0 0 0 0-10.28M12 15.4a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8m6.54-9.94a1.2 1.2 0 1 1-2.4 0 1.2 1.2 0 0 1 2.4 0"/></svg></a>
+          <a href="https://x.com/IslamabadP45636" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.83-5.97 6.83H1.66l7.73-8.84L1.25 2.25h6.83l4.72 6.24zm-1.16 17.52h1.83L7.02 4.13H5.06z"/></svg></a>
+          <a href="https://youtube.com/@pbislamabad" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.56A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14C4.5 20.5 12 20.5 12 20.5s7.5 0 9.38-.56a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8M9.6 15.6V8.4l6.4 3.6z"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h5>Venue</h5>
+        <p>Marina Mall, Dua Chowk, Phase 4-B Ghauri Town, Islamabad, 45500, Pakistan</p>
+      </div>
+      <div>
+        <h5>Quick links</h5>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About us</a></li>
+          <li><a href="join.html">Join us</a></li>
+          <li><a href="fixtures.html">Fixtures</a></li>
+          <li><a href="predictions.html">Predictor League</a></li>
+          <li><a href="media.html">Media</a></li>
+          <li><a href="statutes.html">Statutes</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Penya Blaugrana Islamabad. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="animations.js"></script>
+<script src="predictions.js"></script>
+</body>
+</html>

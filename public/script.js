@@ -386,7 +386,11 @@ function scheduleFixtureRefresh(match) {
 }
 /* ==========================================================================
    FIXTURES PAGE (fixtures.html)
-   Renders at least the next 10 fixtures as premium cards with live countdowns.
+   Two groups, both in chronological (earliest-first) order:
+     - Upcoming  -> the existing responsive grid, unchanged.
+     - Results   -> a horizontal swipeable rail (see .results-rail in
+                    fixtures.html), so finished matches don't push the
+                    upcoming ones off the screen.
    ========================================================================== */
 async function initFixturesPage(listEl) {
   try {
@@ -400,10 +404,11 @@ async function initFixturesPage(listEl) {
 
     const data = await res.json();
 
+    // Ascending by kickoff: the match that happened earlier comes first.
     const matches = (data.matches || [])
       .slice()
       .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
-console.log("Fetched fixtures:", data);
+
     if (!matches.length) {
       listEl.innerHTML =
         '<p class="loading-msg">No league fixtures available right now.</p>';
@@ -411,30 +416,43 @@ console.log("Fetched fixtures:", data);
       return;
     }
 
-    listEl.innerHTML = matches.map((match) => fixtureCardHTML(match)).join("");
+    const isResult = (m) =>
+      m.status === "FINISHED" &&
+      Number.isInteger(m.score?.home) &&
+      Number.isInteger(m.score?.away);
 
-    /*
-     * Start countdown only for matches
-     * that are not finished.
-     */
-    matches.forEach((match) => {
+    const results = matches.filter(isResult);
+    const upcoming = matches.filter((m) => !isResult(m));
+
+    // ---- Upcoming grid (unchanged) ----
+    listEl.innerHTML = upcoming.length
+      ? upcoming.map((match) => fixtureCardHTML(match)).join("")
+      : '<p class="loading-msg">No upcoming fixtures scheduled right now.</p>';
+
+    // ---- Results rail ----
+    const railEl = document.getElementById("resultsRail");
+    const blockEl = document.getElementById("resultsBlock");
+    if (railEl && blockEl) {
+      if (results.length) {
+        blockEl.hidden = false;
+        railEl.innerHTML = results.map((match) => fixtureCardHTML(match)).join("");
+        initResultsRail(blockEl, railEl);
+      } else {
+        blockEl.hidden = true;
+      }
+    }
+
+    // Countdowns + post-match refresh only apply to matches still to be played.
+    upcoming.forEach((match) => {
       const el = listEl.querySelector(
         `[data-fixture-id="${match.id}"] .fixture-countdown`,
       );
 
-      if (el && match.status !== "FINISHED") {
+      if (el) {
         startCardCountdown(el, toDate(match));
       }
-    });
 
-    /*
-     * Schedule post-match refresh only
-     * for unfinished matches.
-     */
-    matches.forEach((match) => {
-      if (match.status !== "FINISHED") {
-        scheduleFixtureRefresh(match);
-      }
+      scheduleFixtureRefresh(match);
     });
   } catch (err) {
     console.warn("Fixtures page failed:", err);
@@ -442,6 +460,40 @@ console.log("Fetched fixtures:", data);
     listEl.innerHTML =
       '<p class="loading-msg">Could not load league fixtures right now. Please refresh.</p>';
   }
+}
+
+/* --------------------------------------------------------------------------
+   RESULTS RAIL — arrow controls for the horizontal results carousel.
+   Swiping/dragging is handled natively by CSS overflow scrolling; this only
+   wires up the desktop arrows and keeps their disabled state in sync.
+   -------------------------------------------------------------------------- */
+function initResultsRail(blockEl, railEl) {
+  const prev = document.getElementById("resultsPrev");
+  const next = document.getElementById("resultsNext");
+  if (!prev || !next) return;
+
+  // Scroll by one card (plus the gap) per click.
+  const step = () => {
+    const card = railEl.querySelector(".fixture-card");
+    if (!card) return railEl.clientWidth * 0.8;
+    const gap = parseFloat(getComputedStyle(railEl).columnGap || "22") || 22;
+    return card.getBoundingClientRect().width + gap;
+  };
+
+  const sync = () => {
+    const max = railEl.scrollWidth - railEl.clientWidth - 1;
+    prev.disabled = railEl.scrollLeft <= 0;
+    next.disabled = railEl.scrollLeft >= max;
+  };
+
+  prev.addEventListener("click", () => railEl.scrollBy({ left: -step(), behavior: "smooth" }));
+  next.addEventListener("click", () => railEl.scrollBy({ left: step(), behavior: "smooth" }));
+  railEl.addEventListener("scroll", sync, { passive: true });
+  window.addEventListener("resize", sync);
+
+  // Start at the earliest result (leftmost) and set the initial arrow states.
+  railEl.scrollLeft = 0;
+  sync();
 }
 
 function fixtureCardHTML(m) {
