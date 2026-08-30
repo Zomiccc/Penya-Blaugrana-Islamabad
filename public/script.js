@@ -429,13 +429,17 @@ async function initFixturesPage(listEl) {
       ? upcoming.map((match) => fixtureCardHTML(match)).join("")
       : '<p class="loading-msg">No upcoming fixtures scheduled right now.</p>';
 
-    // ---- Results rail ----
+    // ---- Results rail (latest first, older matches to the left) ----
     const railEl = document.getElementById("resultsRail");
     const blockEl = document.getElementById("resultsBlock");
     if (railEl && blockEl) {
       if (results.length) {
+        // Sort latest first so the most recent result is the first card visible.
+        const sorted = [...results].sort(
+          (a, b) => new Date(b.utcDate) - new Date(a.utcDate)
+        );
         blockEl.hidden = false;
-        railEl.innerHTML = results.map((match) => fixtureCardHTML(match)).join("");
+        railEl.innerHTML = sorted.map((match) => fixtureCardHTML(match)).join("");
         initResultsRail(blockEl, railEl);
       } else {
         blockEl.hidden = true;
@@ -491,7 +495,7 @@ function initResultsRail(blockEl, railEl) {
   railEl.addEventListener("scroll", sync, { passive: true });
   window.addEventListener("resize", sync);
 
-  // Start at the earliest result (leftmost) and set the initial arrow states.
+  // Start at the latest result (leftmost = most recent) and set arrow states.
   railEl.scrollLeft = 0;
   sync();
 }

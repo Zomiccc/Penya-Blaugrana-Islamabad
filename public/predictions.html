@@ -166,7 +166,10 @@
   }
   .reveal-row:last-child{border-bottom:none}
   .reveal-row.me{color:var(--gold);font-weight:700}
-  .reveal-row .rr-pred{font-family:var(--display);font-size:0.95rem;font-weight:700;margin-left:auto}
+  .reveal-row > span:first-child{
+    min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .reveal-row .rr-pred{font-family:var(--display);font-size:0.95rem;font-weight:700;margin-left:auto;white-space:nowrap;flex-shrink:0}
   .reveal-row .rr-pts{
     font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;
     min-width:82px;text-align:right;
