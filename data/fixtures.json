@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-08-30T20:36:53.231Z",
-  "nextSync": "2026-08-31T08:36:53.241Z",
+  "lastSync": "2026-08-30T21:30:15.736Z",
+  "nextSync": "2026-08-31T09:30:15.749Z",
   "apiStatus": "ok",
   "lastError": null,
   "matches": [
@@ -1783,7 +1783,7 @@
     {
       "id": 564652,
       "utcDate": "2026-08-30T19:30:00Z",
-      "status": "PAUSED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -7091,8 +7091,8 @@
       "matchday": 1,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Stadio Giuseppe Sinigaglia",
+      "city": "Viale Sinigaglia 2 Como 22100",
       "homeTeamId": 7397,
       "homeTeam": "Como 1907",
       "homeCrest": "https://crests.football-data.org/7397.png",
@@ -7128,8 +7128,8 @@
       "matchday": 1,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Sinobo Stadium",
+      "city": "Vladivostocká 1460/2 Praha 10005",
       "homeTeamId": 930,
       "homeTeam": "SK Slavia Praha",
       "homeCrest": "https://crests.football-data.org/930.png",
@@ -8090,8 +8090,8 @@
       "matchday": 3,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Stadio Giuseppe Sinigaglia",
+      "city": "Viale Sinigaglia 2 Como 22100",
       "homeTeamId": 7397,
       "homeTeam": "Como 1907",
       "homeCrest": "https://crests.football-data.org/7397.png",
@@ -8830,8 +8830,8 @@
       "matchday": 4,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Sinobo Stadium",
+      "city": "Vladivostocká 1460/2 Praha 10005",
       "homeTeamId": 930,
       "homeTeam": "SK Slavia Praha",
       "homeCrest": "https://crests.football-data.org/930.png",
@@ -9348,8 +9348,8 @@
       "matchday": 5,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Stadio Giuseppe Sinigaglia",
+      "city": "Viale Sinigaglia 2 Como 22100",
       "homeTeamId": 7397,
       "homeTeam": "Como 1907",
       "homeCrest": "https://crests.football-data.org/7397.png",
@@ -9385,8 +9385,8 @@
       "matchday": 5,
       "stage": "LEAGUE_STAGE",
       "group": null,
-      "venue": "Venue TBC",
-      "city": "",
+      "venue": "Sinobo Stadium",
+      "city": "Vladivostocká 1460/2 Praha 10005",
       "homeTeamId": 930,
       "homeTeam": "SK Slavia Praha",
       "homeCrest": "https://crests.football-data.org/930.png",
@@ -10424,6 +10424,10 @@
       "venue": "Jan Breydelstadion",
       "city": "Olympialaan 74 Brugge 8200"
     },
+    "930": {
+      "venue": "Sinobo Stadium",
+      "city": "Vladivostocká 1460/2 Praha 10005"
+    },
     "1899": {
       "venue": "Olympiako Stadio Spyros Louis",
       "city": "37 Kifisias Av. Athína 15123"
@@ -10431,6 +10435,10 @@
     "5335": {
       "venue": "Campos de Sport de El Sardinero",
       "city": "Calle Real Racing Club, s/n Santander 39005"
+    },
+    "7397": {
+      "venue": "Stadio Giuseppe Sinigaglia",
+      "city": "Viale Sinigaglia 2 Como 22100"
     },
     "10233": {
       "venue": null,
