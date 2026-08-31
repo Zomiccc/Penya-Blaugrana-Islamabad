@@ -480,7 +480,9 @@ async function syncFixtures() {
      *     matches from the cache so the predictor still has them.
      */
     const now = new Date();
-    const dateFrom = now.toISOString().slice(0, 10);
+    // Look back 7 days so recently FINISHED matches get their final scores
+    // updated in the cache (otherwise they stay stale as IN_PLAY/TIMED).
+    const dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const dateTo = new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
     const competitions = (barcaTeam.runningCompetitions || []);
@@ -521,37 +523,34 @@ async function syncFixtures() {
     }
 
     /*
-     * If the non-Barça fetch was rate-limited, keep the existing non-Barça
-     * matches from the cache so the predictor still has all matches.
+     * Combine fresh Barça matches + whatever non-Barça matches we managed
+     * to fetch (may be partial if rate-limited). The merge below fills in
+     * any gaps from the existing cache.
      */
-    let finalRawMatches = [...barcaMatches, ...allCompMatches];
-    if (nonBarcaFetchFailed) {
-      const existingNonBarca = (cache.matches || []).filter((m) => !m.isBarcaMatch);
-      if (existingNonBarca.length) {
-        console.log(`[fixtures] keeping ${existingNonBarca.length} existing non-Barça matches from cache`);
-        // Merge: use existing non-Barça + fresh Barça matches (dedup by id)
-        const barcaIds = new Set(barcaMatches.map((m) => m.id));
-        // Convert existing normalized matches back to a form normalizeMatches can handle
-        // Actually they're already normalized — just use them directly
-        finalRawMatches = null; // signal to use merge path
-      }
-    }
+    const finalRawMatches = [...barcaMatches, ...allCompMatches];
 
     /*
      * 3. Normalize all matches (Barça + other competitions).
      *    Always merge with existing non-Barça matches from the cache so
      *    that finished matches (which aren't in the date-filtered fetch)
      *    are preserved for the predictor reveal + scoring.
+     *
+     *    Fresh matches take priority over cached ones (so scores/status
+     *    get updated). Cached matches that aren't in the fresh fetch are
+     *    kept as-is.
      */
     let matches;
     {
-      const freshNormalized = normalizeMatches(finalRawMatches || barcaMatches);
+      const freshNormalized = normalizeMatches(finalRawMatches);
       const freshIds = new Set(freshNormalized.map((m) => m.id));
       // Keep existing non-Barça matches that aren't in the fresh fetch
-      // (e.g. finished matches that the date filter excluded).
+      // (e.g. finished matches older than the 7-day lookback window).
       const existingKept = (cache.matches || [])
         .filter((m) => !m.isBarcaMatch && !freshIds.has(m.id));
       matches = [...freshNormalized, ...existingKept];
+      if (nonBarcaFetchFailed && existingKept.length) {
+        console.log(`[fixtures] rate-limited — kept ${existingKept.length} existing non-Barça matches from cache`);
+      }
     }
 
     /*
