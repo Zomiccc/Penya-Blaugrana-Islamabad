@@ -461,6 +461,42 @@ app.post('/api/admin/members/add', requireAdmin, async (req, res) => {
   res.json({ ok: true, member: { ...member, passwordHash: undefined } });
 });
 
+// Restore predictions that were lost due to a DB reseed.
+// Bypasses the deadline check — used for disaster recovery only.
+// Accepts an array of { memberId, fixtureId, homeGoals, awayGoals } objects.
+// Skips duplicates (same memberId + fixtureId already in DB).
+app.post('/api/admin/predictions/restore', requireAdmin, async (req, res) => {
+  const { predictions } = req.body || {};
+  if (!Array.isArray(predictions) || !predictions.length) {
+    return res.status(400).json({ error: 'predictions array is required' });
+  }
+  let restored = 0;
+  let skipped = 0;
+  await writeDb((db) => {
+    const existing = new Set(
+      db.predictions.map((p) => `${p.memberId}:${p.fixtureId}`)
+    );
+    for (const p of predictions) {
+      const key = `${p.memberId}:${p.fixtureId}`;
+      if (existing.has(key)) {
+        skipped++;
+        continue;
+      }
+      db.predictions.push({
+        memberId: String(p.memberId),
+        fixtureId: Number(p.fixtureId),
+        homeGoals: Number(p.homeGoals),
+        awayGoals: Number(p.awayGoals),
+        createdAt: p.createdAt || new Date().toISOString(),
+      });
+      existing.add(key);
+      restored++;
+    }
+    return db;
+  });
+  res.json({ ok: true, restored, skipped });
+});
+
 app.delete('/api/admin/members/:id', requireAdmin, async (req, res) => {
   await writeDb((db) => {
     db.members = db.members.filter((x) => x.id !== req.params.id);
