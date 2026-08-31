@@ -35,6 +35,3 @@ public/wp-content/wp-content/wpvivid_staging/
 
 # Admin-uploaded media (created at runtime)
 public/uploads/
-
-# Local database (production uses PostgreSQL — don't deploy stale JSON)
-data/db.json

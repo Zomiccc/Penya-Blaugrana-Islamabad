@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
-const { readDb, writeDb, initDb } = require('./lib/db');
+const { readDb, writeDb, initDb, isPgMode, reseedFromJson } = require('./lib/db');
 const { sendJoinConfirmation, sendPaymentReceipt, sendMemberAuthCode } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
 const { startFixtureSync } = require('./src/jobs/fixtureSync.job');
@@ -495,6 +495,37 @@ app.post('/api/admin/predictions/restore', requireAdmin, async (req, res) => {
     return db;
   });
   res.json({ ok: true, restored, skipped });
+});
+
+// Diagnostic: check if the server is using PostgreSQL or JSON fallback.
+// Helps debug data loss issues on Render.
+app.get('/api/admin/db-status', requireAdmin, async (req, res) => {
+  const db = readDb();
+  res.json({
+    pgMode: isPgMode(),
+    databaseUrlSet: Boolean(process.env.DATABASE_URL),
+    memberCount: (db.members || []).length,
+    predictionCount: (db.predictions || []).length,
+    mediaPostCount: (db.mediaPosts || []).length,
+  });
+});
+
+// Force reseed: drops the PostgreSQL app_state row and reseeds from db.json.
+// Use this when the PostgreSQL database is empty but db.json has data.
+app.post('/api/admin/db/reseed', requireAdmin, async (req, res) => {
+  if (!isPgMode()) {
+    return res.status(400).json({ error: 'Not in PostgreSQL mode — reseed is only for PG. Data is already from db.json.' });
+  }
+  try {
+    const db = await reseedFromJson();
+    res.json({
+      ok: true,
+      memberCount: (db.members || []).length,
+      predictionCount: (db.predictions || []).length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.delete('/api/admin/members/:id', requireAdmin, async (req, res) => {
