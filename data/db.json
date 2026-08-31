@@ -540,6 +540,27 @@
       "homeGoals": 2,
       "awayGoals": 0,
       "createdAt": "2026-08-30T17:00:00.000Z"
+    },
+    {
+      "memberId": "98d0e54e-97a4-4aa1-82b9-7214649d148e",
+      "fixtureId": 564650,
+      "homeGoals": 2,
+      "awayGoals": 0,
+      "createdAt": "2026-08-31T19:00:00.000Z"
+    },
+    {
+      "memberId": "98d0e54e-97a4-4aa1-82b9-7214649d148e",
+      "fixtureId": 564657,
+      "homeGoals": 1,
+      "awayGoals": 0,
+      "createdAt": "2026-08-30T17:00:00.000Z"
+    },
+    {
+      "memberId": "96745360-2876-4931-9c89-c7f8a676ed18",
+      "fixtureId": 564657,
+      "homeGoals": 1,
+      "awayGoals": 1,
+      "createdAt": "2026-08-30T17:00:00.000Z"
     }
   ],
   "memberAuthCodes": [
