@@ -225,27 +225,19 @@
 
     const closed = data.deadline && new Date(data.deadline) <= new Date();
 
-    // Title: "Match Week N" — shows the CURRENT round (the matchday of
-    // the most recent match that has kicked off), not the next round to
-    // predict. Falls back to the window's most common matchday if no
-    // matches have kicked off yet.
+    // Title: "Match Week N" — shows the round members are predicting
+    // (the most common matchday in the prediction window).
     const weekTitle = $('weekTitle');
     if (weekTitle) {
-      let md = null;
-      // Try to get the current round from revealed matches
-      if (window.__currentMatchday != null) {
-        md = window.__currentMatchday;
+      const matchdays = fixtures.map((f) => f.matchday).filter(Number.isInteger);
+      if (matchdays.length) {
+        const counts = {};
+        for (const m of matchdays) counts[m] = (counts[m] || 0) + 1;
+        const md = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+        weekTitle.textContent = `Match Week ${md}`;
+      } else {
+        weekTitle.textContent = 'Match Week';
       }
-      // Fallback: use the most common matchday in the prediction window
-      if (md == null) {
-        const matchdays = fixtures.map((f) => f.matchday).filter(Number.isInteger);
-        if (matchdays.length) {
-          const counts = {};
-          for (const m of matchdays) counts[m] = (counts[m] || 0) + 1;
-          md = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
-        }
-      }
-      weekTitle.textContent = Number.isInteger(Number(md)) ? `Match Week ${md}` : 'Match Week';
     }
 
     list.innerHTML = fixtures.map((f) => {
@@ -397,15 +389,6 @@
     if (!matches.length) {
       el.innerHTML = '<p class="empty-note">Nothing revealed yet. Predictions appear here once a match kicks off.</p>';
       return;
-    }
-    // Set the current matchday from the most recent revealed match
-    // (revealed matches are sorted latest first)
-    const currentMd = matches.find((m) => Number.isInteger(m.matchday))?.matchday;
-    if (currentMd != null) {
-      window.__currentMatchday = currentMd;
-      // Update the title if it's already been rendered
-      const weekTitle = $('weekTitle');
-      if (weekTitle) weekTitle.textContent = `Match Week ${currentMd}`;
     }
     el.innerHTML = matches.map((m) => `
       <div class="reveal-match">
