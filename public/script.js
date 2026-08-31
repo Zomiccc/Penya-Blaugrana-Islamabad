@@ -710,6 +710,7 @@ function finishedMatchHTML(m) {
 }
 
 function startCardCountdown(el, target) {
+  let timer = null;
   function tick() {
     const diff = Math.max(0, target - new Date());
     const d = Math.floor(diff / 86400000);
@@ -719,11 +720,11 @@ function startCardCountdown(el, target) {
     el.innerHTML = `${d} Days · ${h} Hours · ${m} Minutes · ${s} Seconds`;
     if (diff <= 0) {
       el.textContent = "Match day!";
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
     }
   }
   tick();
-  const timer = setInterval(tick, 1000);
+  timer = setInterval(tick, 1000);
 }
 
 async function fetchFixtureResultAfterExpectedEnd(card, match) {
