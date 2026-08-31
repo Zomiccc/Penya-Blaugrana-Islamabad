@@ -32,6 +32,7 @@ function defaultCache() {
     matches: [],
     venueCache: {}, // { [teamId]: { venue, city } }
     homeVenue: { venue: "Spotify Camp Nou", city: "Barcelona" },
+    overrides: {}, // { [fixtureId]: { status, homeScore, awayScore } } — manual fixes that survive syncs
   };
 }
 
@@ -51,6 +52,7 @@ function readCache() {
     if (!c.venueCache) c.venueCache = {};
     if (!c.homeVenue) c.homeVenue = defaultCache().homeVenue;
     if (!c.apiStatus) c.apiStatus = "ok";
+    if (!c.overrides) c.overrides = {};
     return c;
   } catch {
     return defaultCache();
@@ -708,10 +710,11 @@ async function syncFixtures() {
       );
 
     /*
-     * 10. Save ALL matches.
+     * 10. Save ALL matches, then re-apply any manual overrides so they
+     *     survive syncs (the API sometimes returns wrong/stale data).
      */
-    cache.matches =
-      withVenues;
+    cache.matches = withVenues;
+    applyOverrides(cache);
 
     cache.lastSync =
       new Date().toISOString();
@@ -777,8 +780,29 @@ function updateNextSync(isoString) {
 }
 
 /**
+ * Apply stored overrides to the matches in cache (in-place).
+ * Called after every sync so manual fixes survive API refreshes.
+ */
+function applyOverrides(cache) {
+  const overrides = cache.overrides || {};
+  if (!Object.keys(overrides).length) return;
+  let applied = 0;
+  for (const match of cache.matches || []) {
+    const ov = overrides[String(match.id)];
+    if (!ov) continue;
+    match.status = ov.status;
+    if (Number.isInteger(ov.homeScore) && Number.isInteger(ov.awayScore)) {
+      match.score = { home: ov.homeScore, away: ov.awayScore };
+    }
+    applied++;
+  }
+  if (applied) console.log(`[fixtures] re-applied ${applied} manual override(s)`);
+}
+
+/**
  * Manually override a match's status and score in the cache.
  * Used when the API returns wrong/stale data (e.g. FINISHED match showing TIMED).
+ * The override is stored persistently and re-applied after every sync.
  * Returns the updated match or null if not found.
  */
 function overrideMatchResult(fixtureId, status, homeScore, awayScore) {
@@ -789,7 +813,11 @@ function overrideMatchResult(fixtureId, status, homeScore, awayScore) {
   if (Number.isInteger(homeScore) && Number.isInteger(awayScore)) {
     match.score = { home: homeScore, away: awayScore };
   }
+  // Store in overrides so it survives future syncs
+  if (!cache.overrides) cache.overrides = {};
+  cache.overrides[String(fixtureId)] = { status, homeScore, awayScore };
   writeCache(cache);
+  console.log(`[fixtures] override saved for match ${fixtureId}: ${status} ${homeScore}-${awayScore}`);
   return match;
 }
 
