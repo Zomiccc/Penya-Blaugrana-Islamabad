@@ -539,18 +539,19 @@ async function syncFixtures() {
 
     /*
      * 3. Normalize all matches (Barça + other competitions).
+     *    Always merge with existing non-Barça matches from the cache so
+     *    that finished matches (which aren't in the date-filtered fetch)
+     *    are preserved for the predictor reveal + scoring.
      */
     let matches;
-    if (finalRawMatches === null) {
-      // Merge path: fresh Barça matches (normalized) + existing non-Barça from cache
-      const freshBarca = normalizeMatches(barcaMatches);
-      const existingNonBarca = (cache.matches || []).filter((m) => !m.isBarcaMatch);
-      // Dedup by id (prefer fresh Barça data)
-      const freshIds = new Set(freshBarca.map((m) => m.id));
-      const kept = existingNonBarca.filter((m) => !freshIds.has(m.id));
-      matches = [...freshBarca, ...kept];
-    } else {
-      matches = normalizeMatches(finalRawMatches);
+    {
+      const freshNormalized = normalizeMatches(finalRawMatches || barcaMatches);
+      const freshIds = new Set(freshNormalized.map((m) => m.id));
+      // Keep existing non-Barça matches that aren't in the fresh fetch
+      // (e.g. finished matches that the date filter excluded).
+      const existingKept = (cache.matches || [])
+        .filter((m) => !m.isBarcaMatch && !freshIds.has(m.id));
+      matches = [...freshNormalized, ...existingKept];
     }
 
     /*
