@@ -225,14 +225,21 @@
 
     const closed = data.deadline && new Date(data.deadline) <= new Date();
 
-    // Title: "Match Week N" — uses the smallest matchday in the window
-    // (La Liga sometimes schedules a later matchday before an earlier one,
-    // so the first fixture chronologically isn't always the next round).
+    // Title: "Match Week N" — uses the most common matchday in the window.
+    // La Liga sometimes schedules a later matchday before an earlier one,
+    // so the first fixture chronologically isn't always the next round.
+    // Using the mode (most frequent) gives the actual current round.
     const weekTitle = $('weekTitle');
     if (weekTitle) {
       const matchdays = fixtures.map((f) => f.matchday).filter(Number.isInteger);
-      const md = matchdays.length ? Math.min(...matchdays) : null;
-      weekTitle.textContent = Number.isInteger(md) ? `Match Week ${md}` : 'Match Week';
+      if (matchdays.length) {
+        const counts = {};
+        for (const md of matchdays) counts[md] = (counts[md] || 0) + 1;
+        const md = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+        weekTitle.textContent = `Match Week ${md}`;
+      } else {
+        weekTitle.textContent = 'Match Week';
+      }
     }
 
     list.innerHTML = fixtures.map((f) => {
