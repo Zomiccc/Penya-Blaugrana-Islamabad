@@ -225,10 +225,13 @@
 
     const closed = data.deadline && new Date(data.deadline) <= new Date();
 
-    // Title: "Match Week N" — uses the matchday of the first fixture in the window.
+    // Title: "Match Week N" — uses the smallest matchday in the window
+    // (La Liga sometimes schedules a later matchday before an earlier one,
+    // so the first fixture chronologically isn't always the next round).
     const weekTitle = $('weekTitle');
     if (weekTitle) {
-      const md = fixtures[0].matchday;
+      const matchdays = fixtures.map((f) => f.matchday).filter(Number.isInteger);
+      const md = matchdays.length ? Math.min(...matchdays) : null;
       weekTitle.textContent = Number.isInteger(md) ? `Match Week ${md}` : 'Match Week';
     }
 

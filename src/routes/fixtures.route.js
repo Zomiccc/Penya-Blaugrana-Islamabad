@@ -9,6 +9,7 @@ const express = require("express");
 const {
   getCachedFixtures,
   getFixtureResult,
+  overrideMatchResult,
 } = require("../services/fixture.service");
 const { syncNow, clearCache } = require("../jobs/fixtureSync.job");
 
@@ -135,6 +136,28 @@ router.get(
   router.post("/api/admin/fixtures/clear", requireAdmin, (req, res) => {
     const data = clearCache();
     res.json({ ok: true, ...data });
+  });
+
+  /**
+   * POST /api/admin/fixtures/override
+   * Admin — manually override a match's status and score in the cache.
+   * Used when the Football-Data API returns wrong/stale data.
+   * Body: { fixtureId, status, homeScore, awayScore }
+   */
+  router.post("/api/admin/fixtures/override", requireAdmin, (req, res) => {
+    const { fixtureId, status, homeScore, awayScore } = req.body || {};
+    if (!fixtureId || !status) {
+      return res.status(400).json({ error: "fixtureId and status are required" });
+    }
+    const validStatuses = ["TIMED", "IN_PLAY", "FINISHED", "POSTPONED", "CANCELLED", "SUSPENDED"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
+    }
+    const match = overrideMatchResult(fixtureId, status, homeScore, awayScore);
+    if (!match) {
+      return res.status(404).json({ error: "Match not found in cache" });
+    }
+    res.json({ ok: true, match: { id: match.id, homeTeam: match.homeTeam, awayTeam: match.awayTeam, status: match.status, score: match.score } });
   });
 
   return router;

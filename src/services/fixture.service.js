@@ -776,12 +776,30 @@ function updateNextSync(isoString) {
   writeCache(cache);
 }
 
+/**
+ * Manually override a match's status and score in the cache.
+ * Used when the API returns wrong/stale data (e.g. FINISHED match showing TIMED).
+ * Returns the updated match or null if not found.
+ */
+function overrideMatchResult(fixtureId, status, homeScore, awayScore) {
+  const cache = readCache();
+  const match = (cache.matches || []).find((m) => String(m.id) === String(fixtureId));
+  if (!match) return null;
+  match.status = status;
+  if (Number.isInteger(homeScore) && Number.isInteger(awayScore)) {
+    match.score = { home: homeScore, away: awayScore };
+  }
+  writeCache(cache);
+  return match;
+}
+
 module.exports = {
   syncFixtures,
   getCachedFixtures,
   clearFixturesCache,
   updateNextSync,
   getFixtureResult,
+  overrideMatchResult,
   CACHE_PATH,
   BARCA_TEAM_ID,
 };
