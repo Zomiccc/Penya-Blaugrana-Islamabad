@@ -49,6 +49,7 @@ async function init() {
 
   document.getElementById('pricingForm').addEventListener('submit', savePricing);
   document.getElementById('pwForm').addEventListener('submit', changePassword);
+  document.getElementById('addMemberForm').addEventListener('submit', addMember);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
@@ -167,6 +168,33 @@ async function changePassword(e) {
     document.getElementById('pwForm').reset();
   } catch (err) {
     flash(msg, err.message, false);
+  }
+}
+
+async function addMember(e) {
+  e.preventDefault();
+  const msg = document.getElementById('addMemberMsg');
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true;
+  try {
+    const data = await api('/api/admin/members/add', {
+      method: 'POST',
+      body: JSON.stringify({
+        firstName: document.getElementById('addFirstName').value.trim(),
+        lastName: document.getElementById('addLastName').value.trim(),
+        email: document.getElementById('addEmail').value.trim(),
+        membershipType: document.getElementById('addType').value,
+        password: document.getElementById('addPassword').value,
+      }),
+    });
+    flash(msg, `Added ${data.member.firstName} ${data.member.lastName} — they can now log in to Match Predictions.`, true);
+    e.target.reset();
+    document.getElementById('addPassword').value = 'penya2026';
+    await Promise.all([loadMembers(), loadStats()]);
+  } catch (err) {
+    flash(msg, err.message, false);
+  } finally {
+    btn.disabled = false;
   }
 }
 

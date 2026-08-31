@@ -419,6 +419,48 @@ app.post('/api/admin/members/:id/mark-paid', requireAdmin, async (req, res) => {
   res.json({ ok: true, member });
 });
 
+// Manually add a member from the admin dashboard.
+// Creates a paid member with a predictor password so they can log in
+// to the Match Predictions page immediately.
+app.post('/api/admin/members/add', requireAdmin, async (req, res) => {
+  const { firstName, lastName, email, membershipType, password } = req.body || {};
+  if (!email || !firstName) {
+    return res.status(400).json({ error: 'First name and email are required' });
+  }
+  const normalizedEmail = String(email).trim().toLowerCase();
+  if (String(password || '').length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+  const db = readDb();
+  if (db.members.find((m) => m.email.toLowerCase() === normalizedEmail)) {
+    return res.status(409).json({ error: 'A member with that email already exists' });
+  }
+  const pricing = db.pricing || { adult: 3000, kids: 1000, currency: 'PKR' };
+  const type = membershipType === 'kids' ? 'kids' : 'adult';
+  const passwordHash = await bcrypt.hash(String(password), 10);
+  const member = {
+    id: crypto.randomUUID(),
+    firstName: String(firstName).trim(),
+    lastName: String(lastName || '').trim(),
+    contactNumber: '',
+    country: 'Pakistan',
+    email: normalizedEmail,
+    membershipType: type,
+    childName: null,
+    childDob: null,
+    amount: type === 'kids' ? pricing.kids : pricing.adult,
+    currency: pricing.currency,
+    status: 'paid',
+    stripeSessionId: null,
+    createdAt: new Date().toISOString(),
+    paidAt: new Date().toISOString(),
+    manualOverride: true,
+    passwordHash,
+  };
+  await writeDb((d) => { d.members.push(member); return d; });
+  res.json({ ok: true, member: { ...member, passwordHash: undefined } });
+});
+
 app.delete('/api/admin/members/:id', requireAdmin, async (req, res) => {
   await writeDb((db) => {
     db.members = db.members.filter((x) => x.id !== req.params.id);
