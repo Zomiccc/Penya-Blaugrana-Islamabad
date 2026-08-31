@@ -904,6 +904,8 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         awayTeam: match.awayTeam,
         awayCrest: match.awayCrest,
         status: match.status,
+        matchday: match.matchday,
+        competition: match.competition,
         actual: finished ? { home: match.score.home, away: match.score.away } : null,
         predictions: rows,
       };
