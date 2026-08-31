@@ -91,6 +91,17 @@
       link.addEventListener('click', () => showTab(link.dataset.tabLink));
     });
 
+    // Show/hide password toggles
+    document.querySelectorAll('.pwd-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.target);
+        if (!input) return;
+        const isPwd = input.type === 'password';
+        input.type = isPwd ? 'text' : 'password';
+        btn.textContent = isPwd ? 'Hide' : 'Show';
+      });
+    });
+
     $('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const msg = $('gateMsg');

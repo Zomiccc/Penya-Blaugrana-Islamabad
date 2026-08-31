@@ -37,6 +37,14 @@
   }
   .gate input:focus{outline:none;border-color:var(--gold)}
   .gate .btn{width:100%;justify-content:center;margin-top:6px}
+  .pwd-field{position:relative}
+  .pwd-field input{padding-right:42px}
+  .pwd-toggle{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;color:var(--muted);
+    font-size:.7rem;padding:4px;line-height:1;user-select:none;
+  }
+  .pwd-toggle:hover{color:var(--gold)}
   .gate-hint{font-size:.82rem;color:var(--muted);margin-top:16px;line-height:1.5}
   .gate-hint a{color:var(--gold);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   .msg{
@@ -284,9 +292,10 @@
             <label for="loginEmail">Email on your membership</label>
             <input type="email" id="loginEmail" autocomplete="email" required>
           </div>
-          <div class="field">
+          <div class="field pwd-field">
             <label for="loginPassword">Password</label>
             <input type="password" id="loginPassword" autocomplete="current-password" required>
+            <button type="button" class="pwd-toggle" data-target="loginPassword">Show</button>
           </div>
           <button class="btn gold" type="submit"><span>Log in</span></button>
           <p class="gate-hint">
@@ -305,9 +314,10 @@
             <label for="setupCode">6-digit code from your email</label>
             <input type="text" id="setupCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
           </div>
-          <div class="field">
+          <div class="field pwd-field">
             <label for="setupPassword">Set a password (min 8 characters)</label>
             <input type="password" id="setupPassword" autocomplete="new-password" minlength="8">
+            <button type="button" class="pwd-toggle" data-target="setupPassword">Show</button>
           </div>
           <button class="btn gold" type="submit"><span>Set password &amp; log in</span></button>
           <p class="gate-hint">
