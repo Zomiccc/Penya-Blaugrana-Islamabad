@@ -259,7 +259,6 @@
               class="pred-away" value="${away}" ${disabled}
               aria-label="${escapeHtml(f.awayTeam)} goals">
           </div>
-          </div>
           <div class="pred-team away">
             ${crest(f.awayCrest, f.awayTeam)}
             <span>${escapeHtml(f.awayTeam)}</span>
