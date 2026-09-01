@@ -1104,6 +1104,34 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
   res.json({ ok: true, message: msg });
 });
 
+// DELETE /api/admin/chat/message/:id — admin deletes a chat message
+app.delete('/api/admin/chat/message/:id', requireAdmin, async (req, res) => {
+  const id = req.params.id;
+  await writeDb((d) => {
+    d.chatMessages = (d.chatMessages || []).filter((m) => m.id !== id);
+    d.broadcasts = (d.broadcasts || []).filter((m) => m.id !== id);
+    return d;
+  });
+  res.json({ ok: true });
+});
+
+// POST /api/admin/chat/cleanup — remove messages with broken file URLs (pre-base64)
+app.post('/api/admin/chat/cleanup', requireAdmin, async (req, res) => {
+  let removed = 0;
+  await writeDb((d) => {
+    const before = (d.chatMessages || []).length;
+    d.chatMessages = (d.chatMessages || []).filter((m) => {
+      // Remove messages that have file URLs pointing to /uploads/chat/ (broken)
+      if (m.attachment && m.attachment.url && !m.attachment.dataUrl) return false;
+      if (m.voiceNote && m.voiceNote.url && !m.voiceNote.dataUrl) return false;
+      return true;
+    });
+    removed = before - d.chatMessages.length;
+    return d;
+  });
+  res.json({ ok: true, removed });
+});
+
 // ---------------------------- Static hosting ----------------------------
 const PUBLIC_DIR = path.join(__dirname, 'public');
 

@@ -356,7 +356,7 @@ function renderAdminChatMsg(m) {
   });
   const email = m.senderEmail ? ` &lt;${escapeHtml(m.senderEmail)}&gt;` : '';
   let content = escapeHtml(m.text || '');
-  if (m.attachment) {
+  if (m.attachment && (m.attachment.dataUrl || m.attachment.url)) {
     const src = m.attachment.dataUrl || m.attachment.url;
     if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
       content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" style="max-width:200px;border-radius:4px;margin-top:4px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
@@ -366,7 +366,7 @@ function renderAdminChatMsg(m) {
       content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}" style="color:var(--gold)">📎 ${escapeHtml(m.attachment.filename)}</a>`;
     }
   }
-  if (m.voiceNote) {
+  if (m.voiceNote && (m.voiceNote.dataUrl || m.voiceNote.url)) {
     const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
     content += `<br><audio src="${vsrc}" controls style="width:100%;margin-top:4px"></audio>`;
   }

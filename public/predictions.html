@@ -250,7 +250,7 @@
   .chat-fab{
     position:fixed;bottom:24px;right:24px;z-index:9000;
     width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-    background:var(--blue);color:#fff;font-size:1.5rem;
+    background:var(--blau);color:#fff;font-size:1.5rem;
     box-shadow:0 4px 20px rgba(0,77,152,.4);
     display:flex;align-items:center;justify-content:center;
     transition:transform .2s,box-shadow .2s;
@@ -258,7 +258,7 @@
   .chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,77,152,.5)}
   .chat-fab .chat-badge{
     position:absolute;top:-4px;right:-4px;
-    background:var(--gold);color:var(--blue);
+    background:var(--gold);color:var(--blau);
     font-size:.6rem;font-weight:700;font-family:var(--mono);
     min-width:18px;height:18px;border-radius:9px;
     display:flex;align-items:center;justify-content:center;
@@ -268,13 +268,13 @@
     position:fixed;bottom:90px;right:24px;z-index:9001;
     width:380px;max-width:calc(100vw - 32px);
     height:520px;max-height:calc(100vh - 120px);
-    background:var(--navy);border:1px solid rgba(255,255,255,.1);
+    background:var(--night-2);border:1px solid var(--line);
     border-radius:12px;display:none;flex-direction:column;
-    box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:hidden;
+    box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden;
   }
   .chat-panel.open{display:flex}
   .chat-header{
-    padding:14px 18px;background:var(--blue);color:#fff;
+    padding:14px 18px;background:var(--blau);color:#fff;
     display:flex;align-items:center;justify-content:space-between;
     flex-shrink:0;
   }
@@ -282,15 +282,16 @@
   .chat-close{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;padding:0;line-height:1}
   .chat-body{
     flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;
+    background:var(--night);
   }
   .chat-msg{
     max-width:80%;padding:8px 12px;border-radius:8px;font-size:.8rem;
     font-family:var(--mono);line-height:1.4;word-break:break-word;
   }
-  .chat-msg.me{align-self:flex-end;background:var(--blue);color:#fff}
+  .chat-msg.me{align-self:flex-end;background:var(--blau);color:#fff}
   .chat-msg.other{align-self:flex-start;background:rgba(255,255,255,.08);color:var(--chalk)}
   .chat-msg.admin{
-    align-self:flex-start;background:rgba(0,77,152,.18);border:1px solid rgba(0,77,152,.4);
+    align-self:flex-start;background:rgba(0,77,152,.25);border:1px solid rgba(0,77,152,.5);
     color:var(--chalk);
   }
   .chat-msg.broadcast{
@@ -305,24 +306,25 @@
   .chat-msg audio{width:100%;margin-top:4px}
   .chat-msg a{color:var(--gold);text-decoration:underline}
   .chat-input-area{
-    padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);
+    padding:10px 14px;border-top:1px solid var(--line);
     display:flex;align-items:center;gap:8px;flex-shrink:0;
+    background:var(--night-2);
   }
   .chat-input-area input[type=text]{
-    flex:1;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);
-    color:var(--chalk);padding:10px 12px;border-radius:6px;font-size:.8rem;
+    flex:1;background:rgba(0,0,0,.5);border:1px solid var(--line);color:var(--chalk);
+    padding:10px 12px;border-radius:6px;font-size:.8rem;
     font-family:var(--mono);
   }
   .chat-input-area input[type=text]:focus{outline:none;border-color:var(--gold)}
   .chat-btn{
-    background:none;border:1px solid rgba(255,255,255,.15);color:var(--chalk);
+    background:none;border:1px solid var(--line);color:var(--chalk);
     width:36px;height:36px;border-radius:50%;cursor:pointer;
     display:flex;align-items:center;justify-content:center;font-size:1rem;
     flex-shrink:0;transition:all .2s;
   }
   .chat-btn:hover{border-color:var(--gold);color:var(--gold)}
-  .chat-btn.send{background:var(--blue);border-color:var(--blue);color:#fff}
-  .chat-btn.send:hover{background:#003a75}
+  .chat-btn.send{background:var(--blau);border-color:var(--blau);color:#fff}
+  .chat-btn.send:hover{background:var(--blau-dk)}
   .chat-btn.recording{background:#e74c3c;border-color:#e74c3c;color:#fff;animation:pulse 1s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
   .chat-empty{text-align:center;color:var(--muted);font-size:.75rem;padding:20px;font-family:var(--mono)}

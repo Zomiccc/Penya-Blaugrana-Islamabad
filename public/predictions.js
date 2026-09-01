@@ -617,7 +617,7 @@
     }
     const time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let content = escapeHtml(m.text || '');
-    if (m.attachment) {
+    if (m.attachment && (m.attachment.dataUrl || m.attachment.url)) {
       const src = m.attachment.dataUrl || m.attachment.url;
       if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
         content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy" style="max-width:200px;border-radius:6px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
@@ -627,7 +627,7 @@
         content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}">📎 ${escapeHtml(m.attachment.filename)}</a>`;
       }
     }
-    if (m.voiceNote) {
+    if (m.voiceNote && (m.voiceNote.dataUrl || m.voiceNote.url)) {
       const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
       content += `<br><audio src="${vsrc}" controls style="width:100%"></audio>`;
     }
