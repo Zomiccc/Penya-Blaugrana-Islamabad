@@ -98,24 +98,6 @@
     font-family:var(--mono);font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;
     color:var(--chalk);line-height:1.3;min-width:0;
   }
-  .pred-center{display:flex;flex-direction:column;align-items:center;gap:8px}
-  .pred-count-boxes{
-    display:flex;align-items:stretch;gap:0;
-    background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:4px;
-    overflow:hidden;
-  }
-  .pred-count{
-    display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;
-    padding:4px 10px;min-width:48px;
-  }
-  .pred-count-icon{font-size:.6rem;opacity:.6}
-  .pred-count-num{
-    font-family:var(--display);font-size:.85rem;font-weight:700;color:var(--gold);
-    line-height:1;
-  }
-  .pred-count-divider{
-    width:1px;background:rgba(255,255,255,.15);flex-shrink:0;
-  }
   .score-input{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap}
   .score-input input{
     width:56px;background:rgba(0,0,0,.5);border:1px solid var(--gold);color:var(--chalk);
@@ -243,13 +225,9 @@
     .pred-team.away{flex-direction:row;text-align:left}
     .pred-team img{width:28px;height:28px}
     .pred-team span{font-size:.68rem;flex:1;word-break:break-word}
-    .pred-center{order:2;width:100%;align-items:center;margin:4px 0}
-    .pred-count-boxes{width:auto;justify-content:center}
-    .pred-count{min-width:40px;padding:4px 8px}
-    .pred-count-num{font-size:.8rem}
     .score-input{
       flex-direction:row;flex-wrap:nowrap;white-space:nowrap;
-      width:100%;justify-content:center;gap:10px;
+      order:2;width:100%;justify-content:center;gap:10px;margin:4px 0;
     }
     .score-input input{width:48px;flex-shrink:0;font-size:1.05rem}
     .pred-when{text-align:left;min-width:0;order:3}

@@ -244,34 +244,21 @@
       const disabled = f.locked || closed ? 'disabled' : '';
       const home = f.myPrediction ? f.myPrediction.homeGoals : '';
       const away = f.myPrediction ? f.myPrediction.awayGoals : '';
-      const pc = f.predictionCounts || { home: 0, away: 0, total: 0 };
       return `
         <div class="pred-row" data-fixture-id="${escapeHtml(f.id)}">
           <div class="pred-team">
             ${crest(f.homeCrest, f.homeTeam)}
             <span>${escapeHtml(f.homeTeam)}</span>
           </div>
-          <div class="pred-center">
-            <div class="pred-count-boxes" title="Number of members who predicted each team to win — not match scores">
-              <div class="pred-count left" title="${pc.home} member${pc.home === 1 ? '' : 's'} picked ${escapeHtml(f.homeTeam)}">
-                <span class="pred-count-icon">👥</span>
-                <span class="pred-count-num">${pc.home}</span>
-              </div>
-              <div class="pred-count-divider"></div>
-              <div class="pred-count right" title="${pc.away} member${pc.away === 1 ? '' : 's'} picked ${escapeHtml(f.awayTeam)}">
-                <span class="pred-count-icon">👥</span>
-                <span class="pred-count-num">${pc.away}</span>
-              </div>
-            </div>
-            <div class="score-input">
-              <input type="number" min="0" max="20" inputmode="numeric"
-                class="pred-home" value="${home}" ${disabled}
-                aria-label="${escapeHtml(f.homeTeam)} goals">
-              <span class="dash">–</span>
-              <input type="number" min="0" max="20" inputmode="numeric"
-                class="pred-away" value="${away}" ${disabled}
-                aria-label="${escapeHtml(f.awayTeam)} goals">
-            </div>
+          <div class="score-input">
+            <input type="number" min="0" max="20" inputmode="numeric"
+              class="pred-home" value="${home}" ${disabled}
+              aria-label="${escapeHtml(f.homeTeam)} goals">
+            <span class="dash">–</span>
+            <input type="number" min="0" max="20" inputmode="numeric"
+              class="pred-away" value="${away}" ${disabled}
+              aria-label="${escapeHtml(f.awayTeam)} goals">
+          </div>
           </div>
           <div class="pred-team away">
             ${crest(f.awayCrest, f.awayTeam)}
@@ -632,17 +619,18 @@
     const time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let content = escapeHtml(m.text || '');
     if (m.attachment) {
-      const url = m.attachment.url;
+      const src = m.attachment.dataUrl || m.attachment.url;
       if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
-        content += `<br><img src="${url}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy">`;
+        content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy" style="max-width:200px;border-radius:6px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
       } else if (m.attachment.mimetype && m.attachment.mimetype.startsWith('video/')) {
-        content += `<br><video src="${url}" controls></video>`;
+        content += `<br><video src="${src}" controls style="max-width:200px;border-radius:6px"></video>`;
       } else {
-        content += `<br><a href="${url}" target="_blank">📎 ${escapeHtml(m.attachment.filename)}</a>`;
+        content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}">📎 ${escapeHtml(m.attachment.filename)}</a>`;
       }
     }
     if (m.voiceNote) {
-      content += `<br><audio src="${m.voiceNote.url}" controls></audio>`;
+      const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
+      content += `<br><audio src="${vsrc}" controls style="width:100%"></audio>`;
     }
     return `<div class="chat-msg ${cls}">
       <div class="chat-sender">${sender}</div>

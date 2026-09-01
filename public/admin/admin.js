@@ -357,17 +357,18 @@ function renderAdminChatMsg(m) {
   const email = m.senderEmail ? ` &lt;${escapeHtml(m.senderEmail)}&gt;` : '';
   let content = escapeHtml(m.text || '');
   if (m.attachment) {
-    const url = m.attachment.url;
+    const src = m.attachment.dataUrl || m.attachment.url;
     if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
-      content += `<br><img src="${url}" alt="${escapeHtml(m.attachment.filename)}" style="max-width:200px;border-radius:4px;margin-top:4px;cursor:pointer" onclick="window.open('${url}','_blank')">`;
+      content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" style="max-width:200px;border-radius:4px;margin-top:4px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
     } else if (m.attachment.mimetype && m.attachment.mimetype.startsWith('video/')) {
-      content += `<br><video src="${url}" controls style="max-width:200px;border-radius:4px;margin-top:4px"></video>`;
+      content += `<br><video src="${src}" controls style="max-width:200px;border-radius:4px;margin-top:4px"></video>`;
     } else {
-      content += `<br><a href="${url}" target="_blank" style="color:var(--gold)">📎 ${escapeHtml(m.attachment.filename)}</a>`;
+      content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}" style="color:var(--gold)">📎 ${escapeHtml(m.attachment.filename)}</a>`;
     }
   }
   if (m.voiceNote) {
-    content += `<br><audio src="${m.voiceNote.url}" controls style="width:100%;margin-top:4px"></audio>`;
+    const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
+    content += `<br><audio src="${vsrc}" controls style="width:100%;margin-top:4px"></audio>`;
   }
   const replyBtn = (!m.isAdmin && !m.isBroadcast) ?
     ` <button class="btn" style="padding:3px 8px;font-size:.65rem;margin-top:4px" onclick="adminReplyTo('${m.id}','${escapeHtml(m.senderName).replace(/'/g, "\\'")}')">Reply</button>` : '';

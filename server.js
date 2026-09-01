@@ -725,25 +725,11 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
   const mine = db.predictions.filter((p) => p.memberId === req.member.id);
   const myByFixture = new Map(mine.map((p) => [String(p.fixtureId), p]));
 
-  // Count predictions per fixture (how many members predicted each side)
-  const predCountByFixture = new Map();
-  for (const p of db.predictions) {
-    const key = String(p.fixtureId);
-    if (!predCountByFixture.has(key)) {
-      predCountByFixture.set(key, { home: 0, away: 0, total: 0 });
-    }
-    const cnt = predCountByFixture.get(key);
-    cnt.total += 1;
-    if (p.homeGoals > p.awayGoals) cnt.home += 1;
-    else if (p.awayGoals > p.homeGoals) cnt.away += 1;
-  }
-
   res.json({
     deadline: deadline ? deadline.toISOString() : null,
     points: predictor.POINTS,
     fixtures: window.map((m) => {
       const existing = myByFixture.get(String(m.id));
-      const cnt = predCountByFixture.get(String(m.id)) || { home: 0, away: 0, total: 0 };
       return {
         id: m.id,
         utcDate: m.utcDate,
@@ -760,8 +746,6 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
         myPrediction: existing
           ? { homeGoals: existing.homeGoals, awayGoals: existing.awayGoals }
           : null,
-        // How many members predicted each team to win (not match scores!)
-        predictionCounts: cnt,
       };
     }),
   });
@@ -947,20 +931,11 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
    Admin can send broadcast messages that appear in the chat.
    ========================================================================== */
 
-// Multer-like file upload handling using express.raw for attachments
+// File uploads stored as base64 data URLs in the DB (survives Render deploys)
 const multer = require('multer');
-const chatUploadDir = path.join(__dirname, 'public', 'uploads', 'chat');
-if (!fs.existsSync(chatUploadDir)) fs.mkdirSync(chatUploadDir, { recursive: true });
-const chatStorage = multer.diskStorage({
-  destination: chatUploadDir,
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '';
-    cb(null, `${Date.now()}-${crypto.randomUUID()}${ext}`);
-  },
-});
 const chatUpload = multer({
-  storage: chatStorage,
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max (stored in DB as base64)
 });
 
 // GET /api/chat/messages — latest messages (last 200)
@@ -1017,7 +992,7 @@ app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (re
   }
   const text = (req.body.text || '').trim() || '';
   const isVoice = req.body.voiceNote === 'true';
-  const url = `/uploads/chat/${req.file.filename}`;
+  const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
   const msg = {
     id: crypto.randomUUID(),
     senderId: req.member.id,
@@ -1025,9 +1000,9 @@ app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (re
     createdAt: new Date().toISOString(),
   };
   if (isVoice) {
-    msg.voiceNote = { url, filename: req.file.originalname, size: req.file.size };
+    msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
   } else {
-    msg.attachment = { url, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
   }
   await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
   res.json({ ok: true, message: msg });
@@ -1112,7 +1087,7 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
     return res.status(400).json({ error: 'No file uploaded' });
   }
   const text = (req.body.text || '').trim() || '';
-  const url = `/uploads/chat/${req.file.filename}`;
+  const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
   const msg = {
     id: crypto.randomUUID(),
     senderId: null,
@@ -1121,9 +1096,9 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
     createdAt: new Date().toISOString(),
   };
   if (req.body.voiceNote === 'true') {
-    msg.voiceNote = { url, filename: req.file.originalname, size: req.file.size };
+    msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
   } else {
-    msg.attachment = { url, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
   }
   await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
   res.json({ ok: true, message: msg });
