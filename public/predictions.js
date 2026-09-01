@@ -615,8 +615,20 @@
   }
 
   function renderChatMsg(m) {
-    const cls = m.isBroadcast ? 'broadcast' : (m.isMe ? 'me' : 'other');
-    const sender = m.isBroadcast ? '📢 Admin Announcement' : escapeHtml(m.senderName);
+    let cls, sender;
+    if (m.isBroadcast) {
+      cls = 'broadcast';
+      sender = '📢 Admin Announcement';
+    } else if (m.isAdmin) {
+      cls = 'admin';
+      sender = '🛡️ Admin';
+    } else if (m.isMe) {
+      cls = 'me';
+      sender = escapeHtml(m.senderName);
+    } else {
+      cls = 'other';
+      sender = escapeHtml(m.senderName);
+    }
     const time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let content = escapeHtml(m.text || '');
     if (m.attachment) {

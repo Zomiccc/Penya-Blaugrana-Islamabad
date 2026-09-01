@@ -979,9 +979,10 @@ app.get('/api/chat/messages', requireMember, (req, res) => {
     .map((m) => ({
       id: m.id,
       senderId: m.senderId || null,
-      senderName: m.isBroadcast ? 'Admin' : (nameById.get(m.senderId) || 'Former member'),
+      senderName: m.isBroadcast ? 'Admin' : (m.isAdminReply ? 'Admin' : (nameById.get(m.senderId) || 'Former member')),
       isMe: m.senderId === req.member.id,
       isBroadcast: Boolean(m.isBroadcast),
+      isAdmin: Boolean(m.isAdminReply),
       text: m.text || '',
       attachment: m.attachment || null,
       voiceNote: m.voiceNote || null,
@@ -1054,6 +1055,78 @@ app.post('/api/admin/chat/broadcast', requireAdmin, async (req, res) => {
 app.get('/api/admin/chat/broadcasts', requireAdmin, (req, res) => {
   const db = readDb();
   res.json({ broadcasts: (db.broadcasts || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
+});
+
+// GET /api/admin/chat/messages — admin sees all chat messages with sender info
+app.get('/api/admin/chat/messages', requireAdmin, (req, res) => {
+  const db = readDb();
+  const nameById = new Map(
+    db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
+  );
+  const emailById = new Map(db.members.map((m) => [m.id, m.email]));
+  const messages = [...(db.chatMessages || []), ...(db.broadcasts || []).map(b => ({
+    ...b,
+    isBroadcast: true,
+    senderId: null,
+  }))]
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .map((m) => ({
+      id: m.id,
+      senderId: m.senderId || null,
+      senderName: m.isBroadcast ? 'Admin (Broadcast)' : (nameById.get(m.senderId) || 'Former member'),
+      senderEmail: m.isBroadcast ? null : (emailById.get(m.senderId) || null),
+      isBroadcast: Boolean(m.isBroadcast),
+      isAdmin: Boolean(m.isAdminReply),
+      text: m.text || '',
+      attachment: m.attachment || null,
+      voiceNote: m.voiceNote || null,
+      createdAt: m.createdAt,
+    }));
+  res.json({ messages });
+});
+
+// POST /api/admin/chat/reply — admin replies to a specific message or sends a general reply
+app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
+  const { text, replyToId } = req.body || {};
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
+  if (String(text).length > 2000) {
+    return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+  }
+  const msg = {
+    id: crypto.randomUUID(),
+    senderId: null,
+    isAdminReply: true,
+    replyToId: replyToId || null,
+    text: String(text).trim(),
+    createdAt: new Date().toISOString(),
+  };
+  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+  res.json({ ok: true, message: msg });
+});
+
+// POST /api/admin/chat/upload — admin sends a reply with file attachment
+app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const text = (req.body.text || '').trim() || '';
+  const url = `/uploads/chat/${req.file.filename}`;
+  const msg = {
+    id: crypto.randomUUID(),
+    senderId: null,
+    isAdminReply: true,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  if (req.body.voiceNote === 'true') {
+    msg.voiceNote = { url, filename: req.file.originalname, size: req.file.size };
+  } else {
+    msg.attachment = { url, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+  }
+  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+  res.json({ ok: true, message: msg });
 });
 
 // ---------------------------- Static hosting ----------------------------

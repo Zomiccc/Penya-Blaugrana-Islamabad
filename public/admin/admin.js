@@ -51,6 +51,18 @@ async function init() {
   document.getElementById('pwForm').addEventListener('submit', changePassword);
   document.getElementById('addMemberForm').addEventListener('submit', addMember);
   document.getElementById('broadcastForm').addEventListener('submit', sendBroadcast);
+  document.getElementById('adminChatSend').addEventListener('click', sendAdminReply);
+  document.getElementById('adminChatText').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); sendAdminReply(); }
+  });
+  document.getElementById('adminChatAttach').addEventListener('click', () => {
+    document.getElementById('adminChatFile').click();
+  });
+  document.getElementById('adminChatFile').addEventListener('change', () => {
+    const f = document.getElementById('adminChatFile');
+    if (f.files[0]) sendAdminReplyWithFile(f.files[0]);
+    f.value = '';
+  });
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
@@ -58,6 +70,8 @@ async function init() {
   document.getElementById('statusFilter').addEventListener('change', loadMembers);
   document.getElementById('typeFilter').addEventListener('change', loadMembers);
   loadBroadcasts();
+  loadAdminChat();
+  setInterval(loadAdminChat, 5000);
 }
 
 function debounce(fn, ms) {
@@ -299,4 +313,104 @@ async function loadBroadcasts() {
   } catch (err) {
     container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
   }
+}
+
+/* ---------------------------- Admin ChatBox ---------------------------- */
+let adminChatLastCount = 0;
+
+async function loadAdminChat() {
+  const body = document.getElementById('adminChatBody');
+  if (!body) return;
+  try {
+    const data = await api('/api/admin/chat/messages');
+    const msgs = data.messages || [];
+    if (!msgs.length) {
+      body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem">No messages yet.</p>';
+      adminChatLastCount = 0;
+      return;
+    }
+    // Preserve scroll position if user is near bottom
+    const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 100;
+    body.innerHTML = msgs.map(renderAdminChatMsg).join('');
+    if (nearBottom) body.scrollTop = body.scrollHeight;
+    adminChatLastCount = msgs.length;
+  } catch (err) {
+    body.innerHTML = `<p style="text-align:center;color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function renderAdminChatMsg(m) {
+  let bg, border, align, sender;
+  if (m.isBroadcast) {
+    bg = 'rgba(237,187,0,.1)'; border = 'rgba(237,187,0,.3)';
+    align = 'center'; sender = '📢 Broadcast';
+  } else if (m.isAdmin) {
+    bg = 'rgba(0,77,152,.15)'; border = 'rgba(0,77,152,.4)';
+    align = 'flex-end'; sender = '🛡️ Admin (You)';
+  } else {
+    bg = 'rgba(255,255,255,.06)'; border = 'rgba(255,255,255,.1)';
+    align = 'flex-start'; sender = escapeHtml(m.senderName);
+  }
+  const time = new Date(m.createdAt).toLocaleString([], {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+  const email = m.senderEmail ? ` &lt;${escapeHtml(m.senderEmail)}&gt;` : '';
+  let content = escapeHtml(m.text || '');
+  if (m.attachment) {
+    const url = m.attachment.url;
+    if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
+      content += `<br><img src="${url}" alt="${escapeHtml(m.attachment.filename)}" style="max-width:200px;border-radius:4px;margin-top:4px;cursor:pointer" onclick="window.open('${url}','_blank')">`;
+    } else if (m.attachment.mimetype && m.attachment.mimetype.startsWith('video/')) {
+      content += `<br><video src="${url}" controls style="max-width:200px;border-radius:4px;margin-top:4px"></video>`;
+    } else {
+      content += `<br><a href="${url}" target="_blank" style="color:var(--gold)">📎 ${escapeHtml(m.attachment.filename)}</a>`;
+    }
+  }
+  if (m.voiceNote) {
+    content += `<br><audio src="${m.voiceNote.url}" controls style="width:100%;margin-top:4px"></audio>`;
+  }
+  const replyBtn = (!m.isAdmin && !m.isBroadcast) ?
+    ` <button class="btn" style="padding:3px 8px;font-size:.65rem;margin-top:4px" onclick="adminReplyTo('${m.id}','${escapeHtml(m.senderName).replace(/'/g, "\\'")}')">Reply</button>` : '';
+  return `<div style="align-self:${align};max-width:75%;background:${bg};border:1px solid ${border};border-radius:6px;padding:8px 12px;font-size:.8rem;font-family:var(--mono);word-break:break-word">
+    <div style="font-size:.6rem;color:var(--muted-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${sender}${email}</div>
+    <div style="color:var(--chalk);line-height:1.4">${content}</div>
+    <div style="font-size:.55rem;color:var(--muted);margin-top:4px;opacity:.7">${time}</div>
+    ${replyBtn}
+  </div>`;
+}
+
+async function sendAdminReply() {
+  const input = document.getElementById('adminChatText');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  try {
+    await api('/api/admin/chat/reply', { method: 'POST', body: JSON.stringify({ text }) });
+    await loadAdminChat();
+  } catch (err) {
+    input.value = text;
+    alert('Failed to send: ' + err.message);
+  }
+}
+
+async function sendAdminReplyWithFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const res = await fetch('/api/admin/chat/upload', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formData,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    await loadAdminChat();
+  } catch (err) {
+    alert('Failed to upload: ' + err.message);
+  }
+}
+
+function adminReplyTo(msgId, senderName) {
+  const input = document.getElementById('adminChatText');
+  input.value = `@${senderName}: `;
+  input.focus();
 }
