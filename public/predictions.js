@@ -252,15 +252,15 @@
             <span>${escapeHtml(f.homeTeam)}</span>
           </div>
           <div class="pred-center">
-            <div class="pred-count-boxes">
-              <div class="pred-count left" title="${pc.home} member${pc.home === 1 ? '' : 's'} predicted ${escapeHtml(f.homeTeam)} to win">
+            <div class="pred-count-boxes" title="Number of members who predicted each team to win — not match scores">
+              <div class="pred-count left" title="${pc.home} member${pc.home === 1 ? '' : 's'} picked ${escapeHtml(f.homeTeam)}">
+                <span class="pred-count-icon">👥</span>
                 <span class="pred-count-num">${pc.home}</span>
-                <span class="pred-count-label">picked ${escapeHtml(f.homeTeam)}</span>
               </div>
               <div class="pred-count-divider"></div>
-              <div class="pred-count right" title="${pc.away} member${pc.away === 1 ? '' : 's'} predicted ${escapeHtml(f.awayTeam)} to win">
+              <div class="pred-count right" title="${pc.away} member${pc.away === 1 ? '' : 's'} picked ${escapeHtml(f.awayTeam)}">
+                <span class="pred-count-icon">👥</span>
                 <span class="pred-count-num">${pc.away}</span>
-                <span class="pred-count-label">picked ${escapeHtml(f.awayTeam)}</span>
               </div>
             </div>
             <div class="score-input">
