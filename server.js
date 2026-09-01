@@ -721,14 +721,29 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
   const now = new Date();
   const window = predictor.getPredictionWindow(matches, now);
   const deadline = predictor.getDeadline(matches, now);
-  const mine = readDb().predictions.filter((p) => p.memberId === req.member.id);
+  const db = readDb();
+  const mine = db.predictions.filter((p) => p.memberId === req.member.id);
   const myByFixture = new Map(mine.map((p) => [String(p.fixtureId), p]));
+
+  // Count predictions per fixture (how many members predicted each side)
+  const predCountByFixture = new Map();
+  for (const p of db.predictions) {
+    const key = String(p.fixtureId);
+    if (!predCountByFixture.has(key)) {
+      predCountByFixture.set(key, { home: 0, away: 0, total: 0 });
+    }
+    const cnt = predCountByFixture.get(key);
+    cnt.total += 1;
+    if (p.homeGoals > p.awayGoals) cnt.home += 1;
+    else if (p.awayGoals > p.homeGoals) cnt.away += 1;
+  }
 
   res.json({
     deadline: deadline ? deadline.toISOString() : null,
     points: predictor.POINTS,
     fixtures: window.map((m) => {
       const existing = myByFixture.get(String(m.id));
+      const cnt = predCountByFixture.get(String(m.id)) || { home: 0, away: 0, total: 0 };
       return {
         id: m.id,
         utcDate: m.utcDate,
@@ -745,6 +760,8 @@ app.get('/api/predictions/window', requireMember, (req, res) => {
         myPrediction: existing
           ? { homeGoals: existing.homeGoals, awayGoals: existing.awayGoals }
           : null,
+        // How many members predicted each team to win (not match scores!)
+        predictionCounts: cnt,
       };
     }),
   });
@@ -922,6 +939,121 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
     leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
     points: predictor.POINTS,
   });
+});
+
+/* ==========================================================================
+   ChatBox — member chat on the Predictions page
+   Members can send text, voice notes, and file attachments.
+   Admin can send broadcast messages that appear in the chat.
+   ========================================================================== */
+
+// Multer-like file upload handling using express.raw for attachments
+const multer = require('multer');
+const chatUploadDir = path.join(__dirname, 'public', 'uploads', 'chat');
+if (!fs.existsSync(chatUploadDir)) fs.mkdirSync(chatUploadDir, { recursive: true });
+const chatStorage = multer.diskStorage({
+  destination: chatUploadDir,
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '';
+    cb(null, `${Date.now()}-${crypto.randomUUID()}${ext}`);
+  },
+});
+const chatUpload = multer({
+  storage: chatStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+});
+
+// GET /api/chat/messages — latest messages (last 200)
+app.get('/api/chat/messages', requireMember, (req, res) => {
+  const db = readDb();
+  const nameById = new Map(
+    db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
+  );
+  const messages = [...(db.chatMessages || []), ...(db.broadcasts || []).map(b => ({
+    ...b,
+    isBroadcast: true,
+    senderName: 'Admin',
+  }))]
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .slice(-200)
+    .map((m) => ({
+      id: m.id,
+      senderId: m.senderId || null,
+      senderName: m.isBroadcast ? 'Admin' : (nameById.get(m.senderId) || 'Former member'),
+      isMe: m.senderId === req.member.id,
+      isBroadcast: Boolean(m.isBroadcast),
+      text: m.text || '',
+      attachment: m.attachment || null,
+      voiceNote: m.voiceNote || null,
+      createdAt: m.createdAt,
+    }));
+  res.json({ messages });
+});
+
+// POST /api/chat/messages — send a text message
+app.post('/api/chat/messages', requireMember, async (req, res) => {
+  const { text } = req.body || {};
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Message text is required' });
+  }
+  if (String(text).length > 2000) {
+    return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+  }
+  const msg = {
+    id: crypto.randomUUID(),
+    senderId: req.member.id,
+    text: String(text).trim(),
+    createdAt: new Date().toISOString(),
+  };
+  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+  res.json({ ok: true, message: msg });
+});
+
+// POST /api/chat/upload — send a message with file attachment (photo/video/doc)
+app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const text = (req.body.text || '').trim() || '';
+  const isVoice = req.body.voiceNote === 'true';
+  const url = `/uploads/chat/${req.file.filename}`;
+  const msg = {
+    id: crypto.randomUUID(),
+    senderId: req.member.id,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  if (isVoice) {
+    msg.voiceNote = { url, filename: req.file.originalname, size: req.file.size };
+  } else {
+    msg.attachment = { url, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+  }
+  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+  res.json({ ok: true, message: msg });
+});
+
+// POST /api/admin/chat/broadcast — admin sends a broadcast message
+app.post('/api/admin/chat/broadcast', requireAdmin, async (req, res) => {
+  const { text } = req.body || {};
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Broadcast text is required' });
+  }
+  if (String(text).length > 2000) {
+    return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+  }
+  const msg = {
+    id: crypto.randomUUID(),
+    text: String(text).trim(),
+    createdAt: new Date().toISOString(),
+  };
+  await writeDb((d) => { (d.broadcasts = d.broadcasts || []).push(msg); return d; });
+  res.json({ ok: true, message: msg });
+});
+
+// GET /api/admin/chat/broadcasts — list all broadcasts
+app.get('/api/admin/chat/broadcasts', requireAdmin, (req, res) => {
+  const db = readDb();
+  res.json({ broadcasts: (db.broadcasts || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
 });
 
 // ---------------------------- Static hosting ----------------------------

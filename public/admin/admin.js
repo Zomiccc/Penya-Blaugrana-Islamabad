@@ -50,12 +50,14 @@ async function init() {
   document.getElementById('pricingForm').addEventListener('submit', savePricing);
   document.getElementById('pwForm').addEventListener('submit', changePassword);
   document.getElementById('addMemberForm').addEventListener('submit', addMember);
+  document.getElementById('broadcastForm').addEventListener('submit', sendBroadcast);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
   document.getElementById('searchBox').addEventListener('input', debounce(loadMembers, 300));
   document.getElementById('statusFilter').addEventListener('change', loadMembers);
   document.getElementById('typeFilter').addEventListener('change', loadMembers);
+  loadBroadcasts();
 }
 
 function debounce(fn, ms) {
@@ -257,5 +259,44 @@ async function handleRowAction(btn) {
   } catch (err) {
     alert(err.message);
     btn.disabled = false;
+  }
+}
+
+/* ---------------------------- ChatBox Broadcast ---------------------------- */
+async function sendBroadcast(e) {
+  e.preventDefault();
+  const msg = document.getElementById('broadcastMsg');
+  const text = document.getElementById('broadcastText').value.trim();
+  if (!text) return;
+  if (!confirm('Send this broadcast to all members in the ChatBox?')) return;
+  try {
+    await api('/api/admin/chat/broadcast', { method: 'POST', body: JSON.stringify({ text }) });
+    document.getElementById('broadcastText').value = '';
+    flash(msg, 'Broadcast sent!', true);
+    await loadBroadcasts();
+  } catch (err) {
+    flash(msg, err.message, false);
+  }
+}
+
+async function loadBroadcasts() {
+  const container = document.getElementById('broadcastHistory');
+  if (!container) return;
+  try {
+    const data = await api('/api/admin/chat/broadcasts');
+    const bcs = data.broadcasts || [];
+    if (!bcs.length) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:.8rem">No broadcasts sent yet.</p>';
+      return;
+    }
+    container.innerHTML = '<h3 style="font-size:.85rem;margin-bottom:10px">Recent Broadcasts</h3>' +
+      bcs.map((b) => `
+        <div style="background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.2);border-radius:4px;padding:10px 14px;margin-bottom:8px">
+          <div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>
+          <div style="font-size:.65rem;color:var(--muted)">${new Date(b.createdAt).toLocaleString()}</div>
+        </div>
+      `).join('');
+  } catch (err) {
+    container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
   }
 }

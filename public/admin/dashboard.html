@@ -150,6 +150,22 @@
   </div>
 
   <div class="panel">
+    <h2>ChatBox Broadcast</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      Send a broadcast message that appears in the ChatBox on the Match Predictions page. All members will see it.
+    </p>
+    <form id="broadcastForm" style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="field" style="flex:1;min-width:300px">
+        <label>Broadcast Message</label>
+        <textarea id="broadcastText" rows="2" maxlength="2000" placeholder="Type your announcement…" style="width:100%;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:13px 14px;border-radius:2px;font-family:inherit;font-size:.9rem;resize:vertical"></textarea>
+      </div>
+      <button type="submit" class="btn gold">Send Broadcast</button>
+    </form>
+    <div id="broadcastMsg"></div>
+    <div id="broadcastHistory" style="margin-top:20px"></div>
+  </div>
+
+  <div class="panel">
     <h2>Members</h2>
     <div class="toolbar">
       <input type="text" id="searchBox" placeholder="Search name / email / country">

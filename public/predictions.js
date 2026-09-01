@@ -244,20 +244,34 @@
       const disabled = f.locked || closed ? 'disabled' : '';
       const home = f.myPrediction ? f.myPrediction.homeGoals : '';
       const away = f.myPrediction ? f.myPrediction.awayGoals : '';
+      const pc = f.predictionCounts || { home: 0, away: 0, total: 0 };
       return `
         <div class="pred-row" data-fixture-id="${escapeHtml(f.id)}">
           <div class="pred-team">
             ${crest(f.homeCrest, f.homeTeam)}
             <span>${escapeHtml(f.homeTeam)}</span>
           </div>
-          <div class="score-input">
-            <input type="number" min="0" max="20" inputmode="numeric"
-              class="pred-home" value="${home}" ${disabled}
-              aria-label="${escapeHtml(f.homeTeam)} goals">
-            <span class="dash">–</span>
-            <input type="number" min="0" max="20" inputmode="numeric"
-              class="pred-away" value="${away}" ${disabled}
-              aria-label="${escapeHtml(f.awayTeam)} goals">
+          <div class="pred-center">
+            <div class="pred-count-boxes">
+              <div class="pred-count left" title="${pc.home} member${pc.home === 1 ? '' : 's'} predicted ${escapeHtml(f.homeTeam)} to win">
+                <span class="pred-count-num">${pc.home}</span>
+                <span class="pred-count-label">picked ${escapeHtml(f.homeTeam)}</span>
+              </div>
+              <div class="pred-count-divider"></div>
+              <div class="pred-count right" title="${pc.away} member${pc.away === 1 ? '' : 's'} predicted ${escapeHtml(f.awayTeam)} to win">
+                <span class="pred-count-num">${pc.away}</span>
+                <span class="pred-count-label">picked ${escapeHtml(f.awayTeam)}</span>
+              </div>
+            </div>
+            <div class="score-input">
+              <input type="number" min="0" max="20" inputmode="numeric"
+                class="pred-home" value="${home}" ${disabled}
+                aria-label="${escapeHtml(f.homeTeam)} goals">
+              <span class="dash">–</span>
+              <input type="number" min="0" max="20" inputmode="numeric"
+                class="pred-away" value="${away}" ${disabled}
+                aria-label="${escapeHtml(f.awayTeam)} goals">
+            </div>
           </div>
           <div class="pred-team away">
             ${crest(f.awayCrest, f.awayTeam)}
@@ -462,6 +476,175 @@
     $('whoName').textContent = `${me.member.firstName} ${me.member.lastName}`.trim();
 
     await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadReveal()]);
+    initChat();
+  }
+
+  /* ---------------------------- ChatBox ---------------------------- */
+  let chatOpen = false;
+  let chatPollTimer = null;
+  let chatLastCount = 0;
+  let mediaRecorder = null;
+  let chatChunks = [];
+
+  function initChat() {
+    const gate = $('chatGate');
+    if (!gate) return;
+    gate.hidden = false;
+
+    const fab = $('chatFab');
+    const panel = $('chatPanel');
+    const closeBtn = $('chatClose');
+    const sendBtn = $('chatSend');
+    const textInput = $('chatText');
+    const attachBtn = $('chatAttach');
+    const voiceBtn = $('chatVoice');
+    const fileInput = $('chatFileInput');
+
+    fab.addEventListener('click', () => {
+      chatOpen = !chatOpen;
+      panel.classList.toggle('open', chatOpen);
+      if (chatOpen) {
+        loadChatMessages();
+        startChatPolling();
+        textInput.focus();
+        $('chatBadge').hidden = true;
+      } else {
+        stopChatPolling();
+      }
+    });
+
+    closeBtn.addEventListener('click', () => {
+      chatOpen = false;
+      panel.classList.remove('open');
+      stopChatPolling();
+    });
+
+    sendBtn.addEventListener('click', sendChatText);
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatText(); }
+    });
+
+    attachBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) sendChatFile(fileInput.files[0], false);
+      fileInput.value = '';
+    });
+
+    voiceBtn.addEventListener('click', toggleVoiceRecord);
+  }
+
+  async function sendChatText() {
+    const input = $('chatText');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    try {
+      await api('/api/chat/messages', { method: 'POST', body: JSON.stringify({ text }) });
+      await loadChatMessages();
+    } catch (err) {
+      input.value = text;
+      alert('Failed to send: ' + err.message);
+    }
+  }
+
+  async function sendChatFile(file, isVoice) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('voiceNote', isVoice ? 'true' : 'false');
+    try {
+      const res = await fetch('/api/chat/upload', {
+        method: 'POST',
+        headers: { 'Cookie': document.cookie },
+        body: formData,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      await loadChatMessages();
+    } catch (err) {
+      alert('Failed to upload: ' + err.message);
+    }
+  }
+
+  async function toggleVoiceRecord() {
+    const voiceBtn = $('chatVoice');
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      voiceBtn.classList.remove('recording');
+      voiceBtn.textContent = '🎤';
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chatChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size) chatChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chatChunks, { type: 'audio/webm' });
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        sendChatFile(file, true);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorder.start();
+      voiceBtn.classList.add('recording');
+      voiceBtn.textContent = '⏹';
+    } catch (err) {
+      alert('Microphone access denied or not available');
+    }
+  }
+
+  async function loadChatMessages() {
+    const body = $('chatBody');
+    try {
+      const data = await api('/api/chat/messages');
+      const msgs = data.messages || [];
+      if (!msgs.length) {
+        body.innerHTML = '<p class="chat-empty">No messages yet. Start the conversation!</p>';
+        return;
+      }
+      body.innerHTML = msgs.map(renderChatMsg).join('');
+      body.scrollTop = body.scrollHeight;
+      // Update badge if new messages and chat is closed
+      if (!chatOpen && msgs.length > chatLastCount && chatLastCount > 0) {
+        const badge = $('chatBadge');
+        badge.textContent = msgs.length - chatLastCount;
+        badge.hidden = false;
+      }
+      chatLastCount = msgs.length;
+    } catch (err) {
+      body.innerHTML = '<p class="chat-empty">Could not load messages.</p>';
+    }
+  }
+
+  function renderChatMsg(m) {
+    const cls = m.isBroadcast ? 'broadcast' : (m.isMe ? 'me' : 'other');
+    const sender = m.isBroadcast ? '📢 Admin Announcement' : escapeHtml(m.senderName);
+    const time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let content = escapeHtml(m.text || '');
+    if (m.attachment) {
+      const url = m.attachment.url;
+      if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
+        content += `<br><img src="${url}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy">`;
+      } else if (m.attachment.mimetype && m.attachment.mimetype.startsWith('video/')) {
+        content += `<br><video src="${url}" controls></video>`;
+      } else {
+        content += `<br><a href="${url}" target="_blank">📎 ${escapeHtml(m.attachment.filename)}</a>`;
+      }
+    }
+    if (m.voiceNote) {
+      content += `<br><audio src="${m.voiceNote.url}" controls></audio>`;
+    }
+    return `<div class="chat-msg ${cls}">
+      <div class="chat-sender">${sender}</div>
+      ${content}
+      <div class="chat-time">${time}</div>
+    </div>`;
+  }
+
+  function startChatPolling() {
+    stopChatPolling();
+    chatPollTimer = setInterval(loadChatMessages, 5000);
+  }
+  function stopChatPolling() {
+    if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
   }
 
   document.addEventListener('DOMContentLoaded', () => {
