@@ -56,6 +56,7 @@ async function init() {
     if (e.key === 'Enter') { e.preventDefault(); sendAdminReply(); }
   });
   document.getElementById('adminChatAttach').addEventListener('click', () => {
+    if (!activeConvId) return;
     document.getElementById('adminChatFile').click();
   });
   document.getElementById('adminChatFile').addEventListener('change', () => {
@@ -63,6 +64,7 @@ async function init() {
     if (f.files[0]) sendAdminReplyWithFile(f.files[0]);
     f.value = '';
   });
+  document.getElementById('adminResolveBtn').addEventListener('click', toggleResolve);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
   document.getElementById('refreshBtn').addEventListener('click', () => { loadStats(); loadMembers(); loadFixtureStatus(); });
@@ -70,8 +72,8 @@ async function init() {
   document.getElementById('statusFilter').addEventListener('change', loadMembers);
   document.getElementById('typeFilter').addEventListener('change', loadMembers);
   loadBroadcasts();
-  loadAdminChat();
-  setInterval(loadAdminChat, 5000);
+  loadAdminConversations();
+  setInterval(loadAdminConversations, 5000);
 }
 
 function debounce(fn, ms) {
@@ -315,47 +317,108 @@ async function loadBroadcasts() {
   }
 }
 
-/* ---------------------------- Admin ChatBox ---------------------------- */
-let adminChatLastCount = 0;
+/* ---------------------------- Peyna Assistant Admin ---------------------------- */
+let activeConvId = null;
+let adminReplyToMsgId = null;
 
-async function loadAdminChat() {
-  const body = document.getElementById('adminChatBody');
-  if (!body) return;
+async function loadAdminConversations() {
+  const listEl = document.getElementById('adminConvItems');
+  const badgeEl = document.getElementById('adminUnreadBadge');
+  if (!listEl) return;
   try {
-    const data = await api('/api/admin/chat/messages');
-    const msgs = data.messages || [];
-    if (!msgs.length) {
-      body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem">No messages yet.</p>';
-      adminChatLastCount = 0;
+    const data = await api('/api/admin/chat/conversations');
+    const convs = data.conversations || [];
+    const totalUnread = convs.reduce((s, c) => s + (c.adminUnreadCount || 0), 0);
+    if (badgeEl) {
+      if (totalUnread > 0) { badgeEl.textContent = totalUnread; badgeEl.style.display = 'inline-block'; }
+      else { badgeEl.style.display = 'none'; }
+    }
+    if (!convs.length) {
+      listEl.innerHTML = '<p style="padding:20px;text-align:center;color:var(--muted);font-size:.75rem">No conversations yet.</p>';
       return;
     }
-    // Preserve scroll position if user is near bottom
-    const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 100;
+    listEl.innerHTML = convs.map((c) => `
+      <div class="conv-item ${c.id === activeConvId ? 'active' : ''}" data-conv-id="${c.id}"
+        onclick="selectConversation('${c.id}')"
+        style="padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;${c.id === activeConvId ? 'background:rgba(0,77,152,.2)' : ''}">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:.78rem;font-weight:600;color:var(--chalk);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.memberName)}</span>
+          ${c.adminUnreadCount > 0 ? `<span style="background:var(--grana);color:#fff;font-size:.55rem;padding:1px 6px;border-radius:8px;flex-shrink:0">${c.adminUnreadCount}</span>` : ''}
+          ${c.resolved ? '<span style="font-size:.55rem;color:#0a7d43;flex-shrink:0">✓</span>' : ''}
+        </div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</div>
+        <div style="font-size:.55rem;color:var(--muted-lt);margin-top:2px">${new Date(c.lastMessageAt).toLocaleDateString()} ${new Date(c.lastMessageAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    listEl.innerHTML = `<p style="padding:20px;text-align:center;color:var(--grana);font-size:.75rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function selectConversation(convId) {
+  activeConvId = convId;
+  adminReplyToMsgId = null;
+  cancelAdminReply();
+  await loadAdminMessages(convId);
+  await loadAdminConversations(); // refresh list to clear unread
+}
+
+async function loadAdminMessages(convId) {
+  const body = document.getElementById('adminChatBody');
+  const nameEl = document.getElementById('adminChatMemberName');
+  const emailEl = document.getElementById('adminChatMemberEmail');
+  const resolveBtn = document.getElementById('adminResolveBtn');
+  const textInput = document.getElementById('adminChatText');
+  const sendBtn = document.getElementById('adminChatSend');
+  const attachBtn = document.getElementById('adminChatAttach');
+
+  if (!convId) {
+    body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem">Select a member conversation to start chatting.</p>';
+    return;
+  }
+
+  try {
+    const data = await api(`/api/admin/chat/messages/${convId}`);
+    const conv = data.conversation;
+    const msgs = data.messages || [];
+
+    nameEl.textContent = conv.memberName;
+    emailEl.textContent = conv.memberEmail || '';
+    resolveBtn.style.display = 'inline-block';
+    resolveBtn.textContent = conv.resolved ? 'Reopen' : 'Resolve';
+    resolveBtn.style.color = conv.resolved ? '#0a7d43' : 'var(--gold)';
+    textInput.disabled = false;
+    sendBtn.disabled = false;
+    attachBtn.disabled = false;
+
+    if (!msgs.length) {
+      body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">No messages in this conversation yet.</p>';
+      return;
+    }
+
     body.innerHTML = msgs.map(renderAdminChatMsg).join('');
-    if (nearBottom) body.scrollTop = body.scrollHeight;
-    adminChatLastCount = msgs.length;
+    body.scrollTop = body.scrollHeight;
   } catch (err) {
     body.innerHTML = `<p style="text-align:center;color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
   }
 }
 
 function renderAdminChatMsg(m) {
-  let bg, border, align, sender;
-  if (m.isBroadcast) {
-    bg = 'rgba(237,187,0,.1)'; border = 'rgba(237,187,0,.3)';
-    align = 'center'; sender = '📢 Broadcast';
-  } else if (m.isAdmin) {
-    bg = 'rgba(0,77,152,.15)'; border = 'rgba(0,77,152,.4)';
-    align = 'flex-end'; sender = '🛡️ Admin (You)';
-  } else {
-    bg = 'rgba(255,255,255,.06)'; border = 'rgba(255,255,255,.1)';
-    align = 'flex-start'; sender = escapeHtml(m.senderName);
+  const isAdmin = m.isAdmin;
+  const align = isAdmin ? 'flex-end' : 'flex-start';
+  const bg = isAdmin ? 'rgba(0,77,152,.2)' : 'rgba(255,255,255,.06)';
+  const border = isAdmin ? 'rgba(0,77,152,.4)' : 'rgba(255,255,255,.1)';
+  const sender = isAdmin ? '🛡️ Admin' : escapeHtml(m.senderName);
+  const time = new Date(m.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  let replyHtml = '';
+  if (m.replyTo) {
+    replyHtml = `<div style="font-size:.6rem;color:var(--muted);border-left:2px solid var(--muted);padding-left:6px;margin-bottom:4px;opacity:.8">
+      ↳ ${escapeHtml(m.replyTo.preview)}
+    </div>`;
   }
-  const time = new Date(m.createdAt).toLocaleString([], {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-  const email = m.senderEmail ? ` &lt;${escapeHtml(m.senderEmail)}&gt;` : '';
-  let content = escapeHtml(m.text || '');
+
+  let content = replyHtml + escapeHtml(m.text || '');
   if (m.attachment && (m.attachment.dataUrl || m.attachment.url)) {
     const src = m.attachment.dataUrl || m.attachment.url;
     if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
@@ -370,24 +433,28 @@ function renderAdminChatMsg(m) {
     const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
     content += `<br><audio src="${vsrc}" controls style="width:100%;margin-top:4px"></audio>`;
   }
-  const replyBtn = (!m.isAdmin && !m.isBroadcast) ?
-    ` <button class="btn" style="padding:3px 8px;font-size:.65rem;margin-top:4px" onclick="adminReplyTo('${m.id}','${escapeHtml(m.senderName).replace(/'/g, "\\'")}')">Reply</button>` : '';
-  return `<div style="align-self:${align};max-width:75%;background:${bg};border:1px solid ${border};border-radius:6px;padding:8px 12px;font-size:.8rem;font-family:var(--mono);word-break:break-word">
-    <div style="font-size:.6rem;color:var(--muted-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${sender}${email}</div>
+
+  const replyBtn = `<button class="btn" style="padding:2px 8px;font-size:.6rem;margin-top:4px;opacity:.6" onclick="setAdminReplyTo('${m.id}','${escapeHtml(m.text || (m.voiceNote ? 'Voice note' : 'Attachment')).replace(/'/g, "\\'")}')">Reply</button>`;
+
+  return `<div style="align-self:${align};max-width:75%;background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;font-size:.8rem;font-family:var(--mono);word-break:break-word">
+    <div style="font-size:.6rem;color:var(--muted-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${sender}</div>
     <div style="color:var(--chalk);line-height:1.4">${content}</div>
-    <div style="font-size:.55rem;color:var(--muted);margin-top:4px;opacity:.7">${time}</div>
-    ${replyBtn}
+    <div style="font-size:.55rem;color:var(--muted);margin-top:4px;opacity:.7;display:flex;align-items:center;gap:6px">${time} ${replyBtn}</div>
   </div>`;
 }
 
 async function sendAdminReply() {
+  if (!activeConvId) return;
   const input = document.getElementById('adminChatText');
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  const replyTo = adminReplyToMsgId;
+  cancelAdminReply();
   try {
-    await api('/api/admin/chat/reply', { method: 'POST', body: JSON.stringify({ text }) });
-    await loadAdminChat();
+    await api('/api/admin/chat/reply', { method: 'POST', body: JSON.stringify({ text, conversationId: activeConvId, replyToMessageId: replyTo }) });
+    await loadAdminMessages(activeConvId);
+    await loadAdminConversations();
   } catch (err) {
     input.value = text;
     alert('Failed to send: ' + err.message);
@@ -395,23 +462,43 @@ async function sendAdminReply() {
 }
 
 async function sendAdminReplyWithFile(file) {
+  if (!activeConvId) return;
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('conversationId', activeConvId);
+  if (adminReplyToMsgId) formData.append('replyToMessageId', adminReplyToMsgId);
   try {
-    const res = await fetch('/api/admin/chat/upload', {
-      method: 'POST',
-      credentials: 'same-origin',
-      body: formData,
-    });
+    const res = await fetch('/api/admin/chat/upload', { method: 'POST', credentials: 'same-origin', body: formData });
     if (!res.ok) throw new Error(await res.text());
-    await loadAdminChat();
+    cancelAdminReply();
+    await loadAdminMessages(activeConvId);
+    await loadAdminConversations();
   } catch (err) {
     alert('Failed to upload: ' + err.message);
   }
 }
 
-function adminReplyTo(msgId, senderName) {
-  const input = document.getElementById('adminChatText');
-  input.value = `@${senderName}: `;
-  input.focus();
+function setAdminReplyTo(msgId, previewText) {
+  adminReplyToMsgId = msgId;
+  const preview = document.getElementById('adminReplyPreview');
+  const text = document.getElementById('adminReplyPreviewText');
+  text.textContent = previewText.slice(0, 60);
+  preview.style.display = 'block';
+  document.getElementById('adminChatText').focus();
+}
+
+function cancelAdminReply() {
+  adminReplyToMsgId = null;
+  document.getElementById('adminReplyPreview').style.display = 'none';
+}
+
+async function toggleResolve() {
+  if (!activeConvId) return;
+  try {
+    await api(`/api/admin/chat/resolve/${activeConvId}`, { method: 'POST' });
+    await loadAdminMessages(activeConvId);
+    await loadAdminConversations();
+  } catch (err) {
+    alert('Failed: ' + err.message);
+  }
 }

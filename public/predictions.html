@@ -224,7 +224,7 @@
     }
     .pred-team.away{flex-direction:row-reverse;text-align:right}
     .pred-team img{width:26px;height:26px;flex-shrink:0}
-    .pred-team span{font-size:.65rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .pred-team span{font-size:.62rem;min-width:0;word-break:break-word;line-height:1.2}
     .score-input{
       flex-direction:row;flex-wrap:nowrap;white-space:nowrap;
       width:auto;justify-content:center;gap:6px;flex-shrink:0;
@@ -246,65 +246,112 @@
     .pred-when{grid-column:1/-1;grid-row:2;text-align:center}
   }
 
-  /* ---------- ChatBox ---------- */
-  .chat-fab{
+  /* ---------- Peyna Assistant Chat ---------- */
+  .chat-launcher{
     position:fixed;bottom:24px;right:24px;z-index:9000;
-    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
-    background:var(--blau);color:#fff;font-size:1.5rem;
-    box-shadow:0 4px 20px rgba(0,77,152,.4);
-    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#7B2FF7,#5925c9);
+    color:#fff;border:none;cursor:pointer;
+    padding:12px 20px;border-radius:30px;
+    font-family:var(--mono);font-size:.78rem;font-weight:600;
+    display:flex;align-items:center;gap:8px;
+    box-shadow:0 4px 20px rgba(123,47,247,.4);
     transition:transform .2s,box-shadow .2s;
   }
-  .chat-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,77,152,.5)}
-  .chat-fab .chat-badge{
-    position:absolute;top:-4px;right:-4px;
-    background:var(--gold);color:var(--blau);
-    font-size:.6rem;font-weight:700;font-family:var(--mono);
+  .chat-launcher:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(123,47,247,.5)}
+  .chat-launcher .chat-badge{
+    position:absolute;top:-6px;right:-6px;
+    background:var(--gold);color:var(--night);
+    font-size:.55rem;font-weight:700;
     min-width:18px;height:18px;border-radius:9px;
     display:flex;align-items:center;justify-content:center;
     padding:0 5px;
   }
   .chat-panel{
-    position:fixed;bottom:90px;right:24px;z-index:9001;
-    width:380px;max-width:calc(100vw - 32px);
-    height:520px;max-height:calc(100vh - 120px);
+    position:fixed;bottom:80px;right:24px;z-index:9001;
+    width:390px;max-width:calc(100vw - 32px);
+    height:560px;max-height:calc(100vh - 120px);
     background:var(--night-2);border:1px solid var(--line);
-    border-radius:12px;display:none;flex-direction:column;
-    box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden;
+    border-radius:16px;display:none;flex-direction:column;
+    box-shadow:0 12px 48px rgba(0,0,0,.7);overflow:hidden;
   }
   .chat-panel.open{display:flex}
   .chat-header{
-    padding:14px 18px;background:var(--blau);color:#fff;
+    padding:14px 18px;background:linear-gradient(135deg,#7B2FF7,#5925c9);color:#fff;
     display:flex;align-items:center;justify-content:space-between;
     flex-shrink:0;
   }
-  .chat-header h4{font-family:var(--display);font-size:.9rem;letter-spacing:.04em;margin:0}
-  .chat-close{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;padding:0;line-height:1}
+  .chat-header h4{font-family:var(--display);font-size:.95rem;letter-spacing:.03em;margin:0}
+  .chat-header .chat-sub{font-size:.6rem;opacity:.7;font-family:var(--mono)}
+  .chat-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;padding:0;line-height:1;opacity:.8}
+  .chat-close:hover{opacity:1}
   .chat-body{
-    flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;
+    flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
     background:var(--night);
   }
   .chat-msg{
-    max-width:80%;padding:8px 12px;border-radius:8px;font-size:.8rem;
-    font-family:var(--mono);line-height:1.4;word-break:break-word;
+    max-width:78%;padding:10px 14px;border-radius:14px;font-size:.8rem;
+    font-family:var(--mono);line-height:1.4;word-break:break-word;position:relative;
   }
-  .chat-msg.me{align-self:flex-end;background:var(--blau);color:#fff}
-  .chat-msg.other{align-self:flex-start;background:rgba(255,255,255,.08);color:var(--chalk)}
+  .chat-msg.me{align-self:flex-end;background:linear-gradient(135deg,#7B2FF7,#5925c9);color:#fff;border-bottom-right-radius:4px}
+  .chat-msg.other{align-self:flex-start;background:rgba(255,255,255,.08);color:var(--chalk);border-bottom-left-radius:4px}
   .chat-msg.admin{
-    align-self:flex-start;background:rgba(0,77,152,.25);border:1px solid rgba(0,77,152,.5);
-    color:var(--chalk);
+    align-self:flex-start;background:rgba(0,77,152,.3);border:1px solid rgba(0,77,152,.5);
+    color:var(--chalk);border-bottom-left-radius:4px;
   }
   .chat-msg.broadcast{
     align-self:center;background:rgba(237,187,0,.12);border:1px solid rgba(237,187,0,.3);
-    color:var(--gold);text-align:center;max-width:90%;
+    color:var(--gold);text-align:center;max-width:90%;border-radius:10px;
   }
-  .chat-msg .chat-sender{font-size:.6rem;color:var(--muted-lt);margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
+  .chat-msg .chat-sender{font-size:.6rem;color:var(--muted-lt);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
   .chat-msg.me .chat-sender{color:rgba(255,255,255,.6)}
-  .chat-msg .chat-time{font-size:.55rem;color:var(--muted);margin-top:4px;opacity:.7}
-  .chat-msg img{max-width:100%;border-radius:6px;margin-top:4px;cursor:pointer}
-  .chat-msg video{max-width:100%;border-radius:6px;margin-top:4px}
-  .chat-msg audio{width:100%;margin-top:4px}
+  .chat-msg .chat-time{font-size:.55rem;color:var(--muted);margin-top:5px;opacity:.6}
+  .chat-msg.me .chat-time{color:rgba(255,255,255,.5)}
+  .chat-msg img{max-width:100%;border-radius:8px;margin-top:6px;cursor:pointer}
+  .chat-msg video{max-width:100%;border-radius:8px;margin-top:6px}
   .chat-msg a{color:var(--gold);text-decoration:underline}
+  .chat-reply-ref{
+    font-size:.62rem;border-left:2px solid var(--muted);padding-left:8px;
+    margin-bottom:6px;opacity:.7;cursor:pointer;
+  }
+  .chat-reply-ref:hover{opacity:1}
+  .chat-msg.me .chat-reply-ref{border-left-color:rgba(255,255,255,.4);color:rgba(255,255,255,.7)}
+  .chat-msg-actions{
+    position:absolute;top:4px;right:4px;opacity:0;transition:opacity .15s;
+  }
+  .chat-msg:hover .chat-msg-actions{opacity:1}
+  .chat-msg-action-btn{
+    background:rgba(0,0,0,.5);border:none;color:var(--muted-lt);
+    font-size:.55rem;padding:2px 8px;border-radius:10px;cursor:pointer;
+  }
+  .chat-msg-action-btn:hover{color:var(--chalk)}
+  /* Voice note bubble */
+  .voice-bubble{
+    display:flex;align-items:center;gap:8px;min-width:140px;
+  }
+  .voice-play-btn{
+    width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(255,255,255,.2);color:#fff;font-size:.9rem;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .chat-msg.me .voice-play-btn{background:rgba(255,255,255,.25)}
+  .voice-waveform{
+    flex:1;height:24px;display:flex;align-items:center;gap:2px;
+  }
+  .voice-bar{
+    flex:1;background:rgba(255,255,255,.3);border-radius:1px;min-height:4px;
+    transition:background .2s;
+  }
+  .voice-bar.played{background:rgba(255,255,255,.8)}
+  .chat-msg.other .voice-bar,.chat-msg.admin .voice-bar{background:rgba(255,255,255,.15)}
+  .chat-msg.other .voice-bar.played,.chat-msg.admin .voice-bar.played{background:var(--gold)}
+  .voice-duration{font-size:.6rem;opacity:.7;flex-shrink:0;font-family:var(--mono)}
+  .chat-reply-preview{
+    padding:8px 14px;border-top:1px solid var(--line);background:rgba(0,0,0,.3);
+    font-size:.7rem;color:var(--muted);display:none;
+  }
+  .chat-reply-preview .chat-reply-cancel{
+    background:none;border:none;color:var(--grana);cursor:pointer;margin-left:8px;
+  }
   .chat-input-area{
     padding:10px 14px;border-top:1px solid var(--line);
     display:flex;align-items:center;gap:8px;flex-shrink:0;
@@ -312,25 +359,27 @@
   }
   .chat-input-area input[type=text]{
     flex:1;background:rgba(0,0,0,.5);border:1px solid var(--line);color:var(--chalk);
-    padding:10px 12px;border-radius:6px;font-size:.8rem;
+    padding:10px 14px;border-radius:20px;font-size:.8rem;
     font-family:var(--mono);
   }
   .chat-input-area input[type=text]:focus{outline:none;border-color:var(--gold)}
   .chat-btn{
     background:none;border:1px solid var(--line);color:var(--chalk);
-    width:36px;height:36px;border-radius:50%;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;font-size:1rem;
+    width:38px;height:38px;border-radius:50%;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
     flex-shrink:0;transition:all .2s;
   }
   .chat-btn:hover{border-color:var(--gold);color:var(--gold)}
-  .chat-btn.send{background:var(--blau);border-color:var(--blau);color:#fff}
-  .chat-btn.send:hover{background:var(--blau-dk)}
+  .chat-btn.send{background:linear-gradient(135deg,#7B2FF7,#5925c9);border-color:transparent;color:#fff}
+  .chat-btn.send:hover{opacity:.9}
+  .chat-btn.voice{background:rgba(123,47,247,.15);border-color:rgba(123,47,247,.4);color:#a78bfa}
+  .chat-btn.voice:hover{background:rgba(123,47,247,.25)}
   .chat-btn.recording{background:#e74c3c;border-color:#e74c3c;color:#fff;animation:pulse 1s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-  .chat-empty{text-align:center;color:var(--muted);font-size:.75rem;padding:20px;font-family:var(--mono)}
+  .chat-empty{text-align:center;color:var(--muted);font-size:.75rem;padding:30px 20px;font-family:var(--mono)}
   @media(max-width:600px){
-    .chat-panel{bottom:80px;right:12px;width:calc(100vw - 24px);height:calc(100vh - 100px)}
-    .chat-fab{bottom:16px;right:16px}
+    .chat-panel{bottom:72px;right:8px;width:calc(100vw - 16px);height:calc(100vh - 90px);border-radius:12px}
+    .chat-launcher{bottom:16px;right:16px;padding:10px 16px;font-size:.72rem}
   }
 </style>
 </head>
@@ -510,24 +559,32 @@
   </div>
 </section>
 
-<!-- ChatBox — floating chat for logged-in members -->
+<!-- Peyna Assistant — private member-admin chat -->
 <div id="chatGate" hidden>
-  <button class="chat-fab" id="chatFab" aria-label="Open chat">
+  <button class="chat-launcher" id="chatFab" aria-label="Open chat">
     <span>💬</span>
+    <span>Talk to Admin</span>
     <span class="chat-badge" id="chatBadge" hidden>0</span>
   </button>
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
-      <h4>Penya ChatBox</h4>
+      <div>
+        <h4>Peyna Assistant</h4>
+        <div class="chat-sub">Private chat with Admin</div>
+      </div>
       <button class="chat-close" id="chatClose" aria-label="Close chat">×</button>
     </div>
     <div class="chat-body" id="chatBody">
       <p class="chat-empty">Loading messages…</p>
     </div>
+    <div class="chat-reply-preview" id="chatReplyPreview">
+      <span>Replying to: </span><span id="chatReplyPreviewText"></span>
+      <button class="chat-reply-cancel" onclick="cancelMemberReply()">✕</button>
+    </div>
     <div class="chat-input-area">
       <button class="chat-btn" id="chatAttach" aria-label="Attach file" title="Attach photo/video/document">📎</button>
-      <button class="chat-btn" id="chatVoice" aria-label="Record voice note" title="Record voice note">🎤</button>
       <input type="text" id="chatText" placeholder="Type a message…" maxlength="2000">
+      <button class="chat-btn voice" id="chatVoice" aria-label="Record voice note" title="Record voice note">🎤</button>
       <button class="chat-btn send" id="chatSend" aria-label="Send message">➤</button>
       <input type="file" id="chatFileInput" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
     </div>

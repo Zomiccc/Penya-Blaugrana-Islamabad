@@ -926,87 +926,397 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
 });
 
 /* ==========================================================================
-   ChatBox — member chat on the Predictions page
-   Members can send text, voice notes, and file attachments.
-   Admin can send broadcast messages that appear in the chat.
+   Peyna Assistant — one-to-one member-admin chat with privacy
+   Each member has exactly one private conversation thread with the admin.
+   Members can only read/write their own conversation.
+   Admin sees a conversation list and can select/reply to each member.
    ========================================================================== */
 
-// File uploads stored as base64 data URLs in the DB (survives Render deploys)
 const multer = require('multer');
 const chatUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max (stored in DB as base64)
 });
 
-// GET /api/chat/messages — latest messages (last 200)
+// Helper: get or create a conversation for a member
+function getOrCreateConversation(db, memberId) {
+  let conv = (db.chatConversations || []).find((c) => c.memberId === memberId);
+  if (!conv) {
+    conv = {
+      id: crypto.randomUUID(),
+      memberId,
+      resolved: false,
+      resolvedAt: null,
+      resolvedBy: null,
+      adminUnreadCount: 0,
+      memberUnreadCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    db.chatConversations = db.chatConversations || [];
+    db.chatConversations.push(conv);
+  }
+  return conv;
+}
+
+// Helper: build a replyTo preview from a referenced message
+function buildReplyPreview(db, replyToMessageId, conversationId) {
+  if (!replyToMessageId) return null;
+  const orig = (db.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conversationId);
+  if (!orig) return null;
+  let preview = orig.text || '';
+  if (orig.voiceNote) preview = '🎤 Voice note';
+  else if (orig.attachment) preview = `📎 ${orig.attachment.filename || 'Attachment'}`;
+  if (preview.length > 80) preview = preview.slice(0, 77) + '...';
+  return {
+    messageId: orig.id,
+    senderRole: orig.senderRole || 'member',
+    preview,
+  };
+}
+
+/* ---------- Member chat endpoints ---------- */
+
+// GET /api/chat/messages — member gets ONLY their own conversation messages
 app.get('/api/chat/messages', requireMember, (req, res) => {
   const db = readDb();
-  const nameById = new Map(
-    db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
-  );
-  const messages = [...(db.chatMessages || []), ...(db.broadcasts || []).map(b => ({
-    ...b,
+  const memberId = req.member.id;
+  const conv = (db.chatConversations || []).find((c) => c.memberId === memberId);
+  const memberName = `${req.member.firstName} ${req.member.lastName}`.trim();
+
+  // Member's own conversation messages only — privacy enforced server-side
+  const convMessages = (db.chatMessages || [])
+    .filter((m) => conv && m.conversationId === conv.id)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .map((m) => {
+      const isMe = m.senderId === memberId;
+      const isAdmin = m.senderRole === 'admin';
+      return {
+        id: m.id,
+        conversationId: m.conversationId,
+        senderId: m.senderId || null,
+        senderRole: m.senderRole || 'member',
+        senderName: isAdmin ? 'Admin' : memberName,
+        isMe,
+        isAdmin,
+        messageType: m.messageType || 'text',
+        text: m.text || '',
+        attachment: m.attachment || null,
+        voiceNote: m.voiceNote || null,
+        replyToMessageId: m.replyToMessageId || null,
+        replyTo: buildReplyPreview(db, m.replyToMessageId, conv ? conv.id : null),
+        createdAt: m.createdAt,
+      };
+    });
+
+  // Also include broadcasts (visible to all logged-in members)
+  const broadcasts = (db.broadcasts || []).map((b) => ({
+    id: b.id,
     isBroadcast: true,
     senderName: 'Admin',
-  }))]
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    .slice(-200)
-    .map((m) => ({
-      id: m.id,
-      senderId: m.senderId || null,
-      senderName: m.isBroadcast ? 'Admin' : (m.isAdminReply ? 'Admin' : (nameById.get(m.senderId) || 'Former member')),
-      isMe: m.senderId === req.member.id,
-      isBroadcast: Boolean(m.isBroadcast),
-      isAdmin: Boolean(m.isAdminReply),
-      text: m.text || '',
-      attachment: m.attachment || null,
-      voiceNote: m.voiceNote || null,
-      createdAt: m.createdAt,
-    }));
-  res.json({ messages });
+    text: b.text || '',
+    createdAt: b.createdAt,
+  }));
+
+  // Merge and sort
+  const messages = [...convMessages, ...broadcasts]
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  // Reset member unread count (they're reading now)
+  if (conv && conv.memberUnreadCount > 0) {
+    writeDb((d) => {
+      const c = (d.chatConversations || []).find((x) => x.id === conv.id);
+      if (c) c.memberUnreadCount = 0;
+      return d;
+    });
+  }
+
+  res.json({ messages, conversation: conv ? { id: conv.id, resolved: conv.resolved } : null });
 });
 
-// POST /api/chat/messages — send a text message
+// POST /api/chat/messages — member sends a text message in their own conversation
 app.post('/api/chat/messages', requireMember, async (req, res) => {
-  const { text } = req.body || {};
+  const { text, replyToMessageId } = req.body || {};
   if (!text || !String(text).trim()) {
     return res.status(400).json({ error: 'Message text is required' });
   }
   if (String(text).length > 2000) {
     return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
   }
-  const msg = {
-    id: crypto.randomUUID(),
-    senderId: req.member.id,
-    text: String(text).trim(),
-    createdAt: new Date().toISOString(),
-  };
-  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+
+  const memberId = req.member.id;
+  let msg;
+  await writeDb((d) => {
+    const conv = getOrCreateConversation(d, memberId);
+    // Verify replyTo belongs to this conversation
+    let safeReplyTo = null;
+    if (replyToMessageId) {
+      const orig = (d.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conv.id);
+      if (orig) safeReplyTo = replyToMessageId;
+    }
+    msg = {
+      id: crypto.randomUUID(),
+      conversationId: conv.id,
+      senderId: memberId,
+      senderRole: 'member',
+      messageType: 'text',
+      text: String(text).trim(),
+      replyToMessageId: safeReplyTo,
+      createdAt: new Date().toISOString(),
+    };
+    (d.chatMessages = d.chatMessages || []).push(msg);
+    conv.adminUnreadCount = (conv.adminUnreadCount || 0) + 1;
+    return d;
+  });
+
   res.json({ ok: true, message: msg });
 });
 
-// POST /api/chat/upload — send a message with file attachment (photo/video/doc)
+// POST /api/chat/upload — member sends a file/voice note in their own conversation
 app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
   const text = (req.body.text || '').trim() || '';
   const isVoice = req.body.voiceNote === 'true';
+  const replyToMessageId = req.body.replyToMessageId || null;
   const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-  const msg = {
-    id: crypto.randomUUID(),
-    senderId: req.member.id,
-    text,
-    createdAt: new Date().toISOString(),
-  };
-  if (isVoice) {
-    msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
-  } else {
-    msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
-  }
-  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
+  const memberId = req.member.id;
+
+  let msg;
+  await writeDb((d) => {
+    const conv = getOrCreateConversation(d, memberId);
+    let safeReplyTo = null;
+    if (replyToMessageId) {
+      const orig = (d.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conv.id);
+      if (orig) safeReplyTo = replyToMessageId;
+    }
+    msg = {
+      id: crypto.randomUUID(),
+      conversationId: conv.id,
+      senderId: memberId,
+      senderRole: 'member',
+      messageType: isVoice ? 'voice' : 'attachment',
+      text,
+      replyToMessageId: safeReplyTo,
+      createdAt: new Date().toISOString(),
+    };
+    if (isVoice) {
+      msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    } else {
+      msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    }
+    (d.chatMessages = d.chatMessages || []).push(msg);
+    conv.adminUnreadCount = (conv.adminUnreadCount || 0) + 1;
+    return d;
+  });
+
   res.json({ ok: true, message: msg });
 });
+
+/* ---------- Admin chat endpoints ---------- */
+
+// GET /api/admin/chat/conversations — list all conversations with unread/resolved state
+app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
+  const db = readDb();
+  const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
+  const emailById = new Map(db.members.map((m) => [m.id, m.email]));
+
+  const convs = (db.chatConversations || []).map((c) => {
+    const lastMsg = (db.chatMessages || [])
+      .filter((m) => m.conversationId === c.id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+    return {
+      id: c.id,
+      memberId: c.memberId,
+      memberName: nameById.get(c.memberId) || 'Former member',
+      memberEmail: emailById.get(c.memberId) || null,
+      resolved: Boolean(c.resolved),
+      resolvedAt: c.resolvedAt || null,
+      adminUnreadCount: c.adminUnreadCount || 0,
+      lastMessageAt: lastMsg ? lastMsg.createdAt : c.createdAt,
+      lastMessagePreview: lastMsg ? (lastMsg.text || (lastMsg.voiceNote ? '🎤 Voice note' : '📎 Attachment')) : null,
+    };
+  }).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+
+  res.json({ conversations: convs });
+});
+
+// GET /api/admin/chat/messages/:conversationId — admin gets messages for a specific conversation
+app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => {
+  const db = readDb();
+  const convId = req.params.conversationId;
+  const conv = (db.chatConversations || []).find((c) => c.id === convId);
+  if (!conv) {
+    return res.status(404).json({ error: 'Conversation not found' });
+  }
+
+  const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
+  const emailById = new Map(db.members.map((m) => [m.id, m.email]));
+
+  const messages = (db.chatMessages || [])
+    .filter((m) => m.conversationId === convId)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .map((m) => {
+      const isAdmin = m.senderRole === 'admin';
+      return {
+        id: m.id,
+        conversationId: m.conversationId,
+        senderId: m.senderId || null,
+        senderRole: m.senderRole || 'member',
+        senderName: isAdmin ? 'Admin' : (nameById.get(m.senderId) || 'Former member'),
+        senderEmail: isAdmin ? null : (emailById.get(m.senderId) || null),
+        isAdmin,
+        messageType: m.messageType || 'text',
+        text: m.text || '',
+        attachment: m.attachment || null,
+        voiceNote: m.voiceNote || null,
+        replyToMessageId: m.replyToMessageId || null,
+        replyTo: buildReplyPreview(db, m.replyToMessageId, convId),
+        createdAt: m.createdAt,
+      };
+    });
+
+  // Reset admin unread count for this conversation
+  if (conv.adminUnreadCount > 0) {
+    writeDb((d) => {
+      const c = (d.chatConversations || []).find((x) => x.id === convId);
+      if (c) c.adminUnreadCount = 0;
+      return d;
+    });
+  }
+
+  res.json({
+    conversation: {
+      id: conv.id,
+      memberId: conv.memberId,
+      memberName: nameById.get(conv.memberId) || 'Former member',
+      memberEmail: emailById.get(conv.memberId) || null,
+      resolved: Boolean(conv.resolved),
+    },
+    messages,
+  });
+});
+
+// POST /api/admin/chat/reply — admin replies to a specific conversation
+app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
+  const { text, conversationId, replyToMessageId } = req.body || {};
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Reply text is required' });
+  }
+  if (String(text).length > 2000) {
+    return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
+  }
+  if (!conversationId) {
+    return res.status(400).json({ error: 'conversationId is required' });
+  }
+
+  let msg;
+  let found = false;
+  await writeDb((d) => {
+    const conv = (d.chatConversations || []).find((c) => c.id === conversationId);
+    if (!conv) return d;
+    found = true;
+
+    let safeReplyTo = null;
+    if (replyToMessageId) {
+      const orig = (d.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conversationId);
+      if (orig) safeReplyTo = replyToMessageId;
+    }
+
+    msg = {
+      id: crypto.randomUUID(),
+      conversationId,
+      senderId: null,
+      senderRole: 'admin',
+      messageType: 'text',
+      text: String(text).trim(),
+      replyToMessageId: safeReplyTo,
+      createdAt: new Date().toISOString(),
+    };
+    (d.chatMessages = d.chatMessages || []).push(msg);
+    conv.memberUnreadCount = (conv.memberUnreadCount || 0) + 1;
+    return d;
+  });
+
+  if (!found) return res.status(404).json({ error: 'Conversation not found' });
+  res.json({ ok: true, message: msg });
+});
+
+// POST /api/admin/chat/upload — admin sends a file/voice reply to a conversation
+app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const { conversationId, replyToMessageId } = req.body || {};
+  if (!conversationId) {
+    return res.status(400).json({ error: 'conversationId is required' });
+  }
+  const text = (req.body.text || '').trim() || '';
+  const isVoice = req.body.voiceNote === 'true';
+  const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+  let msg;
+  let found = false;
+  await writeDb((d) => {
+    const conv = (d.chatConversations || []).find((c) => c.id === conversationId);
+    if (!conv) return d;
+    found = true;
+
+    let safeReplyTo = null;
+    if (replyToMessageId) {
+      const orig = (d.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conversationId);
+      if (orig) safeReplyTo = replyToMessageId;
+    }
+
+    msg = {
+      id: crypto.randomUUID(),
+      conversationId,
+      senderId: null,
+      senderRole: 'admin',
+      messageType: isVoice ? 'voice' : 'attachment',
+      text,
+      replyToMessageId: safeReplyTo,
+      createdAt: new Date().toISOString(),
+    };
+    if (isVoice) {
+      msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    } else {
+      msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
+    }
+    (d.chatMessages = d.chatMessages || []).push(msg);
+    conv.memberUnreadCount = (conv.memberUnreadCount || 0) + 1;
+    return d;
+  });
+
+  if (!found) return res.status(404).json({ error: 'Conversation not found' });
+  res.json({ ok: true, message: msg });
+});
+
+// POST /api/admin/chat/resolve/:conversationId — toggle resolve/reopen
+app.post('/api/admin/chat/resolve/:conversationId', requireAdmin, async (req, res) => {
+  const convId = req.params.conversationId;
+  let updated;
+  await writeDb((d) => {
+    const conv = (d.chatConversations || []).find((c) => c.id === convId);
+    if (!conv) return d;
+    conv.resolved = !conv.resolved;
+    conv.resolvedAt = conv.resolved ? new Date().toISOString() : null;
+    conv.resolvedBy = conv.resolved ? 'admin' : null;
+    updated = conv;
+    return d;
+  });
+  if (!updated) return res.status(404).json({ error: 'Conversation not found' });
+  res.json({ ok: true, resolved: updated.resolved });
+});
+
+// GET /api/admin/chat/unread-count — total unread across all conversations
+app.get('/api/admin/chat/unread-count', requireAdmin, (req, res) => {
+  const db = readDb();
+  const total = (db.chatConversations || []).reduce((sum, c) => sum + (c.adminUnreadCount || 0), 0);
+  res.json({ totalUnread: total });
+});
+
+/* ---------- Broadcast endpoints ---------- */
 
 // POST /api/admin/chat/broadcast — admin sends a broadcast message
 app.post('/api/admin/chat/broadcast', requireAdmin, async (req, res) => {
@@ -1026,82 +1336,16 @@ app.post('/api/admin/chat/broadcast', requireAdmin, async (req, res) => {
   res.json({ ok: true, message: msg });
 });
 
-// GET /api/admin/chat/broadcasts — list all broadcasts
+// GET /api/admin/chat/broadcasts — list all broadcasts (admin)
 app.get('/api/admin/chat/broadcasts', requireAdmin, (req, res) => {
   const db = readDb();
   res.json({ broadcasts: (db.broadcasts || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
 });
 
-// GET /api/admin/chat/messages — admin sees all chat messages with sender info
-app.get('/api/admin/chat/messages', requireAdmin, (req, res) => {
+// GET /api/chat/broadcasts — member gets broadcasts (predictions page, logged-in only)
+app.get('/api/chat/broadcasts', requireMember, (req, res) => {
   const db = readDb();
-  const nameById = new Map(
-    db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
-  );
-  const emailById = new Map(db.members.map((m) => [m.id, m.email]));
-  const messages = [...(db.chatMessages || []), ...(db.broadcasts || []).map(b => ({
-    ...b,
-    isBroadcast: true,
-    senderId: null,
-  }))]
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-    .map((m) => ({
-      id: m.id,
-      senderId: m.senderId || null,
-      senderName: m.isBroadcast ? 'Admin (Broadcast)' : (nameById.get(m.senderId) || 'Former member'),
-      senderEmail: m.isBroadcast ? null : (emailById.get(m.senderId) || null),
-      isBroadcast: Boolean(m.isBroadcast),
-      isAdmin: Boolean(m.isAdminReply),
-      text: m.text || '',
-      attachment: m.attachment || null,
-      voiceNote: m.voiceNote || null,
-      createdAt: m.createdAt,
-    }));
-  res.json({ messages });
-});
-
-// POST /api/admin/chat/reply — admin replies to a specific message or sends a general reply
-app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
-  const { text, replyToId } = req.body || {};
-  if (!text || !String(text).trim()) {
-    return res.status(400).json({ error: 'Reply text is required' });
-  }
-  if (String(text).length > 2000) {
-    return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
-  }
-  const msg = {
-    id: crypto.randomUUID(),
-    senderId: null,
-    isAdminReply: true,
-    replyToId: replyToId || null,
-    text: String(text).trim(),
-    createdAt: new Date().toISOString(),
-  };
-  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
-  res.json({ ok: true, message: msg });
-});
-
-// POST /api/admin/chat/upload — admin sends a reply with file attachment
-app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-  const text = (req.body.text || '').trim() || '';
-  const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-  const msg = {
-    id: crypto.randomUUID(),
-    senderId: null,
-    isAdminReply: true,
-    text,
-    createdAt: new Date().toISOString(),
-  };
-  if (req.body.voiceNote === 'true') {
-    msg.voiceNote = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
-  } else {
-    msg.attachment = { dataUrl, filename: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype };
-  }
-  await writeDb((d) => { (d.chatMessages = d.chatMessages || []).push(msg); return d; });
-  res.json({ ok: true, message: msg });
+  res.json({ broadcasts: (db.broadcasts || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
 });
 
 // DELETE /api/admin/chat/message/:id — admin deletes a chat message
@@ -1121,7 +1365,6 @@ app.post('/api/admin/chat/cleanup', requireAdmin, async (req, res) => {
   await writeDb((d) => {
     const before = (d.chatMessages || []).length;
     d.chatMessages = (d.chatMessages || []).filter((m) => {
-      // Remove messages that have file URLs pointing to /uploads/chat/ (broken)
       if (m.attachment && m.attachment.url && !m.attachment.dataUrl) return false;
       if (m.voiceNote && m.voiceNote.url && !m.voiceNote.dataUrl) return false;
       return true;

@@ -465,12 +465,14 @@
     initChat();
   }
 
-  /* ---------------------------- ChatBox ---------------------------- */
+    /* ---------------------------- Peyna Assistant Chat ---------------------------- */
   let chatOpen = false;
   let chatPollTimer = null;
   let chatLastCount = 0;
   let mediaRecorder = null;
   let chatChunks = [];
+  let memberReplyToMsgId = null;
+  let voiceNoteAudio = null;
 
   function initChat() {
     const gate = $('chatGate');
@@ -524,8 +526,10 @@
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
+    const replyTo = memberReplyToMsgId;
+    cancelMemberReply();
     try {
-      await api('/api/chat/messages', { method: 'POST', body: JSON.stringify({ text }) });
+      await api('/api/chat/messages', { method: 'POST', body: JSON.stringify({ text, replyToMessageId: replyTo }) });
       await loadChatMessages();
     } catch (err) {
       input.value = text;
@@ -537,10 +541,12 @@
     const formData = new FormData();
     formData.append('file', file);
     formData.append('voiceNote', isVoice ? 'true' : 'false');
+    if (memberReplyToMsgId) formData.append('replyToMessageId', memberReplyToMsgId);
+    cancelMemberReply();
     try {
       const res = await fetch('/api/chat/upload', {
         method: 'POST',
-        headers: { 'Cookie': document.cookie },
+        credentials: 'same-origin',
         body: formData,
       });
       if (!res.ok) throw new Error(await res.text());
@@ -583,12 +589,12 @@
       const data = await api('/api/chat/messages');
       const msgs = data.messages || [];
       if (!msgs.length) {
-        body.innerHTML = '<p class="chat-empty">No messages yet. Start the conversation!</p>';
+        body.innerHTML = '<p class="chat-empty">No messages yet. Start a conversation with Admin!</p>';
+        chatLastCount = 0;
         return;
       }
       body.innerHTML = msgs.map(renderChatMsg).join('');
       body.scrollTop = body.scrollHeight;
-      // Update badge if new messages and chat is closed
       if (!chatOpen && msgs.length > chatLastCount && chatLastCount > 0) {
         const badge = $('chatBadge');
         badge.textContent = msgs.length - chatLastCount;
@@ -610,33 +616,120 @@
       sender = '🛡️ Admin';
     } else if (m.isMe) {
       cls = 'me';
-      sender = escapeHtml(m.senderName);
+      sender = 'You';
     } else {
       cls = 'other';
       sender = escapeHtml(m.senderName);
     }
     const time = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    let content = escapeHtml(m.text || '');
+
+    let replyHtml = '';
+    if (m.replyTo) {
+      replyHtml = `<div class="chat-reply-ref" onclick="scrollToMsg('${m.replyTo.messageId}')">↳ ${escapeHtml(m.replyTo.preview)}</div>`;
+    }
+
+    let content = '';
+    if (m.text) content += escapeHtml(m.text);
+
     if (m.attachment && (m.attachment.dataUrl || m.attachment.url)) {
       const src = m.attachment.dataUrl || m.attachment.url;
       if (m.attachment.mimetype && m.attachment.mimetype.startsWith('image/')) {
-        content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy" style="max-width:200px;border-radius:6px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
+        content += `<br><img src="${src}" alt="${escapeHtml(m.attachment.filename)}" loading="lazy" style="max-width:200px;border-radius:8px;cursor:pointer" onclick="window.open('${src}','_blank')">`;
       } else if (m.attachment.mimetype && m.attachment.mimetype.startsWith('video/')) {
-        content += `<br><video src="${src}" controls style="max-width:200px;border-radius:6px"></video>`;
+        content += `<br><video src="${src}" controls style="max-width:200px;border-radius:8px"></video>`;
       } else {
-        content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}">📎 ${escapeHtml(m.attachment.filename)}</a>`;
+        content += `<br><a href="${src}" target="_blank" download="${escapeHtml(m.attachment.filename)}" style="color:var(--gold)">📎 ${escapeHtml(m.attachment.filename)}</a>`;
       }
     }
+
     if (m.voiceNote && (m.voiceNote.dataUrl || m.voiceNote.url)) {
       const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
-      content += `<br><audio src="${vsrc}" controls style="width:100%"></audio>`;
+      const duration = estimateVoiceDuration(m.voiceNote.size);
+      const bubbleWidth = Math.min(Math.max(duration * 8, 140), 280);
+      content += `<br><div class="voice-bubble" style="width:${bubbleWidth}px">
+        <button class="voice-play-btn" onclick="toggleVoiceNote(this, '${vsrc}')">▶</button>
+        <div class="voice-waveform">${generateWaveBars(20)}</div>
+        <span class="voice-duration">${formatDuration(duration)}</span>
+      </div>`;
     }
-    return `<div class="chat-msg ${cls}">
+
+    const replyBtn = (!m.isBroadcast) ?
+      `<div class="chat-msg-actions"><button class="chat-msg-action-btn" onclick="setMemberReplyTo('${m.id}','${escapeHtml(m.text || (m.voiceNote ? 'Voice note' : 'Attachment')).replace(/'/g, "\\'")}')">Reply</button></div>` : '';
+
+    return `<div class="chat-msg ${cls}" id="msg-${m.id}">
+      ${replyBtn}
       <div class="chat-sender">${sender}</div>
+      ${replyHtml}
       ${content}
       <div class="chat-time">${time}</div>
     </div>`;
   }
+
+  function estimateVoiceDuration(sizeBytes) {
+    return Math.max(1, Math.round(sizeBytes / 2000));
+  }
+  function formatDuration(secs) {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  }
+  function generateWaveBars(count) {
+    let bars = '';
+    for (let i = 0; i < count; i++) {
+      const h = Math.floor(Math.random() * 18) + 4;
+      bars += `<div class="voice-bar" style="height:${h}px"></div>`;
+    }
+    return bars;
+  }
+
+  window.toggleVoiceNote = function(btn, src) {
+    if (voiceNoteAudio && !voiceNoteAudio.paused) {
+      voiceNoteAudio.pause();
+      document.querySelectorAll('.voice-play-btn').forEach(b => b.textContent = '▶');
+      document.querySelectorAll('.voice-bar').forEach(b => b.classList.remove('played'));
+      if (voiceNoteAudio.src === src) { voiceNoteAudio = null; return; }
+    }
+    voiceNoteAudio = new Audio(src);
+    const bubble = btn.closest('.voice-bubble');
+    const bars = bubble ? bubble.querySelectorAll('.voice-bar') : [];
+    const totalBars = bars.length;
+    voiceNoteAudio.addEventListener('timeupdate', () => {
+      const progress = voiceNoteAudio.currentTime / voiceNoteAudio.duration;
+      const playedCount = Math.floor(progress * totalBars);
+      bars.forEach((b, i) => { if (i < playedCount) b.classList.add('played'); else b.classList.remove('played'); });
+    });
+    voiceNoteAudio.addEventListener('ended', () => {
+      btn.textContent = '▶';
+      bars.forEach(b => b.classList.remove('played'));
+      voiceNoteAudio = null;
+    });
+    voiceNoteAudio.play();
+    btn.textContent = '⏸';
+  };
+
+  window.setMemberReplyTo = function(msgId, previewText) {
+    memberReplyToMsgId = msgId;
+    const preview = $('chatReplyPreview');
+    const text = $('chatReplyPreviewText');
+    text.textContent = previewText.slice(0, 60);
+    preview.style.display = 'block';
+    $('chatText').focus();
+  };
+
+  window.cancelMemberReply = function() {
+    memberReplyToMsgId = null;
+    $('chatReplyPreview').style.display = 'none';
+  };
+
+  window.scrollToMsg = function(msgId) {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.transition = 'background .3s';
+      el.style.background = 'rgba(237,187,0,.15)';
+      setTimeout(() => { el.style.background = ''; }, 1500);
+    }
+  };
 
   function startChatPolling() {
     stopChatPolling();
@@ -646,7 +739,7 @@
     if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     initGate();
     $('submitBtn').addEventListener('click', submitPredictions);
     boot();

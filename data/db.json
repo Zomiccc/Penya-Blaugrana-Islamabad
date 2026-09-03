@@ -572,5 +572,6 @@
     }
   ],
   "chatMessages": [],
-  "broadcasts": []
+  "broadcasts": [],
+  "chatConversations": []
 }
