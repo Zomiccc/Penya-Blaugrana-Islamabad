@@ -497,6 +497,19 @@
   let memberReplyToMsgId = null;
   let voiceNoteAudio = null;
 
+  let chatScrollY = 0;
+  function setBackgroundScrollLocked(locked) {
+    if (locked) {
+      chatScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.classList.add('chat-locked');
+      document.body.style.top = `-${chatScrollY}px`;
+    } else {
+      document.body.classList.remove('chat-locked');
+      document.body.style.top = '';
+      window.scrollTo(0, chatScrollY);
+    }
+  }
+
   function initChat() {
     const gate = $('chatGate');
     if (!gate) return;
@@ -514,6 +527,7 @@
     fab.addEventListener('click', () => {
       chatOpen = !chatOpen;
       panel.classList.toggle('open', chatOpen);
+      setBackgroundScrollLocked(chatOpen);
       if (chatOpen) {
         loadChatMessages();
         startChatPolling();
@@ -527,6 +541,7 @@
     closeBtn.addEventListener('click', () => {
       chatOpen = false;
       panel.classList.remove('open');
+      setBackgroundScrollLocked(false);
       stopChatPolling();
     });
 

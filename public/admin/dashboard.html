@@ -60,6 +60,12 @@
 
   @media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}}
+  @media(max-width:760px){
+    #adminChatLayout{flex-direction:column;height:auto !important;max-height:80vh;max-height:80dvh}
+    #adminConvList{width:100% !important;max-height:160px;border-right:none !important;border-bottom:1px solid var(--line)}
+    #adminChatLayout > div:last-child{min-height:360px}
+    #adminChatBody{max-height:45vh;max-height:45dvh}
+  }
 </style>
 </head>
 <body>

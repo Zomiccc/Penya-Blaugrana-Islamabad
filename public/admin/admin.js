@@ -406,14 +406,14 @@ async function loadAdminMessages(convId) {
 function renderAdminChatMsg(m) {
   const isAdmin = m.isAdmin;
   const align = isAdmin ? 'flex-end' : 'flex-start';
-  const bg = isAdmin ? 'rgba(0,77,152,.2)' : 'rgba(255,255,255,.06)';
-  const border = isAdmin ? 'rgba(0,77,152,.4)' : 'rgba(255,255,255,.1)';
+  const bg = isAdmin ? 'linear-gradient(135deg,#1d6fd6,#12457f)' : 'linear-gradient(135deg,#e63946,#b32433)';
+  const border = isAdmin ? 'rgba(29,111,214,.6)' : 'rgba(230,57,70,.6)';
   const sender = isAdmin ? '🛡️ Admin' : escapeHtml(m.senderName);
   const time = new Date(m.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   let replyHtml = '';
   if (m.replyTo) {
-    replyHtml = `<div style="font-size:.6rem;color:var(--muted);border-left:2px solid var(--muted);padding-left:6px;margin-bottom:4px;opacity:.8">
+    replyHtml = `<div style="font-size:.6rem;color:rgba(255,255,255,.75);border-left:2px solid rgba(255,255,255,.4);padding-left:6px;margin-bottom:4px;opacity:.9">
       ↳ ${escapeHtml(m.replyTo.preview)}
     </div>`;
   }
@@ -431,17 +431,64 @@ function renderAdminChatMsg(m) {
   }
   if (m.voiceNote && (m.voiceNote.dataUrl || m.voiceNote.url)) {
     const vsrc = m.voiceNote.dataUrl || m.voiceNote.url;
-    content += `<br><audio src="${vsrc}" controls style="width:100%;margin-top:4px"></audio>`;
+    const duration = estimateAdminVoiceDuration(m.voiceNote.size);
+    const bubbleWidth = Math.min(Math.max(duration * 8, 140), 260);
+    content += `<br><div class="admin-voice-bubble" style="display:flex;align-items:center;gap:8px;min-width:140px;width:${bubbleWidth}px;margin-top:6px">
+      <button class="admin-voice-play-btn" style="width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0" onclick="toggleAdminVoiceNote(this,'${vsrc}')">▶</button>
+      <div class="admin-voice-waveform" style="flex:1;height:22px;display:flex;align-items:center;gap:2px">${generateAdminWaveBars(16)}</div>
+      <span style="font-size:.58rem;opacity:.75;flex-shrink:0">${formatAdminDuration(duration)}</span>
+    </div>`;
   }
 
-  const replyBtn = `<button class="btn" style="padding:2px 8px;font-size:.6rem;margin-top:4px;opacity:.6" onclick="setAdminReplyTo('${m.id}','${escapeHtml(m.text || (m.voiceNote ? 'Voice note' : 'Attachment')).replace(/'/g, "\\'")}')">Reply</button>`;
+  const replyBtn = `<button class="btn" style="padding:2px 8px;font-size:.6rem;margin-top:4px;opacity:.75;background:rgba(0,0,0,.25);border-color:rgba(255,255,255,.3);color:#fff" onclick="setAdminReplyTo('${m.id}','${escapeHtml(m.text || (m.voiceNote ? 'Voice note' : 'Attachment')).replace(/'/g, "\\'")}')">Reply</button>`;
 
-  return `<div style="align-self:${align};max-width:75%;background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;font-size:.8rem;font-family:var(--mono);word-break:break-word">
-    <div style="font-size:.6rem;color:var(--muted-lt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${sender}</div>
-    <div style="color:var(--chalk);line-height:1.4">${content}</div>
-    <div style="font-size:.55rem;color:var(--muted);margin-top:4px;opacity:.7;display:flex;align-items:center;gap:6px">${time} ${replyBtn}</div>
+  return `<div style="align-self:${align};max-width:75%;background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px;font-size:.8rem;font-family:var(--mono);word-break:break-word;color:#fff">
+    <div style="font-size:.6rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">${sender}</div>
+    <div style="color:#fff;line-height:1.4">${content}</div>
+    <div style="font-size:.55rem;color:rgba(255,255,255,.65);margin-top:4px;opacity:.9;display:flex;align-items:center;gap:6px">${time} ${replyBtn}</div>
   </div>`;
 }
+
+let adminVoiceNoteAudio = null;
+function estimateAdminVoiceDuration(sizeBytes) {
+  return Math.max(1, Math.round((sizeBytes || 0) / 2000));
+}
+function formatAdminDuration(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+function generateAdminWaveBars(count) {
+  let bars = '';
+  for (let i = 0; i < count; i++) {
+    const h = Math.floor(Math.random() * 16) + 4;
+    bars += `<div class="admin-voice-bar" style="flex:1;background:rgba(255,255,255,.35);border-radius:1px;min-height:4px;height:${h}px"></div>`;
+  }
+  return bars;
+}
+window.toggleAdminVoiceNote = function(btn, src) {
+  if (adminVoiceNoteAudio && !adminVoiceNoteAudio.paused) {
+    adminVoiceNoteAudio.pause();
+    document.querySelectorAll('.admin-voice-play-btn').forEach(b => b.textContent = '▶');
+    document.querySelectorAll('.admin-voice-bar').forEach(b => b.style.background = 'rgba(255,255,255,.35)');
+    if (adminVoiceNoteAudio.src === src) { adminVoiceNoteAudio = null; return; }
+  }
+  adminVoiceNoteAudio = new Audio(src);
+  const bubble = btn.closest('.admin-voice-bubble');
+  const bars = bubble ? bubble.querySelectorAll('.admin-voice-bar') : [];
+  adminVoiceNoteAudio.addEventListener('timeupdate', () => {
+    const progress = adminVoiceNoteAudio.currentTime / adminVoiceNoteAudio.duration;
+    const playedCount = Math.floor(progress * bars.length);
+    bars.forEach((b, i) => { b.style.background = i < playedCount ? '#EDBB00' : 'rgba(255,255,255,.35)'; });
+  });
+  adminVoiceNoteAudio.addEventListener('ended', () => {
+    btn.textContent = '▶';
+    bars.forEach(b => b.style.background = 'rgba(255,255,255,.35)');
+    adminVoiceNoteAudio = null;
+  });
+  adminVoiceNoteAudio.play();
+  btn.textContent = '⏸';
+};
 
 async function sendAdminReply() {
   if (!activeConvId) return;
