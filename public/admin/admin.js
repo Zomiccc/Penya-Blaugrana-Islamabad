@@ -278,13 +278,13 @@ async function handleRowAction(btn) {
   }
 }
 
-/* ---------------------------- ChatBox Broadcast ---------------------------- */
+/* ---------------------------- Announcements ---------------------------- */
 async function sendBroadcast(e) {
   e.preventDefault();
   const msg = document.getElementById('broadcastMsg');
   const text = document.getElementById('broadcastText').value.trim();
   if (!text) return;
-  if (!confirm('Send this broadcast to all members in the ChatBox?')) return;
+  if (!confirm('Send this announcement to all members on the Match Predictions page?')) return;
   try {
     await api('/api/admin/chat/broadcast', { method: 'POST', body: JSON.stringify({ text }) });
     document.getElementById('broadcastText').value = '';

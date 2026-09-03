@@ -302,6 +302,14 @@
     align-self:center;background:rgba(237,187,0,.12);border:1px solid rgba(237,187,0,.3);
     color:var(--gold);text-align:center;max-width:90%;border-radius:10px;
   }
+  .broadcast-list{display:flex;flex-direction:column;gap:10px}
+  .broadcast-item{
+    background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.25);color:var(--gold);
+    padding:12px 14px;border-radius:2px;line-height:1.5
+  }
+  .broadcast-item .broadcast-meta{
+    font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-top:8px;letter-spacing:.05em
+  }
   .chat-msg .chat-sender{font-size:.6rem;color:var(--muted-lt);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
   .chat-msg.me .chat-sender{color:rgba(255,255,255,.6)}
   .chat-msg .chat-time{font-size:.55rem;color:var(--muted);margin-top:5px;opacity:.6}
@@ -480,6 +488,13 @@
       <div class="who-bar">
         <span>Signed in as <strong id="whoName">—</strong></span>
         <button type="button" id="logoutBtn">Log out</button>
+      </div>
+
+      <div class="panel" id="broadcastPanel" style="margin-bottom:26px" hidden>
+        <div class="panel-head"><h3>Announcements</h3></div>
+        <div class="panel-body">
+          <div id="broadcastsList" class="broadcast-list"></div>
+        </div>
       </div>
 
       <div class="pred-layout">

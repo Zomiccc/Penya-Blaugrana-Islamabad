@@ -1008,18 +1008,7 @@ app.get('/api/chat/messages', requireMember, (req, res) => {
       };
     });
 
-  // Also include broadcasts (visible to all logged-in members)
-  const broadcasts = (db.broadcasts || []).map((b) => ({
-    id: b.id,
-    isBroadcast: true,
-    senderName: 'Admin',
-    text: b.text || '',
-    createdAt: b.createdAt,
-  }));
-
-  // Merge and sort
-  const messages = [...convMessages, ...broadcasts]
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const messages = convMessages;
 
   // Reset member unread count (they're reading now)
   if (conv && conv.memberUnreadCount > 0) {

@@ -444,6 +444,29 @@
     }
   }
 
+  /* ---------------------------- broadcasts ---------------------------- */
+  async function loadBroadcasts() {
+    const panel = $('broadcastPanel');
+    const list = $('broadcastsList');
+    try {
+      const data = await api('/api/chat/broadcasts');
+      const bcs = data.broadcasts || [];
+      if (!bcs.length) {
+        if (panel) panel.hidden = true;
+        return;
+      }
+      list.innerHTML = bcs.map((b) => `
+        <div class="broadcast-item">
+          <div>${escapeHtml(b.text)}</div>
+          <div class="broadcast-meta">${new Date(b.createdAt).toLocaleString()}</div>
+        </div>
+      `).join('');
+      panel.hidden = false;
+    } catch (err) {
+      if (panel) panel.hidden = true;
+    }
+  }
+
   /* ---------------------------- boot ---------------------------- */
   async function boot() {
     let me = null;
@@ -461,7 +484,7 @@
     $('league').hidden = false;
     $('whoName').textContent = `${me.member.firstName} ${me.member.lastName}`.trim();
 
-    await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadReveal()]);
+    await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadReveal(), loadBroadcasts()]);
     initChat();
   }
 
