@@ -846,6 +846,9 @@ app.post('/api/predictions', requireMember, async (req, res) => {
     toInsert.push({
       id: crypto.randomUUID(),
       memberId: req.member.id,
+      // Snapshot the name at prediction time so match history still shows a
+      // real name even if this member is later deleted from the club roster.
+      memberName: `${req.member.firstName} ${req.member.lastName}`.trim(),
       fixtureId: match.id,
       homeGoals,
       awayGoals,
@@ -935,7 +938,10 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         .map((p) => {
           const points = finished ? predictor.scorePrediction(p, match) : null;
           return {
-            member: nameById.get(p.memberId) || 'Former member',
+            // Prefer the name snapshotted when the prediction was made — it
+            // survives the member later being deleted. Older predictions
+            // made before that snapshot existed fall back to a live lookup.
+            member: p.memberName || nameById.get(p.memberId) || 'Former member',
             isMe: p.memberId === req.member.id,
             homeGoals: p.homeGoals,
             awayGoals: p.awayGoals,

@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-09-04T20:28:59.396Z",
-  "nextSync": "2026-09-05T08:28:59.406Z",
+  "lastSync": "2026-09-04T21:08:46.550Z",
+  "nextSync": "2026-09-05T09:08:46.559Z",
   "apiStatus": "ok",
   "lastError": null,
   "matches": [
@@ -2079,7 +2079,7 @@
     {
       "id": 564667,
       "utcDate": "2026-09-04T19:00:00Z",
-      "status": "IN_PLAY",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -2108,7 +2108,7 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": 0,
+        "home": 1,
         "away": 0
       },
       "goals": []
