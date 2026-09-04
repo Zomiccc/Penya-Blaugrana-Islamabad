@@ -210,6 +210,34 @@ async function fetchTeamVenue(teamId) {
 }
 
 /* ---------------------------- Normalisation ---------------------------- */
+
+// Valid Football-Data.org match statuses. The API occasionally returns
+// garbage values (e.g. a timestamp string instead of "FINISHED") when
+// queried with wide date ranges, so we validate and infer below.
+const VALID_STATUSES = new Set([
+  "SCHEDULED", "TIMED", "IN_PLAY", "PAUSED", "FINISHED",
+  "POSTPONED", "CANCELLED", "SUSPENDED", "AWARDED",
+]);
+
+/**
+ * Sanitize the status field from the API. If the API returns an
+ * unrecognised value (which happens with some query patterns), infer
+ * the correct status from the score and kickoff time:
+ *   - Both scores present  → FINISHED
+ *   - Kickoff in the past  → IN_PLAY
+ *   - Otherwise            → TIMED
+ */
+function sanitizeStatus(rawStatus, fullTime, utcDate) {
+  if (rawStatus && VALID_STATUSES.has(rawStatus)) return rawStatus;
+  if (Number.isInteger(fullTime.home) && Number.isInteger(fullTime.away)) {
+    return "FINISHED";
+  }
+  if (utcDate && new Date(utcDate) <= new Date()) {
+    return "IN_PLAY";
+  }
+  return "TIMED";
+}
+
 function normalizeMatches(matches) {
   return matches
     .map((match) => {
@@ -257,7 +285,7 @@ function normalizeMatches(matches) {
 
         utcDate: match.utcDate,
 
-        status: match.status,
+        status: sanitizeStatus(match.status, fullTime, match.utcDate),
 
         minute: match.minute ?? null,
 
