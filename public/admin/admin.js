@@ -307,13 +307,26 @@ async function loadBroadcasts() {
     }
     container.innerHTML = '<h3 style="font-size:.85rem;margin-bottom:10px">Recent Broadcasts</h3>' +
       bcs.map((b) => `
-        <div style="background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.2);border-radius:4px;padding:10px 14px;margin-bottom:8px">
-          <div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>
-          <div style="font-size:.65rem;color:var(--muted)">${new Date(b.createdAt).toLocaleString()}</div>
+        <div style="background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.2);border-radius:4px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>
+            <div style="font-size:.65rem;color:var(--muted)">${new Date(b.createdAt).toLocaleString()}</div>
+          </div>
+          <button class="btn" style="padding:6px 12px;font-size:.65rem;flex-shrink:0;border-color:var(--grana);color:var(--grana)" onclick="deleteBroadcast('${b.id}')">Delete</button>
         </div>
       `).join('');
   } catch (err) {
     container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function deleteBroadcast(id) {
+  if (!confirm('Delete this broadcast? Members will no longer see it on the predictions page.')) return;
+  try {
+    await api(`/api/admin/chat/broadcast/${id}`, { method: 'DELETE' });
+    await loadBroadcasts();
+  } catch (err) {
+    alert('Failed to delete: ' + err.message);
   }
 }
 

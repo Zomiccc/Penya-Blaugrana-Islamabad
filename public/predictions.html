@@ -249,7 +249,7 @@
   /* ---------- Peyna Assistant Chat ---------- */
   .chat-launcher{
     position:fixed;bottom:24px;right:24px;z-index:9000;
-    background:var(--grad);
+    background:linear-gradient(135deg,var(--grana),var(--grana-dk));
     color:#fff;border:none;cursor:pointer;
     padding:12px 20px;border-radius:30px;
     font-family:var(--mono);font-size:.78rem;font-weight:600;
@@ -276,7 +276,7 @@
   }
   .chat-panel.open{display:flex}
   .chat-header{
-    padding:14px 18px;background:var(--grad);color:#fff;
+    padding:14px 18px;background:linear-gradient(135deg,var(--grana),var(--grana-dk));color:#fff;
     display:flex;align-items:center;justify-content:space-between;
     flex-shrink:0;
   }
@@ -381,7 +381,7 @@
     flex-shrink:0;transition:all .2s;
   }
   .chat-btn:hover{border-color:var(--gold);color:var(--gold)}
-  .chat-btn.send{background:var(--grad);border-color:transparent;color:#fff}
+  .chat-btn.send{background:linear-gradient(135deg,var(--grana),var(--grana-dk));border-color:transparent;color:#fff}
   .chat-btn.send:hover{opacity:.9}
   .chat-btn.voice{background:linear-gradient(135deg,var(--grana),var(--grana-dk));border:1.5px solid var(--gold-lt);color:#fff}
   .chat-btn.voice:hover{filter:brightness(1.1)}
@@ -610,7 +610,7 @@
     <div class="chat-input-area">
       <button class="chat-btn" id="chatAttach" aria-label="Attach file" title="Attach photo/video/document">📎</button>
       <input type="text" id="chatText" placeholder="Type a message…" maxlength="2000">
-      <button class="chat-btn voice" id="chatVoice" aria-label="Record voice note" title="Record voice note">🎤</button>
+      <button class="chat-btn voice" id="chatVoice" aria-label="Record voice note" title="Record voice note"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
       <button class="chat-btn send" id="chatSend" aria-label="Send message">➤</button>
       <input type="file" id="chatFileInput" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
     </div>

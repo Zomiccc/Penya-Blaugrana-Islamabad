@@ -1337,6 +1337,20 @@ app.get('/api/chat/broadcasts', requireMember, (req, res) => {
   res.json({ broadcasts: (db.broadcasts || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) });
 });
 
+// DELETE /api/admin/chat/broadcast/:id — admin permanently deletes a broadcast
+app.delete('/api/admin/chat/broadcast/:id', requireAdmin, async (req, res) => {
+  const id = req.params.id;
+  let existed = false;
+  await writeDb((d) => {
+    const before = (d.broadcasts || []).length;
+    d.broadcasts = (d.broadcasts || []).filter((b) => b.id !== id);
+    existed = (d.broadcasts || []).length < before;
+    return d;
+  });
+  if (!existed) return res.status(404).json({ error: 'Broadcast not found' });
+  res.json({ ok: true });
+});
+
 // DELETE /api/admin/chat/message/:id — admin deletes a chat message
 app.delete('/api/admin/chat/message/:id', requireAdmin, async (req, res) => {
   const id = req.params.id;
