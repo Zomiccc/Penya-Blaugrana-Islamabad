@@ -491,7 +491,7 @@
     /* ---------------------------- Peyna Assistant Chat ---------------------------- */
   let chatOpen = false;
   let chatPollTimer = null;
-  let chatLastCount = 0;
+  let unreadPollTimer = null;
   let mediaRecorder = null;
   let chatChunks = [];
   let memberReplyToMsgId = null;
@@ -535,8 +535,14 @@
         $('chatBadge').hidden = true;
       } else {
         stopChatPolling();
+        loadUnreadBadge();
       }
     });
+
+    // Keep checking for unread admin replies even while the panel is closed,
+    // so the "Talk to Admin" button shows a badge as soon as Admin replies.
+    loadUnreadBadge();
+    unreadPollTimer = setInterval(loadUnreadBadge, 15000);
 
     closeBtn.addEventListener('click', () => {
       chatOpen = false;
@@ -630,19 +636,32 @@
       const msgs = data.messages || [];
       if (!msgs.length) {
         body.innerHTML = '<p class="chat-empty">No messages yet. Start a conversation with Admin!</p>';
-        chatLastCount = 0;
         return;
       }
       body.innerHTML = msgs.map(renderChatMsg).join('');
       body.scrollTop = body.scrollHeight;
-      if (!chatOpen && msgs.length > chatLastCount && chatLastCount > 0) {
-        const badge = $('chatBadge');
-        badge.textContent = msgs.length - chatLastCount;
-        badge.hidden = false;
-      }
-      chatLastCount = msgs.length;
     } catch (err) {
       body.innerHTML = '<p class="chat-empty">Could not load messages.</p>';
+    }
+  }
+
+  // Shows how many admin replies the member hasn't read yet on the
+  // "Talk to Admin" button, without marking them as read (that only
+  // happens when the member actually opens the chat panel).
+  async function loadUnreadBadge() {
+    if (chatOpen) return;
+    try {
+      const data = await api('/api/chat/unread-count');
+      const badge = $('chatBadge');
+      const count = data.unreadCount || 0;
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.hidden = false;
+      } else {
+        badge.hidden = true;
+      }
+    } catch (err) {
+      // Non-fatal — badge just won't update this cycle.
     }
   }
 

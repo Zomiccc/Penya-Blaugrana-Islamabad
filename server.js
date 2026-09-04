@@ -1073,6 +1073,15 @@ app.get('/api/chat/messages', requireMember, (req, res) => {
   res.json({ messages, conversation: conv ? { id: conv.id, resolved: conv.resolved } : null });
 });
 
+// GET /api/chat/unread-count — member's unread count, WITHOUT resetting it.
+// Used to show a badge on the "Talk to Admin" button even while the chat
+// panel is closed (opening the panel/loading messages is what clears it).
+app.get('/api/chat/unread-count', requireMember, (req, res) => {
+  const db = readDb();
+  const conv = (db.chatConversations || []).find((c) => c.memberId === req.member.id);
+  res.json({ unreadCount: conv ? (conv.memberUnreadCount || 0) : 0 });
+});
+
 // POST /api/chat/messages — member sends a text message in their own conversation
 app.post('/api/chat/messages', requireMember, async (req, res) => {
   const { text, replyToMessageId } = req.body || {};
