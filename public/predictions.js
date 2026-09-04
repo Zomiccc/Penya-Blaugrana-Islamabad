@@ -699,7 +699,7 @@
       <div class="chat-sender">${sender}</div>
       ${replyHtml}
       ${content}
-      <div class="chat-time">${time}</div>
+      <div class="chat-time">${time}${cls === 'me' ? ' <span class="chat-tick">✓✓</span>' : ''}</div>
     </div>`;
   }
 
