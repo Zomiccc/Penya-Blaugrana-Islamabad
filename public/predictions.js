@@ -225,18 +225,21 @@
 
     const closed = data.deadline && new Date(data.deadline) <= new Date();
 
-    // Title: "Match Week N" — shows the round members are predicting
-    // (the most common matchday in the prediction window).
+    // Title: shows the round members are predicting (the most common
+    // matchday in the set). The set is always a single competition, so once
+    // La Liga's rounds give way to the Champions League, this switches from
+    // "Match Week N" to "UEFA Champions League Match Day N" automatically.
     const weekTitle = $('weekTitle');
     if (weekTitle) {
+      const isUCL = fixtures.some((f) => f.competitionCode === 'CL');
       const matchdays = fixtures.map((f) => f.matchday).filter(Number.isInteger);
       if (matchdays.length) {
         const counts = {};
         for (const m of matchdays) counts[m] = (counts[m] || 0) + 1;
         const md = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
-        weekTitle.textContent = `Match Week ${md}`;
+        weekTitle.textContent = isUCL ? `UEFA Champions League Match Day ${md}` : `Match Week ${md}`;
       } else {
-        weekTitle.textContent = 'Match Week';
+        weekTitle.textContent = isUCL ? 'UEFA Champions League' : 'Match Week';
       }
     }
 
@@ -396,7 +399,9 @@
           <span class="rm-teams">${escapeHtml(m.homeTeam)} v ${escapeHtml(m.awayTeam)}</span>
           ${m.actual
             ? `<span class="rm-score">${m.actual.home}–${m.actual.away}</span>`
-            : '<span class="rm-live">In progress</span>'}
+            : m.live
+              ? `<span class="rm-live">● Live</span><span class="rm-score">${m.live.home}–${m.live.away}</span>`
+              : '<span class="rm-live">In progress</span>'}
         </div>
         <div class="reveal-body">
           ${m.predictions.map((p) => {
@@ -486,6 +491,16 @@
 
     await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadReveal(), loadBroadcasts()]);
     initChat();
+
+    // Keep live scores, the leaderboard, and the prediction window fresh
+    // while the page is open — the cache behind these refreshes from
+    // Football-Data every 5 min on a match day, so this just keeps the
+    // page in step with it without hammering our own API.
+    setInterval(() => {
+      loadWindow();
+      loadLeaderboard();
+      loadReveal();
+    }, 60000);
   }
 
     /* ---------------------------- Peyna Assistant Chat ---------------------------- */

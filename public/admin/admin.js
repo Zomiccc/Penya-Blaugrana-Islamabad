@@ -75,6 +75,78 @@ async function init() {
   loadPredictionResults();
   loadAdminConversations();
   setInterval(loadAdminConversations, 5000);
+
+  document.getElementById('pushToggleBtn').addEventListener('click', togglePushSubscription);
+  initPushStatus();
+}
+
+/* ---------------------------- Phone push notifications ---------------------------- */
+function updatePushButton(subscribed) {
+  const btn = document.getElementById('pushToggleBtn');
+  const status = document.getElementById('pushStatus');
+  btn.textContent = subscribed ? '🔕 Disable Phone Notifications' : '🔔 Enable Phone Notifications';
+  status.textContent = subscribed ? 'Notifications are on for this device.' : '';
+}
+
+async function initPushStatus() {
+  const btn = document.getElementById('pushToggleBtn');
+  const status = document.getElementById('pushStatus');
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    btn.disabled = true;
+    status.textContent = 'Push notifications are not supported in this browser.';
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
+    const sub = await reg.pushManager.getSubscription();
+    updatePushButton(Boolean(sub));
+  } catch (err) {
+    status.textContent = 'Could not set up notifications: ' + err.message;
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function togglePushSubscription() {
+  const btn = document.getElementById('pushToggleBtn');
+  const status = document.getElementById('pushStatus');
+  btn.disabled = true;
+  status.textContent = '';
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
+    const existing = await reg.pushManager.getSubscription();
+
+    if (existing) {
+      await api('/api/admin/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: existing.endpoint }) });
+      await existing.unsubscribe();
+      updatePushButton(false);
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      status.textContent = 'Notification permission was not granted.';
+      return;
+    }
+    const { publicKey } = await api('/api/admin/push/public-key');
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await api('/api/admin/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+    updatePushButton(true);
+  } catch (err) {
+    status.textContent = 'Failed: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function debounce(fn, ms) {
@@ -313,7 +385,9 @@ async function loadBroadcasts() {
             <div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>
             <div style="font-size:.65rem;color:var(--muted)">${new Date(b.createdAt).toLocaleString()}</div>
           </div>
-          <button class="btn" style="padding:6px 12px;font-size:.65rem;flex-shrink:0;border-color:var(--grana);color:var(--grana)" onclick="deleteBroadcast('${b.id}')">Delete</button>
+          <div class="row-actions" style="flex-shrink:0">
+            <button class="btn-del" onclick="deleteBroadcast('${b.id}')">Delete</button>
+          </div>
         </div>
       `).join('');
   } catch (err) {

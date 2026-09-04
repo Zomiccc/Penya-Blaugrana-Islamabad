@@ -279,7 +279,7 @@ function renderCountdown(refs, event) {
 function renderNextStrip(refs, event) {
   if (!refs.nextStripEl) return;
   const isHome = event.isHome;
-  const opponent = event.opponent;
+  const opponent = isHome ? event.awayTeam : event.homeTeam;
   refs.nextStripEl.innerHTML = `Next up: FC Barcelona ${isHome ? "host" : "travel to"} <b>${opponent}</b>, ${formatPKT(toDate(event))}`;
 }
 

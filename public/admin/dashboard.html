@@ -195,9 +195,13 @@
 
   <div class="panel">
     <h2>Peyna Assistant — Member Conversations</h2>
-    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:14px">
       Select a member to view their private conversation. Each thread is isolated — messages are only visible to you and that member.
     </p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button class="btn" id="pushToggleBtn" style="padding:8px 16px;font-size:.7rem">🔔 Enable Phone Notifications</button>
+      <span id="pushStatus" style="font-size:.75rem;color:var(--muted)"></span>
+    </div>
     <div id="adminChatLayout" style="display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;height:560px">
       <!-- Conversation list -->
       <div id="adminConvList" style="width:280px;flex-shrink:0;border-right:1px solid var(--line);overflow-y:auto;background:rgba(0,0,0,.3)">

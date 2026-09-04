@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
+const webpush = require('web-push');
 const { readDb, writeDb, initDb, isPgMode, reseedFromJson } = require('./lib/db');
 const { sendJoinConfirmation, sendPaymentReceipt, sendMemberAuthCode } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
@@ -34,6 +35,42 @@ if (STRIPE_PAYMENT_LINK_ADULT || STRIPE_PAYMENT_LINK_KIDS) {
 } else if (!stripe) {
   console.warn('[warn] STRIPE_SECRET_KEY not set — the Join Us payment flow will save submissions but ' +
     'cannot create real checkout sessions until you add a Stripe key to .env');
+}
+
+// ---------------------------- Web Push (admin phone notifications) ----------------------------
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
+const PUSH_ENABLED = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+if (PUSH_ENABLED) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} else {
+  console.warn('[warn] VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY not set — admin phone notifications are disabled.');
+}
+
+/** Push a notification to every device the admin has enabled notifications on. */
+async function notifyAdminDevices(payload) {
+  if (!PUSH_ENABLED) return;
+  const db = readDb();
+  const subs = db.pushSubscriptions || [];
+  if (!subs.length) return;
+  const body = JSON.stringify(payload);
+  const stale = [];
+  await Promise.all(subs.map(async (sub) => {
+    try {
+      await webpush.sendNotification(sub.subscription, body);
+    } catch (err) {
+      // 404/410 = the browser unsubscribed or the subscription expired — clean it up.
+      if (err.statusCode === 404 || err.statusCode === 410) stale.push(sub.endpoint);
+      else console.warn('[push] send failed:', err.message);
+    }
+  }));
+  if (stale.length) {
+    await writeDb((d) => {
+      d.pushSubscriptions = (d.pushSubscriptions || []).filter((s) => !stale.includes(s.endpoint));
+      return d;
+    });
+  }
 }
 
 // ---------- Stripe webhook needs the RAW body, so register it before express.json() ----------
@@ -883,6 +920,16 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
     .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))
     .map((match) => {
       const finished = predictor.hasFinalScore(match);
+      // A match that has kicked off but isn't finished yet can still have a
+      // running score from the API (it updates score.fullTime live during
+      // play) — show that as "LIVE" rather than a bare "In progress" label.
+      const live =
+        !finished &&
+        ['IN_PLAY', 'PAUSED'].includes(match.status) &&
+        Number.isInteger(match.score?.home) &&
+        Number.isInteger(match.score?.away)
+          ? { home: match.score.home, away: match.score.away }
+          : null;
       const rows = db.predictions
         .filter((p) => String(p.fixtureId) === String(match.id))
         .map((p) => {
@@ -909,6 +956,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         matchday: match.matchday,
         competition: match.competition,
         actual: finished ? { home: match.score.home, away: match.score.away } : null,
+        live,
         predictions: rows,
       };
     })
@@ -919,7 +967,8 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
 
 app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
   const db = readDb();
-  const table = predictor.buildLeaderboard(db.predictions, db.members, fixtureMatches());
+  const currentMembers = db.members.filter((m) => m.status === 'paid');
+  const table = predictor.buildLeaderboard(db.predictions, currentMembers, fixtureMatches());
   res.json({
     leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
     points: predictor.POINTS,
@@ -1117,6 +1166,9 @@ app.post('/api/chat/messages', requireMember, async (req, res) => {
     return d;
   });
 
+  const memberName = `${req.member.firstName} ${req.member.lastName}`.trim();
+  notifyAdminDevices({ title: `New message from ${memberName}`, body: msg.text });
+
   res.json({ ok: true, message: msg });
 });
 
@@ -1157,6 +1209,12 @@ app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (re
     (d.chatMessages = d.chatMessages || []).push(msg);
     conv.adminUnreadCount = (conv.adminUnreadCount || 0) + 1;
     return d;
+  });
+
+  const memberName = `${req.member.firstName} ${req.member.lastName}`.trim();
+  notifyAdminDevices({
+    title: `New message from ${memberName}`,
+    body: isVoice ? '🎤 Sent a voice note' : `📎 Sent an attachment: ${req.file.originalname}`,
   });
 
   res.json({ ok: true, message: msg });
@@ -1363,6 +1421,38 @@ app.get('/api/admin/chat/unread-count', requireAdmin, (req, res) => {
   const db = readDb();
   const total = (db.chatConversations || []).reduce((sum, c) => sum + (c.adminUnreadCount || 0), 0);
   res.json({ totalUnread: total });
+});
+
+/* ---------- Admin push notifications (phone alerts for new chat messages) ---------- */
+
+// GET /api/admin/push/public-key — VAPID public key the browser needs to subscribe
+app.get('/api/admin/push/public-key', requireAdmin, (req, res) => {
+  if (!PUSH_ENABLED) return res.status(503).json({ error: 'Push notifications are not configured on this server.' });
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// POST /api/admin/push/subscribe — save a browser's push subscription (one per device)
+app.post('/api/admin/push/subscribe', requireAdmin, async (req, res) => {
+  const subscription = req.body?.subscription;
+  if (!subscription?.endpoint || !subscription?.keys) {
+    return res.status(400).json({ error: 'Invalid push subscription' });
+  }
+  await writeDb((d) => {
+    d.pushSubscriptions = (d.pushSubscriptions || []).filter((s) => s.endpoint !== subscription.endpoint);
+    d.pushSubscriptions.push({ endpoint: subscription.endpoint, subscription, createdAt: new Date().toISOString() });
+    return d;
+  });
+  res.json({ ok: true });
+});
+
+// POST /api/admin/push/unsubscribe — remove this device's subscription
+app.post('/api/admin/push/unsubscribe', requireAdmin, async (req, res) => {
+  const endpoint = req.body?.endpoint;
+  await writeDb((d) => {
+    d.pushSubscriptions = (d.pushSubscriptions || []).filter((s) => s.endpoint !== endpoint);
+    return d;
+  });
+  res.json({ ok: true });
 });
 
 /* ---------- Broadcast endpoints ---------- */
