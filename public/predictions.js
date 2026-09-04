@@ -494,7 +494,7 @@
 
     // Keep live scores, the leaderboard, and the prediction window fresh
     // while the page is open — the cache behind these refreshes from
-    // Football-Data every 5 min on a match day, so this just keeps the
+    // Football-Data every 1 min on a match day, so this just keeps the
     // page in step with it without hammering our own API.
     setInterval(() => {
       loadWindow();
