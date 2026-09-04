@@ -73,13 +73,24 @@
 <header class="admin-header">
   <div class="container">
     <h1>PBI Admin</h1>
-    <div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <a href="#adminChatLayout" id="adminHeaderBadge" title="New member messages" hidden
+        style="background:var(--gold);color:var(--night);font-family:var(--mono);font-weight:700;
+        font-size:.72rem;min-width:24px;height:24px;padding:0 8px;border-radius:12px;
+        display:flex;align-items:center;justify-content:center;gap:5px;text-decoration:none;
+        box-shadow:0 0 0 rgba(237,187,0,.5);animation:adminBadgePulse 1.8s infinite">💬 <span id="adminHeaderBadgeCount">0</span></a>
       <span class="username" id="whoami"></span>
       <button class="btn" id="logoutBtn" style="padding:8px 18px;font-size:.8rem"><span>Logout</span></button>
       <a class="btn blue" href="../index.html" style="padding:8px 18px;font-size:.8rem"><span>View site</span></a>
     </div>
   </div>
 </header>
+<style>
+@keyframes adminBadgePulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(237,187,0,.55)}
+  50%{box-shadow:0 0 0 6px rgba(237,187,0,0)}
+}
+</style>
 
 <div class="admin-wrap container">
 
@@ -169,6 +180,17 @@
     </form>
     <div id="broadcastMsg"></div>
     <div id="broadcastHistory" style="margin-top:20px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Predictions Results Display</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      Hide a finished match from the members' results list on the Match Predictions page to keep it shorter.
+      This only affects what's shown — hidden matches keep their stored predictions and everyone's points are untouched.
+    </p>
+    <div id="predResultsList" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto">
+      <p style="color:var(--muted);font-size:.8rem">Loading…</p>
+    </div>
   </div>
 
   <div class="panel">

@@ -72,6 +72,7 @@ async function init() {
   document.getElementById('statusFilter').addEventListener('change', loadMembers);
   document.getElementById('typeFilter').addEventListener('change', loadMembers);
   loadBroadcasts();
+  loadPredictionResults();
   loadAdminConversations();
   setInterval(loadAdminConversations, 5000);
 }
@@ -330,9 +331,68 @@ async function deleteBroadcast(id) {
   }
 }
 
+/* ---------------------------- Predictions results visibility ---------------------------- */
+async function loadPredictionResults() {
+  const container = document.getElementById('predResultsList');
+  if (!container) return;
+  try {
+    const data = await api('/api/admin/predictions/matches');
+    const matches = data.matches || [];
+    if (!matches.length) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:.8rem">No finished matches with predictions yet.</p>';
+      return;
+    }
+    container.innerHTML = matches.map((m) => {
+      const dateStr = new Date(m.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const scoreStr = m.actual ? `${m.actual.home}–${m.actual.away}` : m.status;
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:4px;${m.hidden ? 'opacity:.55' : ''}">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;color:var(--chalk);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${escapeHtml(m.homeTeam)} v ${escapeHtml(m.awayTeam)} <span style="color:var(--gold)">${escapeHtml(scoreStr)}</span>
+            </div>
+            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">
+              ${dateStr} · ${m.predictionsCount} prediction${m.predictionsCount === 1 ? '' : 's'}${m.hidden ? ' · <span style="color:var(--grana-lt)">hidden from members</span>' : ''}
+            </div>
+          </div>
+          <button class="btn ${m.hidden ? 'blue' : ''}" style="padding:7px 14px;font-size:.68rem;flex-shrink:0"
+            onclick="toggleMatchHidden('${m.fixtureId}', ${!m.hidden})">${m.hidden ? 'Unhide' : 'Hide'}</button>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function toggleMatchHidden(fixtureId, hide) {
+  if (hide && !confirm('Hide this match from the members\' results list? Their predictions and points for it are kept — this only shortens the display.')) return;
+  try {
+    await api(`/api/admin/predictions/matches/${fixtureId}/${hide ? 'hide' : 'unhide'}`, { method: 'POST' });
+    await loadPredictionResults();
+  } catch (err) {
+    alert('Failed to update: ' + err.message);
+  }
+}
+
 /* ---------------------------- Peyna Assistant Admin ---------------------------- */
 let activeConvId = null;
 let adminReplyToMsgId = null;
+const ADMIN_BASE_TITLE = document.title;
+
+function updateAdminUnreadIndicators(totalUnread) {
+  const headerBadge = document.getElementById('adminHeaderBadge');
+  const headerCount = document.getElementById('adminHeaderBadgeCount');
+  if (headerBadge && headerCount) {
+    if (totalUnread > 0) {
+      headerCount.textContent = totalUnread > 99 ? '99+' : totalUnread;
+      headerBadge.hidden = false;
+    } else {
+      headerBadge.hidden = true;
+    }
+  }
+  document.title = totalUnread > 0 ? `(${totalUnread > 99 ? '99+' : totalUnread}) ${ADMIN_BASE_TITLE}` : ADMIN_BASE_TITLE;
+}
 
 async function loadAdminConversations() {
   const listEl = document.getElementById('adminConvItems');
@@ -346,6 +406,7 @@ async function loadAdminConversations() {
       if (totalUnread > 0) { badgeEl.textContent = totalUnread; badgeEl.style.display = 'inline-block'; }
       else { badgeEl.style.display = 'none'; }
     }
+    updateAdminUnreadIndicators(totalUnread);
     if (!convs.length) {
       listEl.innerHTML = '<p style="padding:20px;text-align:center;color:var(--muted);font-size:.75rem">No conversations yet.</p>';
       return;

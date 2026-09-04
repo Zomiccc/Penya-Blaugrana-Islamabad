@@ -11,7 +11,7 @@ const { readDb, writeDb, initDb, isPgMode, reseedFromJson } = require('./lib/db'
 const { sendJoinConfirmation, sendPaymentReceipt, sendMemberAuthCode } = require('./lib/mailer');
 const { buildFixturesRouter } = require('./src/routes/fixtures.route');
 const { startFixtureSync } = require('./src/jobs/fixtureSync.job');
-const { getCachedFixtures } = require('./src/services/fixture.service');
+const { getCachedFixtures, setMatchHidden, getHiddenMatchIds } = require('./src/services/fixture.service');
 const predictor = require('./lib/predictor');
 
 const app = express();
@@ -872,13 +872,14 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
   const db = readDb();
   const now = new Date();
   const matches = fixtureMatches();
+  const hiddenIds = getHiddenMatchIds(); // display-only filter — never touches scoring
   const matchById = new Map(matches.map((m) => [String(m.id), m]));
   const nameById = new Map(
     db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
   );
 
   const revealed = matches
-    .filter((m) => predictor.hasKickedOff(m, now))
+    .filter((m) => predictor.hasKickedOff(m, now) && !hiddenIds.has(String(m.id)))
     .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))
     .map((match) => {
       const finished = predictor.hasFinalScore(match);
@@ -923,6 +924,56 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
     leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
     points: predictor.POINTS,
   });
+});
+
+// ---------------------------- Admin: predictions results visibility ----------------------------
+// Lets the admin shorten the member-facing "results" list by hiding individual
+// finished matches from display. This is purely cosmetic: hidden matches keep
+// their stored predictions and final score, buildLeaderboard() always runs
+// against the full, unfiltered match list, so nobody's total points change.
+
+// GET /api/admin/predictions/matches — every match with at least one prediction,
+// most recent first, with its current hidden/visible state.
+app.get('/api/admin/predictions/matches', requireAdmin, (req, res) => {
+  const db = readDb();
+  const matches = fixtureMatches();
+  const hiddenIds = getHiddenMatchIds();
+  const predictionCounts = new Map();
+  for (const p of db.predictions || []) {
+    const key = String(p.fixtureId);
+    predictionCounts.set(key, (predictionCounts.get(key) || 0) + 1);
+  }
+
+  const rows = matches
+    .filter((m) => predictionCounts.has(String(m.id)))
+    .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))
+    .map((m) => ({
+      fixtureId: m.id,
+      utcDate: m.utcDate,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      status: m.status,
+      matchday: m.matchday,
+      competition: m.competition,
+      actual: predictor.hasFinalScore(m) ? { home: m.score.home, away: m.score.away } : null,
+      predictionsCount: predictionCounts.get(String(m.id)) || 0,
+      hidden: hiddenIds.has(String(m.id)),
+    }));
+
+  res.json({ matches: rows });
+});
+
+// POST /api/admin/predictions/matches/:id/hide — remove a match from the
+// public results list without touching its predictions or anyone's points.
+app.post('/api/admin/predictions/matches/:id/hide', requireAdmin, (req, res) => {
+  const hidden = setMatchHidden(req.params.id, true);
+  res.json({ ok: true, hiddenMatches: hidden });
+});
+
+// POST /api/admin/predictions/matches/:id/unhide — restore a previously hidden match.
+app.post('/api/admin/predictions/matches/:id/unhide', requireAdmin, (req, res) => {
+  const hidden = setMatchHidden(req.params.id, false);
+  res.json({ ok: true, hiddenMatches: hidden });
 });
 
 /* ==========================================================================

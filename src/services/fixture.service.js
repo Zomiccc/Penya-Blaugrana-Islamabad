@@ -33,6 +33,9 @@ function defaultCache() {
     venueCache: {}, // { [teamId]: { venue, city } }
     homeVenue: { venue: "Spotify Camp Nou", city: "Barcelona" },
     overrides: {}, // { [fixtureId]: { status, homeScore, awayScore } } — manual fixes that survive syncs
+    hiddenMatches: [], // [fixtureId, ...] — matches hidden from the predictions results display only.
+                        // Scoring/leaderboard always uses the full match list, so hiding a match
+                        // here never changes anyone's points — it only shortens what's shown.
   };
 }
 
@@ -53,6 +56,7 @@ function readCache() {
     if (!c.homeVenue) c.homeVenue = defaultCache().homeVenue;
     if (!c.apiStatus) c.apiStatus = "ok";
     if (!c.overrides) c.overrides = {};
+    if (!Array.isArray(c.hiddenMatches)) c.hiddenMatches = [];
     return c;
   } catch {
     return defaultCache();
@@ -764,6 +768,7 @@ function getCachedFixtures() {
     apiStatus: cache.apiStatus,
     lastError: cache.lastError,
     matches: cache.matches,
+    hiddenMatches: cache.hiddenMatches || [],
   };
 }
 
@@ -821,6 +826,33 @@ function overrideMatchResult(fixtureId, status, homeScore, awayScore) {
   return match;
 }
 
+/**
+ * Hide/unhide a match from the predictions RESULTS DISPLAY only.
+ * This never touches `matches` or `overrides` — the match, its final score,
+ * and every stored prediction stay exactly as they are, so the leaderboard
+ * and everyone's total points are completely unaffected. It only adds/removes
+ * the fixtureId from a "don't show this on the results list" set that the
+ * predictions routes check before rendering.
+ */
+function setMatchHidden(fixtureId, hidden) {
+  const cache = readCache();
+  if (!Array.isArray(cache.hiddenMatches)) cache.hiddenMatches = [];
+  const id = String(fixtureId);
+  const has = cache.hiddenMatches.includes(id);
+  if (hidden && !has) {
+    cache.hiddenMatches.push(id);
+  } else if (!hidden && has) {
+    cache.hiddenMatches = cache.hiddenMatches.filter((x) => x !== id);
+  }
+  writeCache(cache);
+  return cache.hiddenMatches;
+}
+
+function getHiddenMatchIds() {
+  const cache = readCache();
+  return new Set((cache.hiddenMatches || []).map(String));
+}
+
 module.exports = {
   syncFixtures,
   getCachedFixtures,
@@ -828,6 +860,8 @@ module.exports = {
   updateNextSync,
   getFixtureResult,
   overrideMatchResult,
+  setMatchHidden,
+  getHiddenMatchIds,
   CACHE_PATH,
   BARCA_TEAM_ID,
 };
