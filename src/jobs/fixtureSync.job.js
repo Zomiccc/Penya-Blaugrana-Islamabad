@@ -5,7 +5,7 @@
 
    Refresh policy:
      - Normal days .......... every 12 hours
-     - Match day ............ every 1 minute
+     - Match day ............ every 3 minutes
      - Match finished ....... back to 12 hours
 
    The scheduler is started once from server.js. The interval is re-evaluated
@@ -19,7 +19,7 @@ const {
 } = require('../services/fixture.service');
 
 const NORMAL_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
-const MATCHDAY_INTERVAL_MS = 60 * 1000;         // 1 minute
+const MATCHDAY_INTERVAL_MS = 3 * 60 * 1000;     // 3 minutes
 
 let timer = null;
 let syncing = false;
@@ -42,7 +42,7 @@ function desiredIntervalMs(cache) {
   const kickoff = new Date(next.utcDate);
   const now = new Date();
 
-  // If the next match is today (same calendar date in UTC), poll every 1 min.
+  // If the next match is today (same calendar date in UTC), poll every 3 min.
   const sameUtcDay =
     kickoff.getUTCFullYear() === now.getUTCFullYear() &&
     kickoff.getUTCMonth() === now.getUTCMonth() &&
@@ -65,7 +65,7 @@ async function runSync(reason) {
     updateNextSync(nextSyncAt);
 
     if (interval !== lastScheduledIntervalMs) {
-      console.log(`[fixtures] refresh interval changed to ${interval === MATCHDAY_INTERVAL_MS ? '1 min (match day)' : '12 hours (normal)'}`);
+      console.log(`[fixtures] refresh interval changed to ${interval === MATCHDAY_INTERVAL_MS ? '3 min (match day)' : '12 hours (normal)'}`);
       lastScheduledIntervalMs = interval;
       scheduleTimer(interval);
     } else {
