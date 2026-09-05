@@ -751,6 +751,13 @@ function fixtureMatches() {
   return getCachedFixtures().matches || [];
 }
 
+// Needed alongside fixtureMatches() any time we ask predictor.hasFinalScore()
+// / scorePrediction() / buildLeaderboard() to score a match — see the
+// comment on hasFinalScore() in lib/predictor.js for why.
+function fixtureLastSync() {
+  return getCachedFixtures().lastSync || null;
+}
+
 // The prediction table: next 10 upcoming fixtures, the deadline, and the
 // member's own already-locked predictions.
 app.get('/api/predictions/window', requireMember, (req, res) => {
@@ -880,13 +887,14 @@ app.post('/api/predictions', requireMember, async (req, res) => {
 // The member's own predictions, with points once matches finish.
 app.get('/api/predictions/me', requireMember, (req, res) => {
   const matches = fixtureMatches();
+  const lastSync = fixtureLastSync();
   const matchById = new Map(matches.map((m) => [String(m.id), m]));
   const mine = readDb()
     .predictions.filter((p) => p.memberId === req.member.id)
     .map((p) => {
       const match = matchById.get(String(p.fixtureId));
-      const finished = predictor.hasFinalScore(match);
-      const points = finished ? predictor.scorePrediction(p, match) : null;
+      const finished = predictor.hasFinalScore(match, lastSync);
+      const points = finished ? predictor.scorePrediction(p, match, lastSync) : null;
       return {
         fixtureId: p.fixtureId,
         homeTeam: match?.homeTeam || 'Unknown',
@@ -912,6 +920,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
   const db = readDb();
   const now = new Date();
   const matches = fixtureMatches();
+  const lastSync = fixtureLastSync();
   const hiddenIds = getHiddenMatchIds(); // display-only filter — never touches scoring
   const matchById = new Map(matches.map((m) => [String(m.id), m]));
   const nameById = new Map(
@@ -922,7 +931,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
     .filter((m) => predictor.hasKickedOff(m, now) && !hiddenIds.has(String(m.id)))
     .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))
     .map((match) => {
-      const finished = predictor.hasFinalScore(match);
+      const finished = predictor.hasFinalScore(match, lastSync);
       // A match that has kicked off but isn't finished yet can still have a
       // running score from the API (it updates score.fullTime live during
       // play) — show that as "LIVE" rather than a bare "In progress" label.
@@ -935,13 +944,18 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
           : null;
       const rows = db.predictions
         .filter((p) => String(p.fixtureId) === String(match.id))
-        .map((p) => {
-          const points = finished ? predictor.scorePrediction(p, match) : null;
+        // Prefer the name snapshotted when the prediction was made — it
+        // survives the member later being deleted. Older predictions made
+        // before that snapshot existed fall back to a live lookup. If
+        // neither resolves (member fully deleted, prediction pre-dates the
+        // snapshot), skip the row entirely rather than showing a
+        // "Former member" placeholder — same as the leaderboard already does.
+        .map((p) => ({ p, name: p.memberName || nameById.get(p.memberId) }))
+        .filter(({ name }) => Boolean(name))
+        .map(({ p, name }) => {
+          const points = finished ? predictor.scorePrediction(p, match, lastSync) : null;
           return {
-            // Prefer the name snapshotted when the prediction was made — it
-            // survives the member later being deleted. Older predictions
-            // made before that snapshot existed fall back to a live lookup.
-            member: p.memberName || nameById.get(p.memberId) || 'Former member',
+            member: name,
             isMe: p.memberId === req.member.id,
             homeGoals: p.homeGoals,
             awayGoals: p.awayGoals,
@@ -974,7 +988,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
 app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
   const db = readDb();
   const currentMembers = db.members.filter((m) => m.status === 'paid');
-  const table = predictor.buildLeaderboard(db.predictions, currentMembers, fixtureMatches());
+  const table = predictor.buildLeaderboard(db.predictions, currentMembers, fixtureMatches(), fixtureLastSync());
   res.json({
     leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
     points: predictor.POINTS,
@@ -992,6 +1006,7 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
 app.get('/api/admin/predictions/matches', requireAdmin, (req, res) => {
   const db = readDb();
   const matches = fixtureMatches();
+  const lastSync = fixtureLastSync();
   const hiddenIds = getHiddenMatchIds();
   const predictionCounts = new Map();
   for (const p of db.predictions || []) {
@@ -1010,7 +1025,7 @@ app.get('/api/admin/predictions/matches', requireAdmin, (req, res) => {
       status: m.status,
       matchday: m.matchday,
       competition: m.competition,
-      actual: predictor.hasFinalScore(m) ? { home: m.score.home, away: m.score.away } : null,
+      actual: predictor.hasFinalScore(m, lastSync) ? { home: m.score.home, away: m.score.away } : null,
       predictionsCount: predictionCounts.get(String(m.id)) || 0,
       hidden: hiddenIds.has(String(m.id)),
     }));

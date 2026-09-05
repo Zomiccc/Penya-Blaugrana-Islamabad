@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-09-04T21:08:46.550Z",
-  "nextSync": "2026-09-05T09:08:46.559Z",
+  "lastSync": "2026-09-05T04:19:27.252Z",
+  "nextSync": "2026-09-05T04:22:27.264Z",
   "apiStatus": "ok",
   "lastError": null,
   "matches": [
@@ -1703,80 +1703,6 @@
       "score": {
         "home": null,
         "away": null
-      },
-      "goals": []
-    },
-    {
-      "id": 564654,
-      "utcDate": "2026-08-28T17:00:00Z",
-      "status": "FINISHED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 3,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Campos de Sport de El Sardinero",
-      "city": "Calle Real Racing Club, s/n Santander 39005",
-      "homeTeamId": 5335,
-      "homeTeam": "Real Racing Club de Santander",
-      "homeCrest": "https://crests.football-data.org/5335.png",
-      "awayTeamId": 285,
-      "awayTeam": "Elche CF",
-      "awayCrest": "https://crests.football-data.org/285.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": 3,
-        "away": 2
-      },
-      "goals": []
-    },
-    {
-      "id": 564648,
-      "utcDate": "2026-08-28T19:30:00Z",
-      "status": "FINISHED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 3,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Estadio de Mendizorroza",
-      "city": "Mendizorroza, Paseo Cervantes, s/n Vitoria 01007",
-      "homeTeamId": 263,
-      "homeTeam": "Deportivo Alavés",
-      "homeCrest": "https://crests.football-data.org/263.png",
-      "awayTeamId": 94,
-      "awayTeam": "Villarreal CF",
-      "awayCrest": "https://crests.football-data.org/94.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": 1,
-        "away": 0
       },
       "goals": []
     },
@@ -10805,6 +10731,80 @@
       "score": {
         "home": null,
         "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564654,
+      "utcDate": "2026-08-28T17:00:00Z",
+      "status": "FINISHED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 3,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Campos de Sport de El Sardinero",
+      "city": "Calle Real Racing Club, s/n Santander 39005",
+      "homeTeamId": 5335,
+      "homeTeam": "Real Racing Club de Santander",
+      "homeCrest": "https://crests.football-data.org/5335.png",
+      "awayTeamId": 285,
+      "awayTeam": "Elche CF",
+      "awayCrest": "https://crests.football-data.org/285.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": 3,
+        "away": 2
+      },
+      "goals": []
+    },
+    {
+      "id": 564648,
+      "utcDate": "2026-08-28T19:30:00Z",
+      "status": "FINISHED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 3,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio de Mendizorroza",
+      "city": "Mendizorroza, Paseo Cervantes, s/n Vitoria 01007",
+      "homeTeamId": 263,
+      "homeTeam": "Deportivo Alavés",
+      "homeCrest": "https://crests.football-data.org/263.png",
+      "awayTeamId": 94,
+      "awayTeam": "Villarreal CF",
+      "awayCrest": "https://crests.football-data.org/94.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": 1,
+        "away": 0
       },
       "goals": []
     },
