@@ -73,6 +73,7 @@ async function init() {
   document.getElementById('typeFilter').addEventListener('change', loadMembers);
   loadBroadcasts();
   loadPredictionResults();
+  loadOrphanedPredictions();
   loadAdminConversations();
   setInterval(loadAdminConversations, 5000);
 
@@ -447,6 +448,73 @@ async function toggleMatchHidden(fixtureId, hide) {
   } catch (err) {
     alert('Failed to update: ' + err.message);
   }
+}
+
+/* ---------------------------- Orphaned predictions ---------------------------- */
+async function loadOrphanedPredictions() {
+  const container = document.getElementById('orphanedList');
+  if (!container) return;
+  try {
+    const data = await api('/api/admin/predictions/orphaned');
+    const groups = data.groups || [];
+    if (!groups.length) {
+      container.innerHTML = '<p style="color:var(--muted);font-size:.8rem">None — every prediction currently has a name attached.</p>';
+      return;
+    }
+    container.innerHTML = groups.map((g) => {
+      const predList = g.predictions
+        .slice()
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((p) => {
+          const dateStr = p.utcDate
+            ? new Date(p.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+          return `<div style="font-size:.75rem;color:var(--chalk-dim);padding:3px 0">${escapeHtml(p.homeTeam)} v ${escapeHtml(p.awayTeam)} — guessed <b style="color:var(--gold)">${p.homeGoals}–${p.awayGoals}</b>${dateStr ? ` · ${dateStr}` : ''}</div>`;
+        })
+        .join('');
+      const [fn, ...rest] = (g.restoredName || '').split(' ');
+      const ln = rest.join(' ');
+      return `
+        <div style="border:1px solid var(--line);border-radius:4px;padding:12px 14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-family:var(--mono);font-size:.62rem;color:var(--muted);word-break:break-all">memberId: ${escapeHtml(g.memberId)}</span>
+            ${g.conversationId ? `<button class="btn blue" style="padding:4px 10px;font-size:.6rem" onclick="viewOrphanedChat('${g.conversationId}')">View chat</button>` : ''}
+            ${g.restoredName ? `<span style="font-size:.7rem;color:#3ddc8a">Restored as "${escapeHtml(g.restoredName)}"</span>` : ''}
+          </div>
+          <div style="margin-bottom:10px">${predList}</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" placeholder="First name" id="orph-fn-${escapeHtml(g.memberId)}" value="${escapeHtml(fn || '')}"
+              style="flex:1;min-width:100px;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:7px 10px;border-radius:4px;font-size:.78rem">
+            <input type="text" placeholder="Last name" id="orph-ln-${escapeHtml(g.memberId)}" value="${escapeHtml(ln || '')}"
+              style="flex:1;min-width:100px;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:7px 10px;border-radius:4px;font-size:.78rem">
+            <button class="btn" style="padding:7px 14px;font-size:.68rem" onclick="restoreOrphanedName('${g.memberId}')">${g.restoredName ? 'Update' : 'Save name'}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function restoreOrphanedName(memberId) {
+  const firstName = document.getElementById(`orph-fn-${memberId}`).value.trim();
+  const lastName = document.getElementById(`orph-ln-${memberId}`).value.trim();
+  if (!firstName) { alert('First name is required'); return; }
+  try {
+    await api(`/api/admin/predictions/orphaned/${memberId}/restore`, {
+      method: 'POST',
+      body: JSON.stringify({ firstName, lastName }),
+    });
+    await loadOrphanedPredictions();
+  } catch (err) {
+    alert('Failed to save: ' + err.message);
+  }
+}
+
+function viewOrphanedChat(conversationId) {
+  document.getElementById('adminChatLayout')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  selectConversation(conversationId);
 }
 
 /* ---------------------------- Peyna Assistant Admin ---------------------------- */

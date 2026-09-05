@@ -194,6 +194,18 @@
   </div>
 
   <div class="panel">
+    <h2>Orphaned Predictions</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
+      Predictions and chat history from members who were later deleted stay forever — only their name is gone.
+      Recognize who one of these was (from their guesses, dates, or their old chat) and give them a name below.
+      This never restores their login or membership — it only fixes what's displayed.
+    </p>
+    <div id="orphanedList" style="display:flex;flex-direction:column;gap:10px;max-height:480px;overflow-y:auto">
+      <p style="color:var(--muted);font-size:.8rem">Loading…</p>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Peyna Assistant — Member Conversations</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:14px">
       Select a member to view their private conversation. Each thread is isolated — messages are only visible to you and that member.

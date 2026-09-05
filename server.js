@@ -926,6 +926,11 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
   const nameById = new Map(
     db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]),
   );
+  // Names the admin manually re-attached to a deleted member's old
+  // predictions — see /api/admin/predictions/orphaned.
+  const restoredNameById = new Map(
+    Object.entries(db.deletedMemberNames || {}).map(([id, r]) => [id, `${r.firstName} ${r.lastName}`.trim()]),
+  );
 
   const revealed = matches
     .filter((m) => predictor.hasKickedOff(m, now) && !hiddenIds.has(String(m.id)))
@@ -946,11 +951,11 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         .filter((p) => String(p.fixtureId) === String(match.id))
         // Prefer the name snapshotted when the prediction was made — it
         // survives the member later being deleted. Older predictions made
-        // before that snapshot existed fall back to a live lookup. If
-        // neither resolves (member fully deleted, prediction pre-dates the
-        // snapshot), skip the row entirely rather than showing a
+        // before that snapshot existed fall back to a live lookup, then to
+        // any name the admin has manually restored. If none of those
+        // resolve, skip the row entirely rather than showing a
         // "Former member" placeholder — same as the leaderboard already does.
-        .map((p) => ({ p, name: p.memberName || nameById.get(p.memberId) }))
+        .map((p) => ({ p, name: p.memberName || nameById.get(p.memberId) || restoredNameById.get(p.memberId) }))
         .filter(({ name }) => Boolean(name))
         .map(({ p, name }) => {
           const points = finished ? predictor.scorePrediction(p, match, lastSync) : null;
@@ -1044,6 +1049,84 @@ app.post('/api/admin/predictions/matches/:id/hide', requireAdmin, (req, res) => 
 app.post('/api/admin/predictions/matches/:id/unhide', requireAdmin, (req, res) => {
   const hidden = setMatchHidden(req.params.id, false);
   res.json({ ok: true, hiddenMatches: hidden });
+});
+
+// ---------------------------- Admin: orphaned predictions ----------------------------
+// When a member is deleted, only their `members` row goes away — their
+// predictions and chat history stay forever (predictions are append-only by
+// design; chat is never cleaned up on member deletion). This surfaces every
+// prediction whose memberId no longer resolves to a name, grouped by member,
+// with any chat history for that same memberId, so the admin can recognize
+// who it was and re-attach their name — without resurrecting their account.
+
+// GET /api/admin/predictions/orphaned — grouped by memberId.
+app.get('/api/admin/predictions/orphaned', requireAdmin, (req, res) => {
+  const db = readDb();
+  const matches = fixtureMatches();
+  const matchById = new Map(matches.map((m) => [String(m.id), m]));
+  const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
+  const restored = db.deletedMemberNames || {};
+
+  const groups = new Map();
+  for (const p of db.predictions || []) {
+    if (p.memberName || nameById.get(p.memberId)) continue; // still a resolvable name — not orphaned
+    if (!groups.has(p.memberId)) {
+      const conv = (db.chatConversations || []).find((c) => c.memberId === p.memberId);
+      const r = restored[p.memberId];
+      groups.set(p.memberId, {
+        memberId: p.memberId,
+        restoredName: r ? `${r.firstName} ${r.lastName}`.trim() : null,
+        conversationId: conv ? conv.id : null,
+        predictions: [],
+      });
+    }
+    const match = matchById.get(String(p.fixtureId));
+    groups.get(p.memberId).predictions.push({
+      fixtureId: p.fixtureId,
+      homeTeam: match ? match.homeTeam : 'Unknown',
+      awayTeam: match ? match.awayTeam : 'Unknown',
+      utcDate: match ? match.utcDate : null,
+      homeGoals: p.homeGoals,
+      awayGoals: p.awayGoals,
+      createdAt: p.createdAt,
+    });
+  }
+
+  const result = [...groups.values()].sort((a, b) => {
+    const aLatest = Math.max(...a.predictions.map((p) => new Date(p.createdAt).getTime()));
+    const bLatest = Math.max(...b.predictions.map((p) => new Date(p.createdAt).getTime()));
+    return bLatest - aLatest;
+  });
+
+  res.json({ groups: result });
+});
+
+// POST /api/admin/predictions/orphaned/:memberId/restore — attach a name.
+// Body: { firstName, lastName }. Does NOT touch `members` — this can never
+// grant login access or reappear in member management/stats/leaderboard.
+app.post('/api/admin/predictions/orphaned/:memberId/restore', requireAdmin, async (req, res) => {
+  const { memberId } = req.params;
+  const firstName = String(req.body?.firstName || '').trim();
+  const lastName = String(req.body?.lastName || '').trim();
+  if (!firstName) {
+    return res.status(400).json({ error: 'First name is required' });
+  }
+  await writeDb((d) => {
+    d.deletedMemberNames = d.deletedMemberNames || {};
+    d.deletedMemberNames[memberId] = { firstName, lastName, restoredAt: new Date().toISOString() };
+    return d;
+  });
+  res.json({ ok: true, name: `${firstName} ${lastName}`.trim() });
+});
+
+// DELETE /api/admin/predictions/orphaned/:memberId/restore — undo a restore.
+app.delete('/api/admin/predictions/orphaned/:memberId/restore', requireAdmin, async (req, res) => {
+  const { memberId } = req.params;
+  await writeDb((d) => {
+    if (d.deletedMemberNames) delete d.deletedMemberNames[memberId];
+    return d;
+  });
+  res.json({ ok: true });
 });
 
 /* ==========================================================================
@@ -1248,6 +1331,8 @@ app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
   const db = readDb();
   const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
   const emailById = new Map(db.members.map((m) => [m.id, m.email]));
+  const restored = db.deletedMemberNames || {};
+  const restoredName = (id) => (restored[id] ? `${restored[id].firstName} ${restored[id].lastName}`.trim() : null);
 
   const convs = (db.chatConversations || []).map((c) => {
     const lastMsg = (db.chatMessages || [])
@@ -1256,7 +1341,7 @@ app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
     return {
       id: c.id,
       memberId: c.memberId,
-      memberName: nameById.get(c.memberId) || 'Former member',
+      memberName: nameById.get(c.memberId) || restoredName(c.memberId) || 'Former member',
       memberEmail: emailById.get(c.memberId) || null,
       resolved: Boolean(c.resolved),
       resolvedAt: c.resolvedAt || null,
@@ -1280,6 +1365,8 @@ app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => 
 
   const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
   const emailById = new Map(db.members.map((m) => [m.id, m.email]));
+  const restored = db.deletedMemberNames || {};
+  const restoredName = (id) => (restored[id] ? `${restored[id].firstName} ${restored[id].lastName}`.trim() : null);
 
   const messages = (db.chatMessages || [])
     .filter((m) => m.conversationId === convId)
@@ -1291,7 +1378,7 @@ app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => 
         conversationId: m.conversationId,
         senderId: m.senderId || null,
         senderRole: m.senderRole || 'member',
-        senderName: isAdmin ? 'Admin' : (nameById.get(m.senderId) || 'Former member'),
+        senderName: isAdmin ? 'Admin' : (nameById.get(m.senderId) || restoredName(m.senderId) || 'Former member'),
         senderEmail: isAdmin ? null : (emailById.get(m.senderId) || null),
         isAdmin,
         messageType: m.messageType || 'text',
@@ -1317,7 +1404,7 @@ app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => 
     conversation: {
       id: conv.id,
       memberId: conv.memberId,
-      memberName: nameById.get(conv.memberId) || 'Former member',
+      memberName: nameById.get(conv.memberId) || restoredName(conv.memberId) || 'Former member',
       memberEmail: emailById.get(conv.memberId) || null,
       resolved: Boolean(conv.resolved),
     },
