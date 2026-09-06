@@ -1608,20 +1608,36 @@ app.post('/api/admin/push/unsubscribe', requireAdmin, async (req, res) => {
 
 /* ---------- Broadcast endpoints ---------- */
 
-// POST /api/admin/chat/broadcast — admin sends a broadcast message
-app.post('/api/admin/chat/broadcast', requireAdmin, async (req, res) => {
-  const { text } = req.body || {};
-  if (!text || !String(text).trim()) {
-    return res.status(400).json({ error: 'Broadcast text is required' });
+// POST /api/admin/chat/broadcast — admin sends a broadcast announcement,
+// optionally with an image. Accepts JSON (text only) or multipart (with an
+// image); multer skips non-multipart requests, so both work on this route.
+app.post('/api/admin/chat/broadcast', requireAdmin, chatUpload.single('image'), async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  const file = req.file;
+
+  if (!text && !file) {
+    return res.status(400).json({ error: 'Add a message, an image, or both' });
   }
-  if (String(text).length > 2000) {
+  if (text.length > 2000) {
     return res.status(400).json({ error: 'Message too long (max 2000 characters)' });
   }
+  if (file && !String(file.mimetype).startsWith('image/')) {
+    return res.status(400).json({ error: 'Only image files can be attached to an announcement' });
+  }
+
   const msg = {
     id: crypto.randomUUID(),
-    text: String(text).trim(),
+    text,
     createdAt: new Date().toISOString(),
   };
+  if (file) {
+    msg.image = {
+      dataUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
+  }
   await writeDb((d) => { (d.broadcasts = d.broadcasts || []).push(msg); return d; });
   res.json({ ok: true, message: msg });
 });

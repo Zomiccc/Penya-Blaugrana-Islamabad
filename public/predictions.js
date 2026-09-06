@@ -216,10 +216,62 @@
   }
 
   /* ---------------------------- prediction table ---------------------------- */
+  /**
+   * Scores typed in but not yet submitted live only in the DOM, and the
+   * background refresh rebuilds this whole list every 60s — which used to
+   * wipe them mid-entry. Worst on a Champions League round: 18 fixtures is
+   * 36 boxes, so anyone filling them in carefully lost the lot. Snapshot the
+   * unsaved values (and the caret) before re-rendering, put them back after.
+   */
+  function captureDraft() {
+    const draft = {};
+    document.querySelectorAll('.pred-row').forEach((row) => {
+      const home = row.querySelector('.pred-home');
+      const away = row.querySelector('.pred-away');
+      if (!home || !away) return;
+      if (home.disabled && away.disabled) return; // locked — the server owns it
+      if (home.value === '' && away.value === '') return;
+      draft[row.dataset.fixtureId] = { home: home.value, away: away.value };
+    });
+
+    let focus = null;
+    const active = document.activeElement;
+    if (active && (active.classList?.contains('pred-home') || active.classList?.contains('pred-away'))) {
+      const row = active.closest('.pred-row');
+      if (row) {
+        focus = {
+          id: row.dataset.fixtureId,
+          side: active.classList.contains('pred-home') ? 'home' : 'away',
+        };
+      }
+    }
+    return { draft, focus };
+  }
+
+  function restoreDraft({ draft, focus }) {
+    for (const [fixtureId, values] of Object.entries(draft)) {
+      const row = document.querySelector(`.pred-row[data-fixture-id="${fixtureId}"]`);
+      if (!row) continue; // fixture dropped out of the round
+      const home = row.querySelector('.pred-home');
+      const away = row.querySelector('.pred-away');
+      if (home && !home.disabled && values.home !== '') home.value = values.home;
+      if (away && !away.disabled && values.away !== '') away.value = values.away;
+    }
+    if (!focus) return;
+    const row = document.querySelector(`.pred-row[data-fixture-id="${focus.id}"]`);
+    const input = row && row.querySelector(focus.side === 'home' ? '.pred-home' : '.pred-away');
+    if (input && !input.disabled) {
+      input.focus();
+      // Not supported on number inputs in every browser.
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* ignore */ }
+    }
+  }
+
   function renderWindow(data) {
     const list = $('predList');
     const bar = $('submitBar');
     const fixtures = data.fixtures || [];
+    const pending = captureDraft();
 
     if (!fixtures.length) {
       list.innerHTML = '<p class="empty-note">No upcoming Barça fixtures to predict right now. Check back once the next round is scheduled.</p>';
@@ -279,6 +331,8 @@
         </div>
       `;
     }).join('');
+
+    restoreDraft(pending);
 
     const openCount = fixtures.filter((f) => !f.locked).length;
     bar.hidden = openCount === 0 || closed;
@@ -499,7 +553,12 @@
       }
       list.innerHTML = bcs.map((b) => `
         <div class="broadcast-item">
-          <div>${escapeHtml(b.text)}</div>
+          ${b.text ? `<div>${escapeHtml(b.text)}</div>` : ''}
+          ${b.image ? `
+            <a class="broadcast-image" href="${escapeHtml(b.image.dataUrl)}" target="_blank" rel="noopener">
+              <img src="${escapeHtml(b.image.dataUrl)}" alt="${escapeHtml(b.image.filename || 'Announcement image')}" loading="lazy">
+            </a>
+          ` : ''}
           <div class="broadcast-meta">${new Date(b.createdAt).toLocaleString()}</div>
         </div>
       `).join('');

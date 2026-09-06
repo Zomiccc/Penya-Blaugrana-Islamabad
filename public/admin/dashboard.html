@@ -176,6 +176,11 @@
         <label>Broadcast Message</label>
         <textarea id="broadcastText" rows="2" maxlength="2000" placeholder="Type your announcement…" style="width:100%;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:13px 14px;border-radius:2px;font-family:inherit;font-size:.9rem;resize:vertical"></textarea>
       </div>
+      <div class="field" style="flex:0 0 auto">
+        <label>Image (optional)</label>
+        <input type="file" id="broadcastImage" accept="image/*"
+          style="background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:11px 12px;border-radius:2px;font-size:.78rem;max-width:230px">
+      </div>
       <button type="submit" class="btn gold">Send Broadcast</button>
     </form>
     <div id="broadcastMsg"></div>

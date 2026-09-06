@@ -356,12 +356,38 @@ async function handleRowAction(btn) {
 async function sendBroadcast(e) {
   e.preventDefault();
   const msg = document.getElementById('broadcastMsg');
-  const text = document.getElementById('broadcastText').value.trim();
-  if (!text) return;
+  const textEl = document.getElementById('broadcastText');
+  const imageEl = document.getElementById('broadcastImage');
+  const text = textEl.value.trim();
+  const file = imageEl?.files?.[0] || null;
+
+  if (!text && !file) {
+    flash(msg, 'Add a message, an image, or both.', false);
+    return;
+  }
+  if (file && file.size > 5 * 1024 * 1024) {
+    flash(msg, 'That image is over the 5MB limit — please use a smaller one.', false);
+    return;
+  }
   if (!confirm('Send this announcement to all members on the Match Predictions page?')) return;
+
   try {
-    await api('/api/admin/chat/broadcast', { method: 'POST', body: JSON.stringify({ text }) });
-    document.getElementById('broadcastText').value = '';
+    // Sent as multipart when an image is attached — the endpoint accepts
+    // either that or plain JSON.
+    const formData = new FormData();
+    formData.append('text', text);
+    if (file) formData.append('image', file);
+    const res = await fetch('/api/admin/chat/broadcast', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formData,
+    });
+    if (res.status === 401) { window.location.href = '/admin/login.html'; return; }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+
+    textEl.value = '';
+    if (imageEl) imageEl.value = '';
     flash(msg, 'Broadcast sent!', true);
     await loadBroadcasts();
   } catch (err) {
@@ -383,7 +409,8 @@ async function loadBroadcasts() {
       bcs.map((b) => `
         <div style="background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.2);border-radius:4px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
           <div style="flex:1;min-width:0">
-            <div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>
+            ${b.text ? `<div style="font-size:.8rem;color:var(--chalk);margin-bottom:4px">${escapeHtml(b.text)}</div>` : ''}
+            ${b.image ? `<a href="${escapeHtml(b.image.dataUrl)}" target="_blank" rel="noopener" style="display:inline-block;margin-bottom:6px"><img src="${escapeHtml(b.image.dataUrl)}" alt="${escapeHtml(b.image.filename || 'Announcement image')}" style="max-width:180px;max-height:120px;border:1px solid rgba(237,187,0,.3);border-radius:3px;display:block"></a>` : ''}
             <div style="font-size:.65rem;color:var(--muted)">${new Date(b.createdAt).toLocaleString()}</div>
           </div>
           <div class="row-actions" style="flex-shrink:0">
