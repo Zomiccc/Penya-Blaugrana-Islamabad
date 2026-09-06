@@ -1094,6 +1094,66 @@ app.post('/api/admin/predictions/matches/:id/unhide', requireAdmin, (req, res) =
   res.json({ ok: true, hiddenMatches: hidden });
 });
 
+/* ---------------------------- Admin: remove a single prediction ----------------------------
+   Predictions are append-only by design: nothing in this app can EDIT a
+   stored score, and that stays true — there is still no route that changes
+   homeGoals/awayGoals, so nobody can turn a losing pick into a winning one.
+   This narrow escape hatch exists only to remove an entry entirely (a test
+   account, a duplicate), because otherwise junk data is stuck in the league
+   forever. Every removal is copied to `deletedPredictions` first, so a
+   deletion is recoverable and auditable rather than silent. */
+
+// GET /api/admin/predictions/matches/:fixtureId/entries — who predicted what.
+app.get('/api/admin/predictions/matches/:fixtureId/entries', requireAdmin, (req, res) => {
+  const db = readDb();
+  const { fixtureId } = req.params;
+  const nameById = new Map(db.members.map((m) => [m.id, `${m.firstName} ${m.lastName}`.trim()]));
+  const restored = db.deletedMemberNames || {};
+
+  const entries = (db.predictions || [])
+    .filter((p) => String(p.fixtureId) === String(fixtureId))
+    .map((p) => ({
+      id: p.id,
+      memberId: p.memberId,
+      member:
+        p.memberName ||
+        nameById.get(p.memberId) ||
+        (restored[p.memberId] ? `${restored[p.memberId].firstName} ${restored[p.memberId].lastName}`.trim() : null) ||
+        'Unknown member',
+      homeGoals: p.homeGoals,
+      awayGoals: p.awayGoals,
+      createdAt: p.createdAt,
+    }))
+    .sort((a, b) => a.member.localeCompare(b.member));
+
+  res.json({ fixtureId, entries });
+});
+
+// DELETE /api/admin/predictions/entry/:predictionId — remove one entry.
+app.delete('/api/admin/predictions/entry/:predictionId', requireAdmin, async (req, res) => {
+  const { predictionId } = req.params;
+  let removed = null;
+
+  await writeDb((d) => {
+    const target = (d.predictions || []).find((p) => p.id === predictionId);
+    if (!target) return d;
+    removed = target;
+    d.predictions = (d.predictions || []).filter((p) => p.id !== predictionId);
+    // Keep a copy so the removal is auditable and reversible by hand.
+    (d.deletedPredictions = d.deletedPredictions || []).push({
+      ...target,
+      deletedAt: new Date().toISOString(),
+    });
+    return d;
+  });
+
+  if (!removed) return res.status(404).json({ error: 'Prediction not found' });
+  console.log(
+    `[admin] deleted prediction ${predictionId} (member ${removed.memberId}, fixture ${removed.fixtureId}, ${removed.homeGoals}-${removed.awayGoals})`,
+  );
+  res.json({ ok: true, removed: { id: removed.id, fixtureId: removed.fixtureId } });
+});
+
 // ---------------------------- Admin: orphaned predictions ----------------------------
 // When a member is deleted, only their `members` row goes away — their
 // predictions and chat history stay forever (predictions are append-only by

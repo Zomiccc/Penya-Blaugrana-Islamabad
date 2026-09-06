@@ -448,22 +448,82 @@ async function loadPredictionResults() {
       const dateStr = new Date(m.utcDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
       const scoreStr = m.actual ? `${m.actual.home}–${m.actual.away}` : m.status;
       return `
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:4px;${m.hidden ? 'opacity:.55' : ''}">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.82rem;color:var(--chalk);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-              ${escapeHtml(m.homeTeam)} v ${escapeHtml(m.awayTeam)} <span style="color:var(--gold)">${escapeHtml(scoreStr)}</span>
+        <div style="border:1px solid var(--line);border-radius:4px;${m.hidden ? 'opacity:.55' : ''}">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.82rem;color:var(--chalk);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                ${escapeHtml(m.homeTeam)} v ${escapeHtml(m.awayTeam)} <span style="color:var(--gold)">${escapeHtml(scoreStr)}</span>
+              </div>
+              <div style="font-size:.65rem;color:var(--muted);margin-top:2px">
+                ${dateStr} · ${m.predictionsCount} prediction${m.predictionsCount === 1 ? '' : 's'}${m.hidden ? ' · <span style="color:var(--grana-lt)">hidden from members</span>' : ''}
+              </div>
             </div>
-            <div style="font-size:.65rem;color:var(--muted);margin-top:2px">
-              ${dateStr} · ${m.predictionsCount} prediction${m.predictionsCount === 1 ? '' : 's'}${m.hidden ? ' · <span style="color:var(--grana-lt)">hidden from members</span>' : ''}
-            </div>
+            <button class="btn" style="padding:7px 12px;font-size:.68rem;flex-shrink:0"
+              onclick="togglePredictionEntries('${m.fixtureId}')">Entries</button>
+            <button class="btn ${m.hidden ? 'blue' : ''}" style="padding:7px 14px;font-size:.68rem;flex-shrink:0"
+              onclick="toggleMatchHidden('${m.fixtureId}', ${!m.hidden})">${m.hidden ? 'Unhide' : 'Hide'}</button>
           </div>
-          <button class="btn ${m.hidden ? 'blue' : ''}" style="padding:7px 14px;font-size:.68rem;flex-shrink:0"
-            onclick="toggleMatchHidden('${m.fixtureId}', ${!m.hidden})">${m.hidden ? 'Unhide' : 'Hide'}</button>
+          <div id="entries-${m.fixtureId}" style="display:none;border-top:1px solid var(--line);padding:8px 14px"></div>
         </div>
       `;
     }).join('');
   } catch (err) {
     container.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+const predictionEntryLabels = {};
+
+/**
+ * Show who predicted what for one match, so a bogus entry (a test account,
+ * a duplicate) can be removed. Stored scores are never editable — this only
+ * deletes a whole entry, and the server keeps a copy for the audit trail.
+ */
+async function togglePredictionEntries(fixtureId) {
+  const panel = document.getElementById(`entries-${fixtureId}`);
+  if (!panel) return;
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.innerHTML = '<p style="color:var(--muted);font-size:.72rem;margin:4px 0">Loading…</p>';
+  try {
+    const data = await api(`/api/admin/predictions/matches/${fixtureId}/entries`);
+    const entries = data.entries || [];
+    if (!entries.length) {
+      panel.innerHTML = '<p style="color:var(--muted);font-size:.72rem;margin:4px 0">No predictions for this match.</p>';
+      return;
+    }
+    // Keep the labels here rather than trying to escape them into an
+    // inline onclick attribute.
+    entries.forEach((e) => {
+      predictionEntryLabels[e.id] = `${e.member} — predicted ${e.homeGoals}–${e.awayGoals}`;
+    });
+    panel.innerHTML = entries.map((e) => `
+      <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+        <span style="flex:1;min-width:0;font-size:.75rem;color:var(--chalk-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(e.member)}</span>
+        <span style="font-size:.78rem;color:var(--gold);font-weight:700;flex-shrink:0">${e.homeGoals}–${e.awayGoals}</span>
+        <div class="row-actions" style="flex-shrink:0">
+          <button class="btn-del" onclick="deletePredictionEntry('${e.id}','${fixtureId}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    panel.innerHTML = `<p style="color:var(--grana);font-size:.72rem;margin:4px 0">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+async function deletePredictionEntry(predictionId, fixtureId) {
+  const label = predictionEntryLabels[predictionId] || 'this prediction';
+  if (!confirm(`Permanently remove this prediction?\n\n${label}\n\nIt stops counting toward the league table. A copy is kept in the database audit trail.`)) return;
+  try {
+    await api(`/api/admin/predictions/entry/${predictionId}`, { method: 'DELETE' });
+    await loadPredictionResults();
+    // Re-open the same match so the admin can see the result of the removal.
+    await togglePredictionEntries(fixtureId);
+  } catch (err) {
+    alert('Failed to delete: ' + err.message);
   }
 }
 
