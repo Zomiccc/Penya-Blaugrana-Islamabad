@@ -383,7 +383,7 @@
         body: JSON.stringify({ predictions: payload }),
       });
       flash(msg, `Locked in ${data.saved} prediction${data.saved === 1 ? '' : 's'}. Good luck!`, true);
-      await Promise.all([loadWindow(), loadMine(), loadLeaderboard()]);
+      await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadSeasonLeaderboard()]);
     } catch (err) {
       flash(msg, err.message);
       await loadWindow();
@@ -418,11 +418,27 @@
   }
 
   /* ---------------------------- league table ---------------------------- */
-  function renderLeaderboard(data) {
-    const el = $('leaderboard');
+  const CROWN_SVG = '<svg class="lt-crown %CLASS%" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 8.5 5.5 12 9 5l3 6 3-6 3.5 7L22 8.5 20 19H4L2 8.5Z"/></svg>';
+  const PODIUM = ['gold', 'silver', 'bronze'];
+
+  function crownFor(rank) {
+    const tier = PODIUM[rank - 1];
+    if (!tier) return '';
+    return CROWN_SVG.replace('%CLASS%', tier);
+  }
+
+  /**
+   * @param {string} containerId
+   * @param {object} data
+   * @param {boolean} withCrowns Season standings get a gold/silver/bronze
+   *   crown on the top three; the weekly table does not.
+   */
+  function renderLeaderboardInto(containerId, data, withCrowns) {
+    const el = $(containerId);
+    if (!el) return;
     const rows = data.leaderboard || [];
     if (!rows.length) {
-      el.innerHTML = '<p class="empty-note">No predictions in the league yet. Be the first.</p>';
+      el.innerHTML = '<p class="empty-note">No points on the board yet.</p>';
       return;
     }
     el.innerHTML = `
@@ -431,17 +447,46 @@
           <tr><th>#</th><th>Member</th><th class="num">Exact</th><th class="num">Total</th></tr>
         </thead>
         <tbody>
-          ${rows.map((r) => `
-            <tr class="${r.isMe ? 'me' : ''}">
+          ${rows.map((r) => {
+            const podium = withCrowns && r.rank <= 3 ? ` podium podium-${r.rank}` : '';
+            return `
+            <tr class="${r.isMe ? 'me' : ''}${podium}">
               <td class="lt-rank">${r.rank}</td>
-              <td>${escapeHtml(r.name)}${r.isMe ? ' (you)' : ''}</td>
+              <td>${withCrowns ? crownFor(r.rank) : ''}${escapeHtml(r.name)}${r.isMe ? ' (you)' : ''}</td>
               <td class="num">${r.exact}</td>
               <td class="num lt-total">${r.points}</td>
-            </tr>
-          `).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     `;
+  }
+
+  function renderLeaderboard(data) {
+    const el = $('leaderboard');
+    const rows = data.leaderboard || [];
+
+    // Label what the weekly table is showing, so a table full of zeros
+    // right after a rollover isn't mistaken for lost points.
+    const note = $('leaderboardNote');
+    if (note) {
+      if (data.scope === 'week' && Number.isInteger(data.matchday)) {
+        note.textContent = `Match week ${data.matchday} only — this table starts from zero every week. Your all-time total is under "My points".`;
+        note.hidden = false;
+      } else {
+        note.hidden = true;
+      }
+    }
+
+    if (!rows.length) {
+      el.innerHTML = '<p class="empty-note">No points on the board for this week yet.</p>';
+      return;
+    }
+    renderLeaderboardInto('leaderboard', data, false);
+  }
+
+  function renderSeasonLeaderboard(data) {
+    renderLeaderboardInto('seasonLeaderboard', data, true);
   }
 
   /* ---------------------------- revealed predictions ---------------------------- */
@@ -497,6 +542,7 @@
     loadWindow();
     loadMine();
     loadLeaderboard();
+    loadSeasonLeaderboard();
     loadReveal();
   }
 
@@ -526,10 +572,30 @@
     } catch { /* sidebar is non-critical */ }
   }
   async function loadLeaderboard() {
+    // La Liga runs a weekly table that resets each match week; the
+    // Champions League keeps the plain running total it always had.
+    const scope = selectedCompetition === 'PD' ? '&scope=week' : '';
     try {
-      renderLeaderboard(await api(`/api/predictions/leaderboard${competitionQuery()}`));
+      renderLeaderboard(await api(`/api/predictions/leaderboard${competitionQuery()}${scope}`));
     } catch (err) {
       $('leaderboard').innerHTML = `<p class="empty-note">${escapeHtml(err.message)}</p>`;
+    }
+  }
+
+  // Season standings are a La Liga-only concept — the panel stays hidden
+  // for the Champions League.
+  async function loadSeasonLeaderboard() {
+    const panel = $('seasonPanel');
+    if (!panel) return;
+    if (selectedCompetition !== 'PD') {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    try {
+      renderSeasonLeaderboard(await api(`/api/predictions/leaderboard${competitionQuery()}&scope=season`));
+    } catch (err) {
+      $('seasonLeaderboard').innerHTML = `<p class="empty-note">${escapeHtml(err.message)}</p>`;
     }
   }
   async function loadReveal() {
@@ -585,7 +651,7 @@
     $('league').hidden = false;
     $('whoName').textContent = `${me.member.firstName} ${me.member.lastName}`.trim();
 
-    await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadReveal(), loadBroadcasts()]);
+    await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadSeasonLeaderboard(), loadReveal(), loadBroadcasts()]);
     initChat();
 
     // Keep live scores, the leaderboard, and the prediction window fresh
@@ -595,6 +661,7 @@
     setInterval(() => {
       loadWindow();
       loadLeaderboard();
+      loadSeasonLeaderboard();
       loadReveal();
     }, 60000);
   }
@@ -674,6 +741,84 @@
     });
 
     voiceBtn.addEventListener('click', toggleVoiceRecord);
+
+    initChatNotifications();
+  }
+
+  /* ---------------------------- Phone notifications ----------------------------
+     Lets a member get a push notification on their phone when Admin replies,
+     even with the site closed. Mirrors the admin-side setup; both share
+     /sw.js, which routes the tap using the URL in the push payload. */
+  function setBellState(on) {
+    const bell = $('chatNotifyBtn');
+    if (!bell) return;
+    bell.classList.toggle('is-on', on);
+    bell.title = on
+      ? 'Notifications are on for this device — tap to turn off'
+      : 'Get notified on this device when Admin replies';
+  }
+
+  async function initChatNotifications() {
+    const bell = $('chatNotifyBtn');
+    if (!bell) return;
+    // Hide entirely where it can't work rather than showing a dead control.
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    bell.hidden = false;
+    bell.addEventListener('click', toggleChatNotifications);
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      setBellState(Boolean(await reg.pushManager.getSubscription()));
+    } catch {
+      bell.hidden = true;
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  async function toggleChatNotifications() {
+    const bell = $('chatNotifyBtn');
+    bell.disabled = true;
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      const existing = await reg.pushManager.getSubscription();
+
+      if (existing) {
+        await api('/api/chat/push/unsubscribe', {
+          method: 'POST',
+          body: JSON.stringify({ endpoint: existing.endpoint }),
+        });
+        await existing.unsubscribe();
+        setBellState(false);
+        return;
+      }
+
+      if (await Notification.requestPermission() !== 'granted') {
+        alert('Notifications were blocked. You can allow them in your browser settings for this site.');
+        return;
+      }
+      const { publicKey } = await api('/api/chat/push/public-key');
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await api('/api/chat/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      });
+      setBellState(true);
+    } catch (err) {
+      alert('Could not change notifications: ' + err.message);
+    } finally {
+      bell.disabled = false;
+    }
   }
 
   async function sendChatText() {

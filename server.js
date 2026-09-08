@@ -49,11 +49,9 @@ if (PUSH_ENABLED) {
 }
 
 /** Push a notification to every device the admin has enabled notifications on. */
-async function notifyAdminDevices(payload) {
-  if (!PUSH_ENABLED) return;
-  const db = readDb();
-  const subs = db.pushSubscriptions || [];
-  if (!subs.length) return;
+/** Deliver one payload to a list of stored subscriptions. Returns the
+ *  endpoints the push service says are dead, so the caller can prune them. */
+async function deliverPush(subs, payload) {
   const body = JSON.stringify(payload);
   const stale = [];
   await Promise.all(subs.map(async (sub) => {
@@ -65,9 +63,32 @@ async function notifyAdminDevices(payload) {
       else console.warn('[push] send failed:', err.message);
     }
   }));
+  return stale;
+}
+
+/** Push to every device the admin has enabled notifications on. */
+async function notifyAdminDevices(payload) {
+  if (!PUSH_ENABLED) return;
+  const subs = readDb().pushSubscriptions || [];
+  if (!subs.length) return;
+  const stale = await deliverPush(subs, { url: '/admin/dashboard.html', ...payload });
   if (stale.length) {
     await writeDb((d) => {
       d.pushSubscriptions = (d.pushSubscriptions || []).filter((s) => !stale.includes(s.endpoint));
+      return d;
+    });
+  }
+}
+
+/** Push to every device ONE member has enabled notifications on. */
+async function notifyMemberDevices(memberId, payload) {
+  if (!PUSH_ENABLED || !memberId) return;
+  const subs = (readDb().memberPushSubscriptions || []).filter((s) => s.memberId === memberId);
+  if (!subs.length) return;
+  const stale = await deliverPush(subs, { url: '/predictions.html', ...payload });
+  if (stale.length) {
+    await writeDb((d) => {
+      d.memberPushSubscriptions = (d.memberPushSubscriptions || []).filter((s) => !stale.includes(s.endpoint));
       return d;
     });
   }
@@ -1025,21 +1046,45 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
   res.json({ competition, matches: revealed });
 });
 
+/* The club runs two La Liga tables side by side:
+     scope=week    the Penya table — the current match week only, so it
+                   starts from zero again every week
+     scope=season  season standings — every match week of the current
+                   season added up, which is what decides 1st/2nd/3rd
+   Omitting scope keeps the original all-time-for-this-competition table,
+   which is what the Champions League still uses. Note that "My points" is
+   a separate endpoint and stays all-time regardless. */
 app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
   const db = readDb();
   const currentMembers = db.members.filter((m) => m.status === 'paid');
   const competitionCode = requestedCompetition(req);
+  const matches = fixtureMatches();
+  const scope = ['week', 'season'].includes(req.query.scope) ? req.query.scope : 'all';
+
+  const round = predictor.getCurrentRound(matches, new Date(), competitionCode);
+  const opts = {};
+  if (scope === 'week') {
+    opts.matchday = round.matchday;
+    opts.seasonId = round.seasonId;
+  } else if (scope === 'season') {
+    opts.seasonId = round.seasonId;
+  }
+
   const table = predictor.buildLeaderboard(
     db.predictions,
     currentMembers,
-    fixtureMatches(),
+    matches,
     fixtureLastSync(),
     competitionCode,
+    opts,
   );
   res.json({
     leaderboard: table.map((row) => ({ ...row, isMe: row.memberId === req.member.id })),
     points: predictor.POINTS,
     competition: competitionCode,
+    scope,
+    matchday: round.matchday,
+    seasonId: round.seasonId,
   });
 });
 
@@ -1329,6 +1374,43 @@ app.get('/api/chat/messages', requireMember, (req, res) => {
   res.json({ messages, conversation: conv ? { id: conv.id, resolved: conv.resolved } : null });
 });
 
+/* ---------- Member push notifications (phone alerts for admin replies) ---------- */
+
+// GET /api/chat/push/public-key — VAPID public key the browser needs.
+app.get('/api/chat/push/public-key', requireMember, (req, res) => {
+  if (!PUSH_ENABLED) return res.status(503).json({ error: 'Push notifications are not configured on this server.' });
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+// POST /api/chat/push/subscribe — save this device against the member.
+app.post('/api/chat/push/subscribe', requireMember, async (req, res) => {
+  const subscription = req.body?.subscription;
+  if (!subscription?.endpoint || !subscription?.keys) {
+    return res.status(400).json({ error: 'Invalid push subscription' });
+  }
+  await writeDb((d) => {
+    d.memberPushSubscriptions = (d.memberPushSubscriptions || []).filter((s) => s.endpoint !== subscription.endpoint);
+    d.memberPushSubscriptions.push({
+      memberId: req.member.id,
+      endpoint: subscription.endpoint,
+      subscription,
+      createdAt: new Date().toISOString(),
+    });
+    return d;
+  });
+  res.json({ ok: true });
+});
+
+// POST /api/chat/push/unsubscribe — remove this device.
+app.post('/api/chat/push/unsubscribe', requireMember, async (req, res) => {
+  const endpoint = req.body?.endpoint;
+  await writeDb((d) => {
+    d.memberPushSubscriptions = (d.memberPushSubscriptions || []).filter((s) => s.endpoint !== endpoint);
+    return d;
+  });
+  res.json({ ok: true });
+});
+
 // GET /api/chat/unread-count — member's unread count, WITHOUT resetting it.
 // Used to show a badge on the "Talk to Admin" button even while the chat
 // panel is closed (opening the panel/loading messages is what clears it).
@@ -1530,6 +1612,7 @@ app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
 
   let msg;
   let found = false;
+  let notifyMemberId = null;
   await writeDb((d) => {
     const conv = (d.chatConversations || []).find((c) => c.id === conversationId);
     if (!conv) return d;
@@ -1553,10 +1636,12 @@ app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
     };
     (d.chatMessages = d.chatMessages || []).push(msg);
     conv.memberUnreadCount = (conv.memberUnreadCount || 0) + 1;
+    notifyMemberId = conv.memberId;
     return d;
   });
 
   if (!found) return res.status(404).json({ error: 'Conversation not found' });
+  notifyMemberDevices(notifyMemberId, { title: 'Message from Admin', body: msg.text });
   res.json({ ok: true, message: msg });
 });
 
@@ -1575,10 +1660,12 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
 
   let msg;
   let found = false;
+  let notifyMemberId = null;
   await writeDb((d) => {
     const conv = (d.chatConversations || []).find((c) => c.id === conversationId);
     if (!conv) return d;
     found = true;
+    notifyMemberId = conv.memberId;
 
     let safeReplyTo = null;
     if (replyToMessageId) {
@@ -1607,6 +1694,10 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
   });
 
   if (!found) return res.status(404).json({ error: 'Conversation not found' });
+  notifyMemberDevices(notifyMemberId, {
+    title: 'Message from Admin',
+    body: isVoice ? '🎤 Sent you a voice note' : `📎 Sent you a file: ${req.file.originalname}`,
+  });
   res.json({ ok: true, message: msg });
 });
 

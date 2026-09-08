@@ -64,6 +64,7 @@ async function init() {
     if (f.files[0]) sendAdminReplyWithFile(f.files[0]);
     f.value = '';
   });
+  document.getElementById('adminChatVoice').addEventListener('click', toggleAdminVoiceRecord);
   document.getElementById('adminResolveBtn').addEventListener('click', toggleResolve);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
@@ -674,6 +675,7 @@ async function loadAdminMessages(convId) {
   const textInput = document.getElementById('adminChatText');
   const sendBtn = document.getElementById('adminChatSend');
   const attachBtn = document.getElementById('adminChatAttach');
+  const voiceBtn = document.getElementById('adminChatVoice');
 
   if (!convId) {
     body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem">Select a member conversation to start chatting.</p>';
@@ -693,6 +695,7 @@ async function loadAdminMessages(convId) {
     textInput.disabled = false;
     sendBtn.disabled = false;
     attachBtn.disabled = false;
+    if (voiceBtn) voiceBtn.disabled = false;
 
     if (!msgs.length) {
       body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">No messages in this conversation yet.</p>';
@@ -811,11 +814,14 @@ async function sendAdminReply() {
   }
 }
 
-async function sendAdminReplyWithFile(file) {
+async function sendAdminReplyWithFile(file, isVoice = false) {
   if (!activeConvId) return;
   const formData = new FormData();
   formData.append('file', file);
   formData.append('conversationId', activeConvId);
+  // Without this the server files it as a plain attachment instead of a
+  // playable voice note.
+  formData.append('voiceNote', isVoice ? 'true' : 'false');
   if (adminReplyToMsgId) formData.append('replyToMessageId', adminReplyToMsgId);
   try {
     const res = await fetch('/api/admin/chat/upload', { method: 'POST', credentials: 'same-origin', body: formData });
@@ -825,6 +831,53 @@ async function sendAdminReplyWithFile(file) {
     await loadAdminConversations();
   } catch (err) {
     alert('Failed to upload: ' + err.message);
+  }
+}
+
+/* ---------------------------- Admin voice notes ----------------------------
+   The mic button existed in the dashboard markup but had no JavaScript
+   behind it at all (and was hardcoded `disabled`), so it did nothing. This
+   mirrors the member-side recorder in predictions.js. */
+let adminMediaRecorder = null;
+let adminVoiceChunks = [];
+
+const ADMIN_MIC_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+const ADMIN_STOP_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+async function toggleAdminVoiceRecord() {
+  const voiceBtn = document.getElementById('adminChatVoice');
+  if (!activeConvId) return;
+
+  if (adminMediaRecorder && adminMediaRecorder.state === 'recording') {
+    adminMediaRecorder.stop();
+    voiceBtn.classList.remove('recording');
+    voiceBtn.innerHTML = ADMIN_MIC_ICON;
+    voiceBtn.title = 'Record voice note';
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    alert('Voice recording is not supported in this browser.');
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    adminVoiceChunks = [];
+    adminMediaRecorder = new MediaRecorder(stream);
+    adminMediaRecorder.ondataavailable = (e) => { if (e.data.size) adminVoiceChunks.push(e.data); };
+    adminMediaRecorder.onstop = () => {
+      const blob = new Blob(adminVoiceChunks, { type: 'audio/webm' });
+      const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+      sendAdminReplyWithFile(file, true);
+      stream.getTracks().forEach((t) => t.stop());
+    };
+    adminMediaRecorder.start();
+    voiceBtn.classList.add('recording');
+    voiceBtn.innerHTML = ADMIN_STOP_ICON;
+    voiceBtn.title = 'Stop and send';
+  } catch (err) {
+    alert('Microphone access denied or not available');
   }
 }
 
