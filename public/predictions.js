@@ -741,6 +741,8 @@
     });
 
     voiceBtn.addEventListener('click', toggleVoiceRecord);
+    $('chatVoiceSend')?.addEventListener('click', sendPendingVoiceNote);
+    $('chatVoiceDiscard')?.addEventListener('click', closeVoiceReview);
 
     initChatNotifications();
   }
@@ -749,26 +751,36 @@
      Lets a member get a push notification on their phone when Admin replies,
      even with the site closed. Mirrors the admin-side setup; both share
      /sw.js, which routes the tap using the URL in the push payload. */
+  // Registration is kicked off at page load and cached here, so the tap
+  // handler never has to await it — see toggleChatNotifications().
+  let swRegistration = null;
+
   function setBellState(on) {
     const bell = $('chatNotifyBtn');
     if (!bell) return;
     bell.classList.toggle('is-on', on);
+    bell.textContent = on ? '🔔 Notifications On' : '🔔 Turn Notifications On';
     bell.title = on
-      ? 'Notifications are on for this device — tap to turn off'
-      : 'Get notified on this device when Admin replies';
+      ? 'Notifications are on for this device — tap to turn them off'
+      : 'Get notified on this phone when Admin replies';
   }
 
   async function initChatNotifications() {
     const bell = $('chatNotifyBtn');
     if (!bell) return;
     // Hide entirely where it can't work rather than showing a dead control.
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
 
     bell.hidden = false;
     bell.addEventListener('click', toggleChatNotifications);
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      setBellState(Boolean(await reg.pushManager.getSubscription()));
+      // Register up front. Doing this inside the click handler was what made
+      // the button need two or three taps: awaiting registration used up the
+      // browser's transient user-activation, so the permission prompt never
+      // came up on the first tap. By the third, the worker was cached and the
+      // await resolved fast enough for the activation to survive.
+      swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      setBellState(Boolean(await swRegistration.pushManager.getSubscription()));
     } catch {
       bell.hidden = true;
     }
@@ -783,42 +795,66 @@
     return out;
   }
 
-  async function toggleChatNotifications() {
+  function toggleChatNotifications() {
     const bell = $('chatNotifyBtn');
+    const turningOn = !bell.classList.contains('is-on');
+
+    if (turningOn) {
+      // CRITICAL: ask for permission synchronously, as the very first thing
+      // the tap does. Any await before this point spends the browser's
+      // transient user-activation and the prompt silently never appears,
+      // which is what made the button need several taps.
+      if (Notification.permission === 'denied') {
+        alert('Notifications are blocked for this site. Allow them in your browser settings, then tap again.');
+        return;
+      }
+      const permission = Notification.requestPermission();
+      bell.disabled = true;
+      Promise.resolve(permission)
+        .then((result) => {
+          if (result !== 'granted') return null;
+          return subscribeToChatPush();
+        })
+        .then((ok) => { if (ok) setBellState(true); })
+        .catch((err) => alert('Could not turn notifications on: ' + err.message))
+        .finally(() => { bell.disabled = false; });
+      return;
+    }
+
+    if (!confirm('Turn notifications off for this device?')) return;
     bell.disabled = true;
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      const existing = await reg.pushManager.getSubscription();
+    unsubscribeFromChatPush()
+      .then(() => setBellState(false))
+      .catch((err) => alert('Could not turn notifications off: ' + err.message))
+      .finally(() => { bell.disabled = false; });
+  }
 
-      if (existing) {
-        await api('/api/chat/push/unsubscribe', {
-          method: 'POST',
-          body: JSON.stringify({ endpoint: existing.endpoint }),
-        });
-        await existing.unsubscribe();
-        setBellState(false);
-        return;
-      }
-
-      if (await Notification.requestPermission() !== 'granted') {
-        alert('Notifications were blocked. You can allow them in your browser settings for this site.');
-        return;
-      }
+  async function subscribeToChatPush() {
+    const reg = swRegistration || (await navigator.serviceWorker.register('/sw.js', { scope: '/' }));
+    const existing = await reg.pushManager.getSubscription();
+    const sub = existing || (await (async () => {
       const { publicKey } = await api('/api/chat/push/public-key');
-      const sub = await reg.pushManager.subscribe({
+      return reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-      await api('/api/chat/push/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({ subscription: sub.toJSON() }),
-      });
-      setBellState(true);
-    } catch (err) {
-      alert('Could not change notifications: ' + err.message);
-    } finally {
-      bell.disabled = false;
-    }
+    })());
+    await api('/api/chat/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ subscription: sub.toJSON() }),
+    });
+    return true;
+  }
+
+  async function unsubscribeFromChatPush() {
+    const reg = swRegistration || (await navigator.serviceWorker.getRegistration('/'));
+    const existing = reg && (await reg.pushManager.getSubscription());
+    if (!existing) return;
+    await api('/api/chat/push/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint: existing.endpoint }),
+    });
+    await existing.unsubscribe();
   }
 
   async function sendChatText() {
@@ -856,32 +892,99 @@
     }
   }
 
+  /* ---------------------------- voice notes ----------------------------
+     Three states: idle → recording → review. Stopping no longer fires the
+     note off immediately; it's held in the review bar so it can be listened
+     back and then sent or discarded.
+
+     `voiceStarting` guards re-entry: getUserMedia doesn't resolve until the
+     mic permission prompt is answered, and without the guard (and without
+     the immediate visual feedback below) extra taps during that wait each
+     kicked off another mic request — which is what made it take 2-3 taps. */
+  const MIC_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+  const STOP_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  let voiceStarting = false;
+  let pendingVoiceFile = null;
+  let pendingVoiceUrl = null;
+
+  function resetVoiceButton() {
+    const voiceBtn = $('chatVoice');
+    if (!voiceBtn) return;
+    voiceBtn.classList.remove('recording', 'starting');
+    voiceBtn.innerHTML = MIC_ICON;
+    voiceBtn.title = 'Record voice note';
+  }
+
+  function closeVoiceReview() {
+    const bar = $('chatVoiceReview');
+    const player = $('chatVoicePlayer');
+    if (bar) bar.classList.remove('is-open');
+    if (player) player.removeAttribute('src');
+    if (pendingVoiceUrl) URL.revokeObjectURL(pendingVoiceUrl);
+    pendingVoiceUrl = null;
+    pendingVoiceFile = null;
+  }
+
+  function openVoiceReview(file) {
+    pendingVoiceFile = file;
+    if (pendingVoiceUrl) URL.revokeObjectURL(pendingVoiceUrl);
+    pendingVoiceUrl = URL.createObjectURL(file);
+    const player = $('chatVoicePlayer');
+    if (player) player.src = pendingVoiceUrl;
+    $('chatVoiceReview')?.classList.add('is-open');
+  }
+
   async function toggleVoiceRecord() {
     const voiceBtn = $('chatVoice');
-    const MIC_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
-    const STOP_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
     if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-      voiceBtn.classList.remove('recording');
-      voiceBtn.innerHTML = MIC_ICON;
+      mediaRecorder.stop(); // onstop opens the review bar
       return;
     }
+    if (voiceStarting) return; // mic request already in flight
+
+    // Feedback before awaiting anything, so a slow permission prompt doesn't
+    // look like a dead button.
+    voiceStarting = true;
+    voiceBtn.classList.add('starting');
+    voiceBtn.title = 'Starting microphone…';
+    closeVoiceReview();
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       chatChunks = [];
       mediaRecorder = new MediaRecorder(stream);
       mediaRecorder.ondataavailable = (e) => { if (e.data.size) chatChunks.push(e.data); };
       mediaRecorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        resetVoiceButton();
         const blob = new Blob(chatChunks, { type: 'audio/webm' });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
-        sendChatFile(file, true);
-        stream.getTracks().forEach(t => t.stop());
+        if (!blob.size) return;
+        openVoiceReview(new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' }));
       };
       mediaRecorder.start();
+      voiceBtn.classList.remove('starting');
       voiceBtn.classList.add('recording');
       voiceBtn.innerHTML = STOP_ICON;
+      voiceBtn.title = 'Stop recording';
     } catch (err) {
+      resetVoiceButton();
       alert('Microphone access denied or not available');
+    } finally {
+      voiceStarting = false;
+    }
+  }
+
+  async function sendPendingVoiceNote() {
+    if (!pendingVoiceFile) return;
+    const file = pendingVoiceFile;
+    const sendBtn = $('chatVoiceSend');
+    if (sendBtn) sendBtn.disabled = true;
+    try {
+      await sendChatFile(file, true);
+      closeVoiceReview();
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
     }
   }
 

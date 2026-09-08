@@ -321,14 +321,22 @@
   .chat-header .chat-sub{font-size:.6rem;opacity:.7;font-family:var(--mono)}
   .chat-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;padding:0;line-height:1;opacity:.8}
   .chat-close:hover{opacity:1}
-  /* Toggle for phone notifications when Admin replies. Dimmed when off. */
-  .chat-bell{
-    background:none;border:none;cursor:pointer;padding:0 6px;line-height:1;
-    font-size:1.05rem;opacity:.45;filter:grayscale(1);margin-left:auto;
-    transition:opacity .2s ease,filter .2s ease;
+  /* Phone-notification toggle. Labelled rather than a bare bell icon so
+     it's obvious what it does; goes solid gold once it's on. */
+  .chat-notify{
+    margin-left:auto;margin-right:10px;flex-shrink:0;
+    background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.35);
+    color:#fff;cursor:pointer;
+    font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;
+    text-transform:uppercase;font-weight:700;line-height:1.25;
+    padding:6px 9px;border-radius:3px;max-width:118px;text-align:center;
+    transition:background .2s ease,border-color .2s ease,color .2s ease;
   }
-  .chat-bell:hover{opacity:.8}
-  .chat-bell.is-on{opacity:1;filter:none}
+  .chat-notify:hover{background:rgba(0,0,0,.45)}
+  .chat-notify.is-on{
+    background:var(--gold);border-color:var(--gold);color:#04060F;
+  }
+  .chat-notify:disabled{opacity:.6;cursor:default}
   .chat-body{
     flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
     background:
@@ -419,6 +427,31 @@
     padding:8px 14px;border-top:1px solid var(--line);background:rgba(0,0,0,.3);
     font-size:.7rem;color:var(--muted);display:none;
   }
+  /* A finished recording waits here until it's sent, so a bad take can be
+     discarded instead of firing off the moment recording stops. */
+  .voice-review{
+    display:none;align-items:center;gap:8px;
+    padding:8px 12px;border-top:1px solid var(--line);background:rgba(237,187,0,.08);
+  }
+  .voice-review.is-open{display:flex}
+  .voice-review .vr-label{
+    font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--gold);flex-shrink:0;
+  }
+  .voice-review .vr-audio{flex:1;min-width:0;height:32px}
+  .voice-review .vr-btn{
+    flex-shrink:0;cursor:pointer;border-radius:3px;font-family:var(--mono);
+    font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;
+    padding:7px 11px;border:1px solid transparent;
+  }
+  .voice-review .vr-send{background:var(--gold);color:#04060F}
+  .voice-review .vr-send:hover{background:var(--gold-lt)}
+  .voice-review .vr-discard{background:transparent;color:var(--grana-lt);border-color:rgba(212,18,106,.5)}
+  .voice-review .vr-discard:hover{background:var(--grana);color:#fff}
+  /* Recording state on the mic button */
+  .chat-btn.voice.recording{background:var(--grana);color:#fff;animation:vrPulse 1.4s ease-in-out infinite}
+  .chat-btn.voice.starting{opacity:.65}
+  @keyframes vrPulse{0%,100%{box-shadow:0 0 0 0 rgba(165,0,68,.55)}50%{box-shadow:0 0 0 7px rgba(165,0,68,0)}}
   .chat-reply-preview .chat-reply-cancel{
     background:none;border:none;color:var(--grana);cursor:pointer;margin-left:8px;
   }
@@ -678,7 +711,7 @@
         <h4>Peyna Assistant</h4>
         <div class="chat-sub">Private chat with Admin</div>
       </div>
-      <button class="chat-bell" id="chatNotifyBtn" title="Get notified on this device when Admin replies" hidden>🔔</button>
+      <button class="chat-notify" id="chatNotifyBtn" hidden>🔔 Turn Notifications On</button>
       <button class="chat-close" id="chatClose" aria-label="Close chat">×</button>
     </div>
     <div class="chat-body" id="chatBody">
@@ -687,6 +720,13 @@
     <div class="chat-reply-preview" id="chatReplyPreview">
       <span>Replying to: </span><span id="chatReplyPreviewText"></span>
       <button class="chat-reply-cancel" onclick="cancelMemberReply()">✕</button>
+    </div>
+    <!-- Recorded voice note held here until it's explicitly sent -->
+    <div class="voice-review" id="chatVoiceReview">
+      <span class="vr-label">Voice note</span>
+      <audio class="vr-audio" id="chatVoicePlayer" controls preload="metadata"></audio>
+      <button type="button" class="vr-btn vr-send" id="chatVoiceSend">Send</button>
+      <button type="button" class="vr-btn vr-discard" id="chatVoiceDiscard" aria-label="Discard voice note">✕</button>
     </div>
     <div class="chat-input-area">
       <button class="chat-btn" id="chatAttach" aria-label="Attach file" title="Attach photo/video/document">📎</button>

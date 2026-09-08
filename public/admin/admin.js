@@ -65,6 +65,8 @@ async function init() {
     f.value = '';
   });
   document.getElementById('adminChatVoice').addEventListener('click', toggleAdminVoiceRecord);
+  document.getElementById('adminVoiceSend').addEventListener('click', sendAdminPendingVoiceNote);
+  document.getElementById('adminVoiceDiscard').addEventListener('click', closeAdminVoiceReview);
   document.getElementById('adminResolveBtn').addEventListener('click', toggleResolve);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
@@ -90,17 +92,21 @@ function updatePushButton(subscribed) {
   status.textContent = subscribed ? 'Notifications are on for this device.' : '';
 }
 
+// Cached at load so the tap handler never awaits registration — see the
+// comment in togglePushSubscription().
+let adminSwRegistration = null;
+
 async function initPushStatus() {
   const btn = document.getElementById('pushToggleBtn');
   const status = document.getElementById('pushStatus');
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
     btn.disabled = true;
     status.textContent = 'Push notifications are not supported in this browser.';
     return;
   }
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
-    const sub = await reg.pushManager.getSubscription();
+    adminSwRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
+    const sub = await adminSwRegistration.pushManager.getSubscription();
     updatePushButton(Boolean(sub));
   } catch (err) {
     status.textContent = 'Could not set up notifications: ' + err.message;
@@ -116,39 +122,63 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-async function togglePushSubscription() {
+function togglePushSubscription() {
   const btn = document.getElementById('pushToggleBtn');
   const status = document.getElementById('pushStatus');
-  btn.disabled = true;
+  const turningOn = !btn.textContent.includes('Disable');
   status.textContent = '';
-  try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' });
-    const existing = await reg.pushManager.getSubscription();
 
-    if (existing) {
-      await api('/api/admin/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: existing.endpoint }) });
-      await existing.unsubscribe();
-      updatePushButton(false);
+  if (turningOn) {
+    // Ask for permission synchronously, before any await. Awaiting first
+    // spends the browser's transient user-activation, so the prompt never
+    // appears and the button appears to need several taps.
+    if (Notification.permission === 'denied') {
+      status.textContent = 'Notifications are blocked for this site — allow them in your browser settings, then tap again.';
       return;
     }
+    const permission = Notification.requestPermission();
+    btn.disabled = true;
+    Promise.resolve(permission)
+      .then((result) => {
+        if (result !== 'granted') {
+          status.textContent = 'Notification permission was not granted.';
+          return null;
+        }
+        return subscribeAdminPush();
+      })
+      .then((ok) => { if (ok) updatePushButton(true); })
+      .catch((err) => { status.textContent = 'Failed: ' + err.message; })
+      .finally(() => { btn.disabled = false; });
+    return;
+  }
 
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      status.textContent = 'Notification permission was not granted.';
-      return;
-    }
+  btn.disabled = true;
+  unsubscribeAdminPush()
+    .then(() => updatePushButton(false))
+    .catch((err) => { status.textContent = 'Failed: ' + err.message; })
+    .finally(() => { btn.disabled = false; });
+}
+
+async function subscribeAdminPush() {
+  const reg = adminSwRegistration || (await navigator.serviceWorker.register('/sw.js', { scope: '/admin/' }));
+  const existing = await reg.pushManager.getSubscription();
+  const sub = existing || (await (async () => {
     const { publicKey } = await api('/api/admin/push/public-key');
-    const sub = await reg.pushManager.subscribe({
+    return reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
     });
-    await api('/api/admin/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
-    updatePushButton(true);
-  } catch (err) {
-    status.textContent = 'Failed: ' + err.message;
-  } finally {
-    btn.disabled = false;
-  }
+  })());
+  await api('/api/admin/push/subscribe', { method: 'POST', body: JSON.stringify({ subscription: sub.toJSON() }) });
+  return true;
+}
+
+async function unsubscribeAdminPush() {
+  const reg = adminSwRegistration || (await navigator.serviceWorker.getRegistration('/admin/'));
+  const existing = reg && (await reg.pushManager.getSubscription());
+  if (!existing) return;
+  await api('/api/admin/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: existing.endpoint }) });
+  await existing.unsubscribe();
 }
 
 function debounce(fn, ms) {
@@ -663,6 +693,9 @@ async function selectConversation(convId) {
   activeConvId = convId;
   adminReplyToMsgId = null;
   cancelAdminReply();
+  // Drop any unsent recording — it was meant for the previous member.
+  if (adminMediaRecorder && adminMediaRecorder.state === 'recording') adminMediaRecorder.stop();
+  closeAdminVoiceReview();
   await loadAdminMessages(convId);
   await loadAdminConversations(); // refresh list to clear unread
 }
@@ -840,26 +873,64 @@ async function sendAdminReplyWithFile(file, isVoice = false) {
    mirrors the member-side recorder in predictions.js. */
 let adminMediaRecorder = null;
 let adminVoiceChunks = [];
+let adminVoiceStarting = false;
+let adminPendingVoiceFile = null;
+let adminPendingVoiceUrl = null;
 
 const ADMIN_MIC_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
 const ADMIN_STOP_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+function resetAdminVoiceButton() {
+  const voiceBtn = document.getElementById('adminChatVoice');
+  if (!voiceBtn) return;
+  voiceBtn.classList.remove('recording');
+  voiceBtn.style.background = '';
+  voiceBtn.innerHTML = ADMIN_MIC_ICON;
+  voiceBtn.title = 'Record voice note';
+}
+
+function closeAdminVoiceReview() {
+  const bar = document.getElementById('adminVoiceReview');
+  const player = document.getElementById('adminVoicePlayer');
+  if (bar) bar.style.display = 'none';
+  if (player) player.removeAttribute('src');
+  if (adminPendingVoiceUrl) URL.revokeObjectURL(adminPendingVoiceUrl);
+  adminPendingVoiceUrl = null;
+  adminPendingVoiceFile = null;
+}
+
+function openAdminVoiceReview(file) {
+  adminPendingVoiceFile = file;
+  if (adminPendingVoiceUrl) URL.revokeObjectURL(adminPendingVoiceUrl);
+  adminPendingVoiceUrl = URL.createObjectURL(file);
+  const player = document.getElementById('adminVoicePlayer');
+  if (player) player.src = adminPendingVoiceUrl;
+  const bar = document.getElementById('adminVoiceReview');
+  if (bar) bar.style.display = 'flex';
+}
 
 async function toggleAdminVoiceRecord() {
   const voiceBtn = document.getElementById('adminChatVoice');
   if (!activeConvId) return;
 
   if (adminMediaRecorder && adminMediaRecorder.state === 'recording') {
-    adminMediaRecorder.stop();
-    voiceBtn.classList.remove('recording');
-    voiceBtn.innerHTML = ADMIN_MIC_ICON;
-    voiceBtn.title = 'Record voice note';
+    adminMediaRecorder.stop(); // onstop opens the review bar
     return;
   }
+  if (adminVoiceStarting) return; // mic request already in flight
 
   if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
     alert('Voice recording is not supported in this browser.');
     return;
   }
+
+  // Feedback before the await — getUserMedia doesn't resolve until the mic
+  // prompt is answered, and without this the button looked dead and got
+  // tapped repeatedly, each tap starting another mic request.
+  adminVoiceStarting = true;
+  voiceBtn.style.opacity = '.65';
+  voiceBtn.title = 'Starting microphone…';
+  closeAdminVoiceReview();
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -867,17 +938,36 @@ async function toggleAdminVoiceRecord() {
     adminMediaRecorder = new MediaRecorder(stream);
     adminMediaRecorder.ondataavailable = (e) => { if (e.data.size) adminVoiceChunks.push(e.data); };
     adminMediaRecorder.onstop = () => {
-      const blob = new Blob(adminVoiceChunks, { type: 'audio/webm' });
-      const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
-      sendAdminReplyWithFile(file, true);
       stream.getTracks().forEach((t) => t.stop());
+      resetAdminVoiceButton();
+      const blob = new Blob(adminVoiceChunks, { type: 'audio/webm' });
+      if (!blob.size) return;
+      openAdminVoiceReview(new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' }));
     };
     adminMediaRecorder.start();
     voiceBtn.classList.add('recording');
+    voiceBtn.style.background = 'var(--grana)';
     voiceBtn.innerHTML = ADMIN_STOP_ICON;
-    voiceBtn.title = 'Stop and send';
+    voiceBtn.title = 'Stop recording';
   } catch (err) {
+    resetAdminVoiceButton();
     alert('Microphone access denied or not available');
+  } finally {
+    adminVoiceStarting = false;
+    voiceBtn.style.opacity = '';
+  }
+}
+
+async function sendAdminPendingVoiceNote() {
+  if (!adminPendingVoiceFile) return;
+  const file = adminPendingVoiceFile;
+  const btn = document.getElementById('adminVoiceSend');
+  if (btn) btn.disabled = true;
+  try {
+    await sendAdminReplyWithFile(file, true);
+    closeAdminVoiceReview();
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
