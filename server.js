@@ -1532,6 +1532,9 @@ app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
       id: c.id,
       memberId: c.memberId,
       memberName: c.memberName || nameById.get(c.memberId) || restoredName(c.memberId) || 'Former member',
+      // The member record is gone — used to tag the row and to power the
+      // "clear former" cleanup.
+      isFormer: !nameById.has(c.memberId),
       memberEmail: emailById.get(c.memberId) || null,
       resolved: Boolean(c.resolved),
       resolvedAt: c.resolvedAt || null,
@@ -1704,6 +1707,30 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
     body: isVoice ? '🎤 Sent you a voice note' : `📎 Sent you a file: ${req.file.originalname}`,
   });
   res.json({ ok: true, message: msg });
+});
+
+// POST /api/admin/chat/conversations/cleanup-former — delete every thread
+// whose member record no longer exists, in one go.
+app.post('/api/admin/chat/conversations/cleanup-former', requireAdmin, async (req, res) => {
+  let removedConversations = 0;
+  let removedMessages = 0;
+
+  await writeDb((d) => {
+    const liveIds = new Set((d.members || []).map((m) => m.id));
+    const doomed = (d.chatConversations || []).filter((c) => !liveIds.has(c.memberId));
+    if (!doomed.length) return d;
+    const doomedIds = new Set(doomed.map((c) => c.id));
+
+    const before = (d.chatMessages || []).length;
+    d.chatMessages = (d.chatMessages || []).filter((m) => !doomedIds.has(m.conversationId));
+    removedMessages = before - d.chatMessages.length;
+    d.chatConversations = (d.chatConversations || []).filter((c) => !doomedIds.has(c.id));
+    removedConversations = doomed.length;
+    return d;
+  });
+
+  console.log(`[admin] cleaned up ${removedConversations} former-member chats (${removedMessages} messages)`);
+  res.json({ ok: true, removedConversations, removedMessages });
 });
 
 // DELETE /api/admin/chat/conversation/:conversationId — remove a whole

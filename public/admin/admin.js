@@ -67,6 +67,10 @@ async function init() {
   document.getElementById('adminChatVoice').addEventListener('click', toggleAdminVoiceRecord);
   document.getElementById('adminVoiceSend').addEventListener('click', sendAdminPendingVoiceNote);
   document.getElementById('adminVoiceDiscard').addEventListener('click', closeAdminVoiceReview);
+  document.getElementById('waBackBtn').addEventListener('click', showChatList);
+  document.getElementById('waCleanupBtn').addEventListener('click', cleanupFormerChats);
+  document.getElementById('waDeleteBtn').addEventListener('click', () => { if (activeConvId) deleteConversation(activeConvId); });
+  document.getElementById('waSearch').addEventListener('input', renderConversationRows);
   document.getElementById('adminResolveBtn').addEventListener('click', toggleResolve);
   document.getElementById('fxSyncBtn').addEventListener('click', syncFixturesNow);
   document.getElementById('fxClearBtn').addEventListener('click', clearFixturesCache);
@@ -671,51 +675,125 @@ async function loadAdminConversations() {
       listEl.innerHTML = '<p style="padding:20px;text-align:center;color:var(--muted);font-size:.75rem">No conversations yet.</p>';
       return;
     }
-    listEl.innerHTML = convs.map((c) => `
-      <div class="conv-item ${c.id === activeConvId ? 'active' : ''}" data-conv-id="${c.id}"
-        onclick="selectConversation('${c.id}')"
-        style="padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;${c.id === activeConvId ? 'background:rgba(0,77,152,.2)' : ''}">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:.78rem;font-weight:600;color:var(--chalk);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.memberName)}</span>
-          ${c.adminUnreadCount > 0 ? `<span style="background:var(--grana);color:#fff;font-size:.55rem;padding:1px 6px;border-radius:8px;flex-shrink:0">${c.adminUnreadCount}</span>` : ''}
-          ${c.resolved ? '<span style="font-size:.55rem;color:#0a7d43;flex-shrink:0">✓</span>' : ''}
-          <button type="button" title="Delete this chat"
-            onclick="event.stopPropagation();deleteConversation('${c.id}')"
-            style="flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:2px 4px"
-            onmouseover="this.style.color='var(--grana-lt)'" onmouseout="this.style.color='var(--muted)'">🗑</button>
-        </div>
-        <div style="font-size:.65rem;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</div>
-        <div style="font-size:.55rem;color:var(--muted-lt);margin-top:2px">${new Date(c.lastMessageAt).toLocaleDateString()} ${new Date(c.lastMessageAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
-      </div>
-    `).join('');
+    allConversations = convs;
+    renderConversationRows();
   } catch (err) {
     listEl.innerHTML = `<p style="padding:20px;text-align:center;color:var(--grana);font-size:.75rem">${escapeHtml(err.message)}</p>`;
   }
+}
+
+/* ---------------------------- Conversation list rendering ---------------------------- */
+let allConversations = [];
+
+/** Initials for the avatar circle, e.g. "Ashir Qureshi" -> "AQ". */
+function initialsFor(name) {
+  const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+/** Relative-ish timestamp, like a messenger list. */
+function chatListTime(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+function renderConversationRows() {
+  const listEl = document.getElementById('adminConvItems');
+  if (!listEl) return;
+  const term = (document.getElementById('waSearch')?.value || '').trim().toLowerCase();
+  const rows = term
+    ? allConversations.filter((c) => (c.memberName || '').toLowerCase().includes(term)
+        || (c.lastMessagePreview || '').toLowerCase().includes(term))
+    : allConversations;
+
+  if (!rows.length) {
+    listEl.innerHTML = `<p class="wa-empty">${term ? 'No chats match that search.' : 'No conversations yet.'}</p>`;
+    return;
+  }
+
+  listEl.innerHTML = rows.map((c) => `
+    <div class="wa-row ${c.adminUnreadCount > 0 ? 'unread' : ''}" data-conv-id="${c.id}"
+      onclick="selectConversation('${c.id}')">
+      <div class="wa-avatar ${c.isFormer ? 'former' : ''}">${escapeHtml(initialsFor(c.memberName))}</div>
+      <div class="wa-row-main">
+        <div class="wa-row-top">
+          <span class="wa-row-name">${escapeHtml(c.memberName)}</span>
+          <span class="wa-row-time">${escapeHtml(chatListTime(c.lastMessageAt))}</span>
+        </div>
+        <div class="wa-row-bottom">
+          <span class="wa-row-preview">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</span>
+          ${c.isFormer ? '<span class="wa-tag-former">Former</span>' : ''}
+          ${c.resolved ? '<span style="font-size:.6rem;color:#3ddc8a;flex-shrink:0">✓</span>' : ''}
+          ${c.adminUnreadCount > 0 ? `<span class="wa-row-badge">${c.adminUnreadCount}</span>` : ''}
+          <button type="button" class="wa-row-del" title="Delete this chat"
+            onclick="event.stopPropagation();deleteConversation('${c.id}')">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/** Swap between the chat list and an open conversation. */
+function showChatList() {
+  document.getElementById('waChatPane').hidden = true;
+  document.getElementById('waListPane').hidden = false;
+}
+function showChatView() {
+  document.getElementById('waListPane').hidden = true;
+  document.getElementById('waChatPane').hidden = false;
+}
+
+/** Delete every thread whose member no longer exists. */
+async function cleanupFormerChats() {
+  const former = allConversations.filter((c) => c.isFormer);
+  if (!former.length) {
+    alert('There are no chats from former members.');
+    return;
+  }
+  if (!confirm(`Delete ${former.length} chat${former.length === 1 ? '' : 's'} from members who no longer exist?\n\nThis cannot be undone.`)) return;
+  try {
+    const res = await api('/api/admin/chat/conversations/cleanup-former', { method: 'POST' });
+    if (activeConvId && former.some((c) => c.id === activeConvId)) clearOpenConversation();
+    await loadAdminConversations();
+    showChatList();
+    alert(`Removed ${res.removedConversations} chat(s).`);
+  } catch (err) {
+    alert('Cleanup failed: ' + err.message);
+  }
+}
+
+/** Reset the chat pane back to its empty state. */
+function clearOpenConversation() {
+  activeConvId = null;
+  closeAdminVoiceReview();
+  const body = document.getElementById('adminChatBody');
+  const nameEl = document.getElementById('adminChatMemberName');
+  const emailEl = document.getElementById('adminChatMemberEmail');
+  if (body) body.innerHTML = '<p class="wa-empty">Select a member conversation to start chatting.</p>';
+  if (nameEl) nameEl.textContent = 'Select a conversation';
+  if (emailEl) emailEl.textContent = '';
+  const resolveBtn = document.getElementById('adminResolveBtn');
+  if (resolveBtn) resolveBtn.style.display = 'none';
 }
 
 /** Permanently remove a chat thread — mainly to clear out members who have left. */
 async function deleteConversation(convId) {
   if (!confirm('Delete this entire chat and all its messages?\n\nThis cannot be undone.')) return;
   try {
-    const res = await api(`/api/admin/chat/conversation/${convId}`, { method: 'DELETE' });
+    await api(`/api/admin/chat/conversation/${convId}`, { method: 'DELETE' });
     if (activeConvId === convId) {
-      activeConvId = null;
-      closeAdminVoiceReview();
-      const body = document.getElementById('adminChatBody');
-      const nameEl = document.getElementById('adminChatMemberName');
-      const emailEl = document.getElementById('adminChatMemberEmail');
-      if (body) body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">Select a member conversation to start chatting.</p>';
-      if (nameEl) nameEl.textContent = 'Select a conversation';
-      if (emailEl) emailEl.textContent = '';
-      for (const id of ['adminChatText', 'adminChatSend', 'adminChatAttach', 'adminChatVoice']) {
-        const el = document.getElementById(id);
-        if (el) el.disabled = true;
-      }
-      const resolveBtn = document.getElementById('adminResolveBtn');
-      if (resolveBtn) resolveBtn.style.display = 'none';
+      clearOpenConversation();
+      showChatList();
     }
     await loadAdminConversations();
-    console.log(`Deleted chat (${res.removedMessages} messages)`);
   } catch (err) {
     alert('Failed to delete chat: ' + err.message);
   }
@@ -728,6 +806,7 @@ async function selectConversation(convId) {
   // Drop any unsent recording — it was meant for the previous member.
   if (adminMediaRecorder && adminMediaRecorder.state === 'recording') adminMediaRecorder.stop();
   closeAdminVoiceReview();
+  showChatView();
   await loadAdminMessages(convId);
   await loadAdminConversations(); // refresh list to clear unread
 }
@@ -754,16 +833,23 @@ async function loadAdminMessages(convId) {
 
     nameEl.textContent = conv.memberName;
     emailEl.textContent = conv.memberEmail || '';
+    const avatar = document.getElementById('waChatAvatar');
+    if (avatar) {
+      avatar.textContent = initialsFor(conv.memberName);
+      avatar.classList.toggle('former', !conv.memberEmail);
+    }
     resolveBtn.style.display = 'inline-block';
     resolveBtn.textContent = conv.resolved ? 'Reopen' : 'Resolve';
     resolveBtn.style.color = conv.resolved ? '#0a7d43' : 'var(--gold)';
+    // The composer is only reachable with a thread open now, so these are
+    // always usable here — no more permanently greyed-out mic button.
     textInput.disabled = false;
     sendBtn.disabled = false;
     attachBtn.disabled = false;
     if (voiceBtn) voiceBtn.disabled = false;
 
     if (!msgs.length) {
-      body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">No messages in this conversation yet.</p>';
+      body.innerHTML = '<p class="wa-empty">No messages in this conversation yet.</p>';
       return;
     }
 
@@ -924,7 +1010,7 @@ function resetAdminVoiceButton() {
 function closeAdminVoiceReview() {
   const bar = document.getElementById('adminVoiceReview');
   const player = document.getElementById('adminVoicePlayer');
-  if (bar) bar.style.display = 'none';
+  if (bar) bar.classList.remove('is-open');
   if (player) player.removeAttribute('src');
   if (adminPendingVoiceUrl) URL.revokeObjectURL(adminPendingVoiceUrl);
   adminPendingVoiceUrl = null;
@@ -938,7 +1024,7 @@ function openAdminVoiceReview(file) {
   const player = document.getElementById('adminVoicePlayer');
   if (player) player.src = adminPendingVoiceUrl;
   const bar = document.getElementById('adminVoiceReview');
-  if (bar) bar.style.display = 'flex';
+  if (bar) bar.classList.add('is-open');
 }
 
 async function toggleAdminVoiceRecord() {

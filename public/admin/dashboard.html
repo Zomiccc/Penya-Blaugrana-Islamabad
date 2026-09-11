@@ -58,13 +58,163 @@
   .btn-del{background:transparent;color:var(--grana-lt);border-color:rgba(212,18,106,.45) !important}
   .btn-del:hover{background:var(--grana);color:#fff;border-color:var(--grana) !important}
 
+  /* ==========================================================================
+     Member conversations — messenger-style. One pane at a time: the chat
+     list, and tapping a name swaps in that conversation. Replaces the old
+     split view, where the composer sat there permanently greyed out with
+     nothing selected.
+     ========================================================================== */
+  .wa{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--night-2);height:600px;display:flex}
+  .wa-pane{flex:1;display:flex;flex-direction:column;min-width:0}
+  .wa-pane[hidden]{display:none}
+
+  .wa-pane-head{
+    display:flex;align-items:center;gap:10px;padding:13px 16px;
+    background:rgba(0,0,0,.3);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .wa-pane-title{font-family:var(--display);font-size:1rem;font-weight:700;color:var(--chalk)}
+  .wa-total-badge{
+    background:var(--grana);color:#fff;font-family:var(--mono);font-size:.6rem;
+    padding:2px 8px;border-radius:10px;display:none;
+  }
+  .wa-icon-btn{
+    margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted-lt);
+    font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;
+    padding:6px 10px;border-radius:4px;cursor:pointer;transition:.15s ease;flex-shrink:0;
+  }
+  .wa-icon-btn:hover{color:var(--chalk);border-color:var(--gold)}
+  .wa-icon-btn.danger{margin-left:0;font-size:.78rem;padding:5px 9px}
+  .wa-icon-btn.danger:hover{color:#fff;background:var(--grana);border-color:var(--grana)}
+
+  .wa-search{padding:10px 14px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .wa-search input{
+    width:100%;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);
+    padding:9px 12px;border-radius:20px;font-family:inherit;font-size:.82rem;
+  }
+  .wa-search input:focus{outline:none;border-color:var(--gold)}
+
+  .wa-list{flex:1;overflow-y:auto;min-height:0}
+  .wa-row{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,.05);transition:background .15s ease;
+  }
+  .wa-row:hover{background:rgba(255,255,255,.04)}
+  .wa-row.unread .wa-row-name{color:#fff}
+  .wa-avatar{
+    width:42px;height:42px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:700;font-size:.95rem;color:#fff;
+    background:linear-gradient(135deg,var(--blau),var(--grana));
+  }
+  .wa-avatar.former{background:linear-gradient(135deg,#3a4258,#222838);color:var(--muted-lt)}
+  .wa-row-main{flex:1;min-width:0}
+  .wa-row-top{display:flex;align-items:baseline;gap:8px}
+  .wa-row-name{
+    font-size:.88rem;font-weight:600;color:var(--chalk);flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .wa-row-time{font-family:var(--mono);font-size:.58rem;color:var(--muted);flex-shrink:0}
+  .wa-row-bottom{display:flex;align-items:center;gap:8px;margin-top:3px}
+  .wa-row-preview{
+    flex:1;min-width:0;font-size:.74rem;color:var(--muted-lt);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .wa-row-badge{
+    background:var(--grana);color:#fff;font-family:var(--mono);font-size:.55rem;
+    min-width:18px;text-align:center;padding:2px 6px;border-radius:9px;flex-shrink:0;
+  }
+  .wa-tag-former{
+    font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);padding:1px 5px;border-radius:3px;flex-shrink:0;
+  }
+  .wa-row-del{
+    background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;
+    padding:4px;flex-shrink:0;opacity:0;transition:.15s ease;
+  }
+  .wa-row:hover .wa-row-del{opacity:1}
+  .wa-row-del:hover{color:var(--grana-lt)}
+  .wa-empty{text-align:center;color:var(--muted);font-size:.8rem;padding:30px 20px}
+
+  /* ---- chat view ---- */
+  .wa-chat-head{
+    display:flex;align-items:center;gap:10px;padding:10px 14px;
+    background:rgba(0,0,0,.3);border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .wa-back{
+    background:none;border:none;color:var(--chalk);font-size:1.3rem;cursor:pointer;
+    padding:0 4px;line-height:1;flex-shrink:0;
+  }
+  .wa-back:hover{color:var(--gold)}
+  .wa-chat-head .wa-avatar{width:36px;height:36px;font-size:.82rem}
+  .wa-chat-who{flex:1;min-width:0;display:flex;flex-direction:column}
+  .wa-chat-who #adminChatMemberName{
+    font-size:.86rem;font-weight:700;color:var(--chalk);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .wa-chat-who #adminChatMemberEmail{font-size:.66rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .wa-body{
+    flex:1;overflow-y:auto;min-height:0;padding:16px 14px;
+    display:flex;flex-direction:column;gap:8px;
+    background:linear-gradient(rgba(4,6,15,.9),rgba(4,6,15,.9)),
+      repeating-linear-gradient(45deg,rgba(255,255,255,.02) 0 12px,transparent 12px 24px);
+  }
+
+  .wa-reply{
+    display:none;padding:8px 14px;border-top:1px solid var(--line);
+    background:rgba(0,0,0,.35);font-size:.7rem;color:var(--muted);flex-shrink:0;
+  }
+  .wa-reply button{background:none;border:none;color:var(--grana-lt);cursor:pointer;margin-left:8px}
+
+  .wa-voice-review{
+    display:none;align-items:center;gap:8px;padding:9px 14px;flex-shrink:0;
+    border-top:1px solid rgba(237,187,0,.3);background:rgba(237,187,0,.09);
+  }
+  .wa-voice-review.is-open{display:flex}
+  .wa-vr-label{
+    font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--gold);flex-shrink:0;
+  }
+  .wa-voice-review audio{flex:1;min-width:0;height:32px}
+  .wa-vr-send{
+    background:var(--gold);color:#04060F;border:none;border-radius:4px;cursor:pointer;flex-shrink:0;
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:8px 14px;
+  }
+  .wa-vr-discard{
+    background:transparent;border:1px solid rgba(212,18,106,.5);color:var(--grana-lt);
+    border-radius:4px;cursor:pointer;padding:7px 10px;flex-shrink:0;font-size:.75rem;
+  }
+  .wa-vr-discard:hover{background:var(--grana);color:#fff}
+
+  .wa-composer{
+    display:flex;align-items:center;gap:8px;padding:10px 12px;flex-shrink:0;
+    border-top:1px solid var(--line);background:rgba(0,0,0,.25);
+  }
+  .wa-composer input[type=text]{
+    flex:1;min-width:0;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--chalk);
+    padding:11px 14px;border-radius:20px;font-family:inherit;font-size:.86rem;
+  }
+  .wa-composer input[type=text]:focus{outline:none;border-color:var(--gold)}
+  .wa-c-btn{
+    flex-shrink:0;width:38px;height:38px;border-radius:50%;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:.95rem;
+    background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--chalk-dim);
+    transition:.15s ease;
+  }
+  .wa-c-btn:hover{background:rgba(255,255,255,.14);color:var(--chalk)}
+  .wa-c-btn.send{background:var(--blau);border-color:var(--blau);color:#fff}
+  .wa-c-btn.send:hover{background:var(--blau-lt)}
+  .wa-c-btn.mic.recording{
+    background:var(--grana);border-color:var(--grana);color:#fff;
+    animation:waPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes waPulse{0%,100%{box-shadow:0 0 0 0 rgba(165,0,68,.55)}50%{box-shadow:0 0 0 8px rgba(165,0,68,0)}}
+
   @media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr}}
   @media(max-width:600px){.stat-grid{grid-template-columns:1fr}.panel{padding:24px 20px}}
   @media(max-width:760px){
-    #adminChatLayout{flex-direction:column;height:auto !important;max-height:80vh;max-height:80dvh}
-    #adminConvList{width:100% !important;max-height:160px;border-right:none !important;border-bottom:1px solid var(--line)}
-    #adminChatLayout > div:last-child{min-height:360px}
-    #adminChatBody{max-height:45vh;max-height:45dvh}
+    .wa{height:78vh;height:78dvh}
+    .wa-avatar{width:38px;height:38px}
   }
 </style>
 </head>
@@ -219,43 +369,55 @@
       <button class="btn" id="pushToggleBtn" style="padding:8px 16px;font-size:.7rem">🔔 Enable Phone Notifications</button>
       <span id="pushStatus" style="font-size:.75rem;color:var(--muted)"></span>
     </div>
-    <div id="adminChatLayout" style="display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;height:560px">
-      <!-- Conversation list -->
-      <div id="adminConvList" style="width:280px;flex-shrink:0;border-right:1px solid var(--line);overflow-y:auto;background:rgba(0,0,0,.3)">
-        <div style="padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
-          <span style="font-size:.8rem;font-weight:700;color:var(--chalk)">Conversations</span>
-          <span id="adminUnreadBadge" style="margin-left:auto;background:var(--grana);color:#fff;font-size:.6rem;padding:2px 8px;border-radius:10px;display:none"></span>
+    <div id="adminChatLayout" class="wa">
+      <!-- ---- LIST VIEW: tap a name to open that chat ---- -->
+      <div class="wa-pane" id="waListPane">
+        <div class="wa-pane-head">
+          <span class="wa-pane-title">Chats</span>
+          <span id="adminUnreadBadge" class="wa-total-badge"></span>
+          <button class="wa-icon-btn" id="waCleanupBtn" title="Remove chats from members who no longer exist">Clear former</button>
         </div>
-        <div id="adminConvItems"></div>
+        <div class="wa-search">
+          <input type="text" id="waSearch" placeholder="Search chats…" autocomplete="off">
+        </div>
+        <div id="adminConvItems" class="wa-list"></div>
       </div>
-      <!-- Active chat -->
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0">
-        <div id="adminChatHeader" style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.2);min-height:48px">
-          <span id="adminChatMemberName" style="font-size:.85rem;font-weight:700;color:var(--chalk)">Select a conversation</span>
-          <span id="adminChatMemberEmail" style="font-size:.7rem;color:var(--muted)"></span>
-          <button class="btn" id="adminResolveBtn" style="margin-left:auto;padding:4px 10px;font-size:.56rem;letter-spacing:.04em;display:none">Resolve</button>
-        </div>
-        <div id="adminChatBody" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:0;background:rgba(0,0,0,.15)">
-          <p style="text-align:center;color:var(--muted);font-size:.8rem">Select a member conversation to start chatting.</p>
-        </div>
-        <!-- Reply preview -->
-        <div id="adminReplyPreview" style="display:none;padding:8px 14px;border-top:1px solid var(--line);background:rgba(0,0,0,.3);font-size:.7rem;color:var(--muted)">
-          <span>Replying to: </span><span id="adminReplyPreviewText"></span>
-          <button onclick="cancelAdminReply()" style="background:none;border:none;color:var(--grana);cursor:pointer;margin-left:8px">✕</button>
-        </div>
-        <div style="padding:10px 14px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center">
-          <button class="btn" id="adminChatAttach" style="padding:9px 12px;font-size:.8rem">📎</button>
-          <input type="file" id="adminChatFile" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
-          <div id="adminVoiceReview" style="display:none;align-items:center;gap:8px;flex:1 0 100%;order:-1;padding:8px 10px;margin-bottom:8px;background:rgba(237,187,0,.08);border:1px solid rgba(237,187,0,.3);border-radius:4px">
-            <span style="font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);flex-shrink:0">Voice note</span>
-            <audio id="adminVoicePlayer" controls preload="metadata" style="flex:1;min-width:0;height:32px"></audio>
-            <button type="button" class="btn gold" id="adminVoiceSend" style="padding:7px 14px;font-size:.66rem;flex-shrink:0">Send</button>
-            <div class="row-actions" style="flex-shrink:0"><button type="button" class="btn-del" id="adminVoiceDiscard">Discard</button></div>
+
+      <!-- ---- CHAT VIEW ---- -->
+      <div class="wa-pane" id="waChatPane" hidden>
+        <div class="wa-chat-head">
+          <button class="wa-back" id="waBackBtn" aria-label="Back to chats">←</button>
+          <div class="wa-avatar" id="waChatAvatar">?</div>
+          <div class="wa-chat-who">
+            <span id="adminChatMemberName">Select a conversation</span>
+            <span id="adminChatMemberEmail"></span>
           </div>
-          <input type="text" id="adminChatText" placeholder="Reply to member…" maxlength="2000" disabled
-            style="flex:1;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:10px 12px;border-radius:4px;font-family:inherit;font-size:.85rem">
-          <button class="btn" id="adminChatVoice" style="padding:9px 12px;font-size:.8rem;display:flex;align-items:center;justify-content:center" disabled><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
-          <button class="btn blue" id="adminChatSend" style="padding:9px 18px;font-size:.8rem" disabled>Send</button>
+          <button class="btn" id="adminResolveBtn" style="padding:4px 10px;font-size:.56rem;letter-spacing:.04em;display:none">Resolve</button>
+          <button class="wa-icon-btn danger" id="waDeleteBtn" title="Delete this chat">🗑</button>
+        </div>
+
+        <div id="adminChatBody" class="wa-body">
+          <p class="wa-empty">Select a member conversation to start chatting.</p>
+        </div>
+
+        <div id="adminReplyPreview" class="wa-reply">
+          <span>Replying to: </span><span id="adminReplyPreviewText"></span>
+          <button onclick="cancelAdminReply()">✕</button>
+        </div>
+
+        <div id="adminVoiceReview" class="wa-voice-review">
+          <span class="wa-vr-label">Voice note</span>
+          <audio id="adminVoicePlayer" controls preload="metadata"></audio>
+          <button type="button" class="wa-vr-send" id="adminVoiceSend">Send</button>
+          <button type="button" class="wa-vr-discard" id="adminVoiceDiscard" aria-label="Discard">✕</button>
+        </div>
+
+        <div class="wa-composer">
+          <button class="wa-c-btn" id="adminChatAttach" title="Attach a file">📎</button>
+          <input type="file" id="adminChatFile" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+          <input type="text" id="adminChatText" placeholder="Type a message…" maxlength="2000">
+          <button class="wa-c-btn mic" id="adminChatVoice" title="Record voice note"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+          <button class="wa-c-btn send" id="adminChatSend" title="Send">➤</button>
         </div>
       </div>
     </div>
