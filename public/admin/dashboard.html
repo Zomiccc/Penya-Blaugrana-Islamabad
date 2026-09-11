@@ -100,6 +100,9 @@
   }
   .wa-row:hover{background:rgba(255,255,255,.04)}
   .wa-row.unread .wa-row-name{color:#fff}
+  /* Members with no thread yet — listed so the admin can start a chat. */
+  .wa-row.no-thread .wa-avatar{background:linear-gradient(135deg,#1b2437,#141a29);color:var(--muted-lt)}
+  .wa-row.no-thread .wa-row-preview{font-style:italic;opacity:.7}
   .wa-avatar{
     width:42px;height:42px;border-radius:50%;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;

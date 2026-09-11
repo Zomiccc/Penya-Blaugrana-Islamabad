@@ -1541,10 +1541,56 @@ app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
       adminUnreadCount: c.adminUnreadCount || 0,
       lastMessageAt: lastMsg ? lastMsg.createdAt : c.createdAt,
       lastMessagePreview: lastMsg ? (lastMsg.text || (lastMsg.voiceNote ? '🎤 Voice note' : '📎 Attachment')) : null,
+      hasThread: true,
     };
-  }).sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+  });
 
-  res.json({ conversations: convs });
+  // A conversation only came into existence when a MEMBER wrote first, so
+  // the admin could only ever reply — anyone who had never messaged simply
+  // wasn't in the list and couldn't be contacted. Every current member is
+  // listed now; the thread itself is created on first use.
+  const withThread = new Set(convs.map((c) => c.memberId));
+  const contactable = db.members
+    .filter((m) => m.status === 'paid' && !withThread.has(m.id))
+    .map((m) => ({
+      id: null,
+      memberId: m.id,
+      memberName: `${m.firstName} ${m.lastName}`.trim() || m.email || 'Member',
+      isFormer: false,
+      memberEmail: m.email || null,
+      resolved: false,
+      resolvedAt: null,
+      adminUnreadCount: 0,
+      lastMessageAt: null,
+      lastMessagePreview: null,
+      hasThread: false,
+    }));
+
+  // Active threads first, newest reply at the top; then everyone else
+  // alphabetically so the list reads like a contact list.
+  convs.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+  contactable.sort((a, b) => a.memberName.localeCompare(b.memberName));
+
+  res.json({ conversations: [...convs, ...contactable] });
+});
+
+// POST /api/admin/chat/conversation/ensure — open (creating if needed) the
+// thread for one member, so the admin can start a conversation with someone
+// who has never messaged first.
+app.post('/api/admin/chat/conversation/ensure', requireAdmin, async (req, res) => {
+  const memberId = req.body?.memberId;
+  if (!memberId) return res.status(400).json({ error: 'memberId is required' });
+
+  const member = readDb().members.find((m) => m.id === memberId);
+  if (!member) return res.status(404).json({ error: 'Member not found' });
+
+  let conversationId = null;
+  await writeDb((d) => {
+    const conv = getOrCreateConversation(d, memberId, `${member.firstName} ${member.lastName}`.trim());
+    conversationId = conv.id;
+    return d;
+  });
+  res.json({ ok: true, conversationId });
 });
 
 // GET /api/admin/chat/messages/:conversationId — admin gets messages for a specific conversation

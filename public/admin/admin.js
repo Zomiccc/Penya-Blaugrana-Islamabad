@@ -720,8 +720,8 @@ function renderConversationRows() {
   }
 
   listEl.innerHTML = rows.map((c) => `
-    <div class="wa-row ${c.adminUnreadCount > 0 ? 'unread' : ''}" data-conv-id="${c.id}"
-      onclick="selectConversation('${c.id}')">
+    <div class="wa-row ${c.adminUnreadCount > 0 ? 'unread' : ''} ${c.hasThread ? '' : 'no-thread'}"
+      onclick="${c.hasThread ? `selectConversation('${c.id}')` : `startConversationWith('${c.memberId}')`}">
       <div class="wa-avatar ${c.isFormer ? 'former' : ''}">${escapeHtml(initialsFor(c.memberName))}</div>
       <div class="wa-row-main">
         <div class="wa-row-top">
@@ -729,16 +729,31 @@ function renderConversationRows() {
           <span class="wa-row-time">${escapeHtml(chatListTime(c.lastMessageAt))}</span>
         </div>
         <div class="wa-row-bottom">
-          <span class="wa-row-preview">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</span>
+          <span class="wa-row-preview">${escapeHtml(c.lastMessagePreview || (c.hasThread ? 'No messages yet' : 'Tap to start a chat'))}</span>
           ${c.isFormer ? '<span class="wa-tag-former">Former</span>' : ''}
           ${c.resolved ? '<span style="font-size:.6rem;color:#3ddc8a;flex-shrink:0">✓</span>' : ''}
           ${c.adminUnreadCount > 0 ? `<span class="wa-row-badge">${c.adminUnreadCount}</span>` : ''}
-          <button type="button" class="wa-row-del" title="Delete this chat"
-            onclick="event.stopPropagation();deleteConversation('${c.id}')">🗑</button>
+          ${c.hasThread ? `<button type="button" class="wa-row-del" title="Delete this chat"
+            onclick="event.stopPropagation();deleteConversation('${c.id}')">🗑</button>` : ''}
         </div>
       </div>
     </div>
   `).join('');
+}
+
+/** Open a chat with a member who has never messaged — the thread is created
+ *  on the server the first time it's opened. */
+async function startConversationWith(memberId) {
+  try {
+    const { conversationId } = await api('/api/admin/chat/conversation/ensure', {
+      method: 'POST',
+      body: JSON.stringify({ memberId }),
+    });
+    await loadAdminConversations();
+    await selectConversation(conversationId);
+  } catch (err) {
+    alert('Could not open that chat: ' + err.message);
+  }
 }
 
 /** Swap between the chat list and an open conversation. */
