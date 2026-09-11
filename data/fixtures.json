@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-09-08T14:38:54.192Z",
-  "nextSync": "2026-09-09T02:38:54.200Z",
+  "lastSync": "2026-09-11T09:05:09.872Z",
+  "nextSync": "2026-09-11T21:05:09.881Z",
   "apiStatus": "ok",
   "lastError": null,
   "matches": [
@@ -155,7 +155,7 @@
     {
       "id": 575329,
       "utcDate": "2026-09-09T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -184,8 +184,8 @@
       "isAway": false,
       "isBarcaMatch": true,
       "score": {
-        "home": null,
-        "away": null
+        "home": 5,
+        "away": 1
       },
       "goals": []
     },
@@ -302,8 +302,8 @@
     },
     {
       "id": 564700,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-10T16:30:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -1707,43 +1707,6 @@
       "goals": []
     },
     {
-      "id": 564682,
-      "utcDate": "2026-09-03T19:00:00Z",
-      "status": "FINISHED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 6,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Estadio Municipal de Anoeta",
-      "city": "Anoeta Pasalekua, 1 San Sebastián 20014",
-      "homeTeamId": 92,
-      "homeTeam": "Real Sociedad de Fútbol",
-      "homeCrest": "https://crests.football-data.org/92.png",
-      "awayTeamId": 558,
-      "awayTeam": "RC Celta de Vigo",
-      "awayCrest": "https://crests.football-data.org/558.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": 0,
-        "away": 0
-      },
-      "goals": []
-    },
-    {
       "id": 564667,
       "utcDate": "2026-09-04T19:00:00Z",
       "status": "FINISHED",
@@ -3039,9 +3002,46 @@
       "goals": []
     },
     {
+      "id": 564706,
+      "utcDate": "2026-10-09T19:00:00Z",
+      "status": "TIMED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 8,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio La Rosaleda",
+      "city": "Paseo de Martiricos, s/n Málaga 29011",
+      "homeTeamId": 84,
+      "homeTeam": "Málaga CF",
+      "homeCrest": "https://crests.football-data.org/84.png",
+      "awayTeamId": 80,
+      "awayTeam": "RCD Espanyol de Barcelona",
+      "awayCrest": "https://crests.football-data.org/80.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
       "id": 564698,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-10T12:00:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3077,8 +3077,8 @@
     },
     {
       "id": 564699,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-10T14:15:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3113,46 +3113,9 @@
       "goals": []
     },
     {
-      "id": 564701,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 8,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Estadio Benito Villamarín",
-      "city": "Avenida de Heliópolis, s/n Sevilla 41012",
-      "homeTeamId": 90,
-      "homeTeam": "Real Betis Balompié",
-      "homeCrest": "https://crests.football-data.org/90.png",
-      "awayTeamId": 79,
-      "awayTeam": "CA Osasuna",
-      "awayCrest": "https://crests.football-data.org/79.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": null,
-        "away": null
-      },
-      "goals": []
-    },
-    {
       "id": 564702,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-10T19:00:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3188,8 +3151,8 @@
     },
     {
       "id": 564703,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-11T12:00:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3224,9 +3187,9 @@
       "goals": []
     },
     {
-      "id": 564704,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "id": 564707,
+      "utcDate": "2026-10-11T14:15:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3243,14 +3206,51 @@
       "matchday": 8,
       "stage": "REGULAR_SEASON",
       "group": null,
-      "venue": "Estadio Ciudad de Valencia",
-      "city": "Calle San Vicente de Paúl, 44 Valencia 46019",
-      "homeTeamId": 88,
-      "homeTeam": "Levante UD",
-      "homeCrest": "https://crests.football-data.org/88.png",
-      "awayTeamId": 559,
-      "awayTeam": "Sevilla FC",
-      "awayCrest": "https://crests.football-data.org/559.png",
+      "venue": "Estadio Municipal de Anoeta",
+      "city": "Anoeta Pasalekua, 1 San Sebastián 20014",
+      "homeTeamId": 92,
+      "homeTeam": "Real Sociedad de Fútbol",
+      "homeCrest": "https://crests.football-data.org/92.png",
+      "awayTeamId": 560,
+      "awayTeam": "RC Deportivo La Coruña",
+      "awayCrest": "https://crests.football-data.org/560.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564701,
+      "utcDate": "2026-10-11T16:30:00Z",
+      "status": "TIMED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 8,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Benito Villamarín",
+      "city": "Avenida de Heliópolis, s/n Sevilla 41012",
+      "homeTeamId": 90,
+      "homeTeam": "Real Betis Balompié",
+      "homeCrest": "https://crests.football-data.org/90.png",
+      "awayTeamId": 79,
+      "awayTeam": "CA Osasuna",
+      "awayCrest": "https://crests.football-data.org/79.png",
       "isHome": false,
       "isAway": false,
       "isBarcaMatch": false,
@@ -3262,8 +3262,8 @@
     },
     {
       "id": 564705,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "utcDate": "2026-10-11T19:00:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3298,9 +3298,9 @@
       "goals": []
     },
     {
-      "id": 564706,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
+      "id": 564704,
+      "utcDate": "2026-10-12T19:00:00Z",
+      "status": "TIMED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -3317,51 +3317,14 @@
       "matchday": 8,
       "stage": "REGULAR_SEASON",
       "group": null,
-      "venue": "Estadio La Rosaleda",
-      "city": "Paseo de Martiricos, s/n Málaga 29011",
-      "homeTeamId": 84,
-      "homeTeam": "Málaga CF",
-      "homeCrest": "https://crests.football-data.org/84.png",
-      "awayTeamId": 80,
-      "awayTeam": "RCD Espanyol de Barcelona",
-      "awayCrest": "https://crests.football-data.org/80.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": null,
-        "away": null
-      },
-      "goals": []
-    },
-    {
-      "id": 564707,
-      "utcDate": "2026-10-11T00:00:00Z",
-      "status": "SCHEDULED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 8,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Estadio Municipal de Anoeta",
-      "city": "Anoeta Pasalekua, 1 San Sebastián 20014",
-      "homeTeamId": 92,
-      "homeTeam": "Real Sociedad de Fútbol",
-      "homeCrest": "https://crests.football-data.org/92.png",
-      "awayTeamId": 560,
-      "awayTeam": "RC Deportivo La Coruña",
-      "awayCrest": "https://crests.football-data.org/560.png",
+      "venue": "Estadio Ciudad de Valencia",
+      "city": "Calle San Vicente de Paúl, 44 Valencia 46019",
+      "homeTeamId": 88,
+      "homeTeam": "Levante UD",
+      "homeCrest": "https://crests.football-data.org/88.png",
+      "awayTeamId": 559,
+      "awayTeam": "Sevilla FC",
+      "awayCrest": "https://crests.football-data.org/559.png",
       "isHome": false,
       "isAway": false,
       "isBarcaMatch": false,
@@ -6702,9 +6665,342 @@
       "goals": []
     },
     {
+      "id": 564808,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "San Mamés",
+      "city": "Ibaigane, Alameda Mazarredo, 23 Bilbao 48009",
+      "homeTeamId": 77,
+      "homeTeam": "Athletic Club",
+      "homeCrest": "https://crests.football-data.org/77.png",
+      "awayTeamId": 94,
+      "awayTeam": "Villarreal CF",
+      "awayCrest": "https://crests.football-data.org/94.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564809,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Manuel Martínez Valero",
+      "city": "Avenida Manuel Martínez Valero, 3 Elche 03208",
+      "homeTeamId": 285,
+      "homeTeam": "Elche CF",
+      "homeCrest": "https://crests.football-data.org/285.png",
+      "awayTeamId": 82,
+      "awayTeam": "Getafe CF",
+      "awayCrest": "https://crests.football-data.org/82.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564810,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Santiago Bernabéu",
+      "city": "Avenida Concha Espina, 1 Madrid 28036",
+      "homeTeamId": 86,
+      "homeTeam": "Real Madrid CF",
+      "homeCrest": "https://crests.football-data.org/86.png",
+      "awayTeamId": 88,
+      "awayTeam": "Levante UD",
+      "awayCrest": "https://crests.football-data.org/88.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564812,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Abanca-Riazor",
+      "city": "Plaza de Pontevedra, 19 A Coruña 15003",
+      "homeTeamId": 560,
+      "homeTeam": "RC Deportivo La Coruña",
+      "homeCrest": "https://crests.football-data.org/560.png",
+      "awayTeamId": 87,
+      "awayTeam": "Rayo Vallecano de Madrid",
+      "awayCrest": "https://crests.football-data.org/87.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564813,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Wanda Metropolitano",
+      "city": "Paseo Virgen del Puerto, 67 Madrid 28005",
+      "homeTeamId": 78,
+      "homeTeam": "Club Atlético de Madrid",
+      "homeCrest": "https://crests.football-data.org/78.png",
+      "awayTeamId": 5335,
+      "awayTeam": "Real Racing Club de Santander",
+      "awayCrest": "https://crests.football-data.org/5335.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564814,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio de Mendizorroza",
+      "city": "Mendizorroza, Paseo Cervantes, s/n Vitoria 01007",
+      "homeTeamId": 263,
+      "homeTeam": "Deportivo Alavés",
+      "homeCrest": "https://crests.football-data.org/263.png",
+      "awayTeamId": 92,
+      "awayTeam": "Real Sociedad de Fútbol",
+      "awayCrest": "https://crests.football-data.org/92.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564815,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Ramón Sánchez Pizjuán",
+      "city": "Calle Sevilla Fútbol Club, s/n Sevilla 41005",
+      "homeTeamId": 559,
+      "homeTeam": "Sevilla FC",
+      "homeCrest": "https://crests.football-data.org/559.png",
+      "awayTeamId": 558,
+      "awayTeam": "RC Celta de Vigo",
+      "awayCrest": "https://crests.football-data.org/558.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564816,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "RCDE Stadium",
+      "city": "Avenida Baix Llobregat, 100 Cornellà de Llobregat 08940",
+      "homeTeamId": 80,
+      "homeTeam": "RCD Espanyol de Barcelona",
+      "homeCrest": "https://crests.football-data.org/80.png",
+      "awayTeamId": 90,
+      "awayTeam": "Real Betis Balompié",
+      "awayCrest": "https://crests.football-data.org/90.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564817,
+      "utcDate": "2027-01-10T00:00:00Z",
+      "status": "SCHEDULED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 19,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio de Mestalla",
+      "city": "Plaza del Valencia Club de Fútbol, 2 Valencia 46010",
+      "homeTeamId": 95,
+      "homeTeam": "Valencia CF",
+      "homeCrest": "https://crests.football-data.org/95.png",
+      "awayTeamId": 84,
+      "awayTeam": "Málaga CF",
+      "awayCrest": "https://crests.football-data.org/84.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": null,
+        "away": null
+      },
+      "goals": []
+    },
+    {
       "id": 575323,
       "utcDate": "2026-09-08T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6733,15 +7029,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 3
       },
       "goals": []
     },
     {
       "id": 575324,
       "utcDate": "2026-09-08T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6770,15 +7066,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 1,
+        "away": 0
       },
       "goals": []
     },
     {
       "id": 575325,
       "utcDate": "2026-09-08T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6807,15 +7103,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575326,
       "utcDate": "2026-09-08T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6844,15 +7140,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 0,
+        "away": 2
       },
       "goals": []
     },
     {
       "id": 575327,
       "utcDate": "2026-09-08T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6881,15 +7177,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 3,
+        "away": 2
       },
       "goals": []
     },
     {
       "id": 575328,
       "utcDate": "2026-09-08T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6918,15 +7214,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 3
       },
       "goals": []
     },
     {
       "id": 575330,
       "utcDate": "2026-09-09T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6955,15 +7251,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 3,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575331,
       "utcDate": "2026-09-09T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -6992,15 +7288,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575332,
       "utcDate": "2026-09-09T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7029,15 +7325,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 6,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575333,
       "utcDate": "2026-09-09T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7066,15 +7362,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 0,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575334,
       "utcDate": "2026-09-09T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7103,15 +7399,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 3,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575335,
       "utcDate": "2026-09-10T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7140,15 +7436,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 1,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575336,
       "utcDate": "2026-09-10T16:45:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7177,15 +7473,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 1,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575337,
       "utcDate": "2026-09-10T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7214,15 +7510,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 5,
+        "away": 0
       },
       "goals": []
     },
     {
       "id": 575338,
       "utcDate": "2026-09-10T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7251,15 +7547,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 4,
+        "away": 0
       },
       "goals": []
     },
     {
       "id": 575339,
       "utcDate": "2026-09-10T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7288,15 +7584,15 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 4,
+        "away": 1
       },
       "goals": []
     },
     {
       "id": 575340,
       "utcDate": "2026-09-10T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2001,
@@ -7325,8 +7621,8 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 2,
+        "away": 3
       },
       "goals": []
     },
@@ -10472,6 +10768,43 @@
       "score": {
         "home": null,
         "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564682,
+      "utcDate": "2026-09-03T19:00:00Z",
+      "status": "FINISHED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 6,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Municipal de Anoeta",
+      "city": "Anoeta Pasalekua, 1 San Sebastián 20014",
+      "homeTeamId": 92,
+      "homeTeam": "Real Sociedad de Fútbol",
+      "homeCrest": "https://crests.football-data.org/92.png",
+      "awayTeamId": 558,
+      "awayTeam": "RC Celta de Vigo",
+      "awayCrest": "https://crests.football-data.org/558.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": 0,
+        "away": 0
       },
       "goals": []
     },

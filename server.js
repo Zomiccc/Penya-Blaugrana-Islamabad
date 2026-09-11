@@ -1291,7 +1291,7 @@ const chatUpload = multer({
 });
 
 // Helper: get or create a conversation for a member
-function getOrCreateConversation(db, memberId) {
+function getOrCreateConversation(db, memberId, memberName) {
   let conv = (db.chatConversations || []).find((c) => c.memberId === memberId);
   if (!conv) {
     conv = {
@@ -1307,6 +1307,11 @@ function getOrCreateConversation(db, memberId) {
     db.chatConversations = db.chatConversations || [];
     db.chatConversations.push(conv);
   }
+  // Snapshot the name on every message so the thread still shows who it was
+  // if the member is later deleted — the conversation only ever stored a
+  // memberId, so deleting the member turned the thread into "Former member".
+  // Refreshed each time so a rename propagates.
+  if (memberName) conv.memberName = memberName;
   return conv;
 }
 
@@ -1433,7 +1438,7 @@ app.post('/api/chat/messages', requireMember, async (req, res) => {
   const memberId = req.member.id;
   let msg;
   await writeDb((d) => {
-    const conv = getOrCreateConversation(d, memberId);
+    const conv = getOrCreateConversation(d, memberId, `${req.member.firstName} ${req.member.lastName}`.trim());
     // Verify replyTo belongs to this conversation
     let safeReplyTo = null;
     if (replyToMessageId) {
@@ -1474,7 +1479,7 @@ app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (re
 
   let msg;
   await writeDb((d) => {
-    const conv = getOrCreateConversation(d, memberId);
+    const conv = getOrCreateConversation(d, memberId, `${req.member.firstName} ${req.member.lastName}`.trim());
     let safeReplyTo = null;
     if (replyToMessageId) {
       const orig = (d.chatMessages || []).find((m) => m.id === replyToMessageId && m.conversationId === conv.id);
@@ -1526,7 +1531,7 @@ app.get('/api/admin/chat/conversations', requireAdmin, (req, res) => {
     return {
       id: c.id,
       memberId: c.memberId,
-      memberName: nameById.get(c.memberId) || restoredName(c.memberId) || 'Former member',
+      memberName: c.memberName || nameById.get(c.memberId) || restoredName(c.memberId) || 'Former member',
       memberEmail: emailById.get(c.memberId) || null,
       resolved: Boolean(c.resolved),
       resolvedAt: c.resolvedAt || null,
@@ -1563,7 +1568,7 @@ app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => 
         conversationId: m.conversationId,
         senderId: m.senderId || null,
         senderRole: m.senderRole || 'member',
-        senderName: isAdmin ? 'Admin' : (nameById.get(m.senderId) || restoredName(m.senderId) || 'Former member'),
+        senderName: isAdmin ? 'Admin' : (conv.memberName || nameById.get(m.senderId) || restoredName(m.senderId) || 'Former member'),
         senderEmail: isAdmin ? null : (emailById.get(m.senderId) || null),
         isAdmin,
         messageType: m.messageType || 'text',
@@ -1589,7 +1594,7 @@ app.get('/api/admin/chat/messages/:conversationId', requireAdmin, (req, res) => 
     conversation: {
       id: conv.id,
       memberId: conv.memberId,
-      memberName: nameById.get(conv.memberId) || restoredName(conv.memberId) || 'Former member',
+      memberName: conv.memberName || nameById.get(conv.memberId) || restoredName(conv.memberId) || 'Former member',
       memberEmail: emailById.get(conv.memberId) || null,
       resolved: Boolean(conv.resolved),
     },
@@ -1699,6 +1704,32 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
     body: isVoice ? '🎤 Sent you a voice note' : `📎 Sent you a file: ${req.file.originalname}`,
   });
   res.json({ ok: true, message: msg });
+});
+
+// DELETE /api/admin/chat/conversation/:conversationId — remove a whole
+// thread and its messages. Mainly for clearing out threads belonging to
+// members who have since left. Unlike predictions this isn't scored data,
+// so it's a straight delete — but it is permanent, hence the confirm in
+// the UI and the count returned here.
+app.delete('/api/admin/chat/conversation/:conversationId', requireAdmin, async (req, res) => {
+  const convId = req.params.conversationId;
+  let found = false;
+  let removedMessages = 0;
+
+  await writeDb((d) => {
+    const conv = (d.chatConversations || []).find((c) => c.id === convId);
+    if (!conv) return d;
+    found = true;
+    const before = (d.chatMessages || []).length;
+    d.chatMessages = (d.chatMessages || []).filter((m) => m.conversationId !== convId);
+    removedMessages = before - d.chatMessages.length;
+    d.chatConversations = (d.chatConversations || []).filter((c) => c.id !== convId);
+    return d;
+  });
+
+  if (!found) return res.status(404).json({ error: 'Conversation not found' });
+  console.log(`[admin] deleted conversation ${convId} (${removedMessages} messages)`);
+  res.json({ ok: true, removedMessages });
 });
 
 // POST /api/admin/chat/resolve/:conversationId — toggle resolve/reopen

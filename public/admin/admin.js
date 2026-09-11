@@ -679,6 +679,10 @@ async function loadAdminConversations() {
           <span style="font-size:.78rem;font-weight:600;color:var(--chalk);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.memberName)}</span>
           ${c.adminUnreadCount > 0 ? `<span style="background:var(--grana);color:#fff;font-size:.55rem;padding:1px 6px;border-radius:8px;flex-shrink:0">${c.adminUnreadCount}</span>` : ''}
           ${c.resolved ? '<span style="font-size:.55rem;color:#0a7d43;flex-shrink:0">✓</span>' : ''}
+          <button type="button" title="Delete this chat"
+            onclick="event.stopPropagation();deleteConversation('${c.id}')"
+            style="flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.8rem;line-height:1;padding:2px 4px"
+            onmouseover="this.style.color='var(--grana-lt)'" onmouseout="this.style.color='var(--muted)'">🗑</button>
         </div>
         <div style="font-size:.65rem;color:var(--muted);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.lastMessagePreview || 'No messages yet')}</div>
         <div style="font-size:.55rem;color:var(--muted-lt);margin-top:2px">${new Date(c.lastMessageAt).toLocaleDateString()} ${new Date(c.lastMessageAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
@@ -686,6 +690,34 @@ async function loadAdminConversations() {
     `).join('');
   } catch (err) {
     listEl.innerHTML = `<p style="padding:20px;text-align:center;color:var(--grana);font-size:.75rem">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+/** Permanently remove a chat thread — mainly to clear out members who have left. */
+async function deleteConversation(convId) {
+  if (!confirm('Delete this entire chat and all its messages?\n\nThis cannot be undone.')) return;
+  try {
+    const res = await api(`/api/admin/chat/conversation/${convId}`, { method: 'DELETE' });
+    if (activeConvId === convId) {
+      activeConvId = null;
+      closeAdminVoiceReview();
+      const body = document.getElementById('adminChatBody');
+      const nameEl = document.getElementById('adminChatMemberName');
+      const emailEl = document.getElementById('adminChatMemberEmail');
+      if (body) body.innerHTML = '<p style="text-align:center;color:var(--muted);font-size:.8rem;padding:20px">Select a member conversation to start chatting.</p>';
+      if (nameEl) nameEl.textContent = 'Select a conversation';
+      if (emailEl) emailEl.textContent = '';
+      for (const id of ['adminChatText', 'adminChatSend', 'adminChatAttach', 'adminChatVoice']) {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      }
+      const resolveBtn = document.getElementById('adminResolveBtn');
+      if (resolveBtn) resolveBtn.style.display = 'none';
+    }
+    await loadAdminConversations();
+    console.log(`Deleted chat (${res.removedMessages} messages)`);
+  } catch (err) {
+    alert('Failed to delete chat: ' + err.message);
   }
 }
 
@@ -935,14 +967,19 @@ async function toggleAdminVoiceRecord() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     adminVoiceChunks = [];
-    adminMediaRecorder = new MediaRecorder(stream);
+    adminMediaRecorder = new MediaRecorder(stream, pickRecorderOptions());
     adminMediaRecorder.ondataavailable = (e) => { if (e.data.size) adminVoiceChunks.push(e.data); };
     adminMediaRecorder.onstop = () => {
       stream.getTracks().forEach((t) => t.stop());
       resetAdminVoiceButton();
-      const blob = new Blob(adminVoiceChunks, { type: 'audio/webm' });
-      if (!blob.size) return;
-      openAdminVoiceReview(new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' }));
+      // Use what the recorder actually produced, not an assumed format.
+      const type = (adminMediaRecorder.mimeType || adminVoiceChunks[0]?.type || 'audio/webm').split(';')[0];
+      const blob = new Blob(adminVoiceChunks, { type });
+      if (!blob.size) {
+        alert('Nothing was recorded — try holding the button a moment longer.');
+        return;
+      }
+      openAdminVoiceReview(new File([blob], `voice-${Date.now()}.${extForAudioType(type)}`, { type }));
     };
     adminMediaRecorder.start();
     voiceBtn.classList.add('recording');
@@ -951,11 +988,36 @@ async function toggleAdminVoiceRecord() {
     voiceBtn.title = 'Stop recording';
   } catch (err) {
     resetAdminVoiceButton();
-    alert('Microphone access denied or not available');
+    // Report what actually failed — "denied or not available" made real
+    // problems (unsupported codec, insecure origin) impossible to diagnose.
+    const reason = err && err.name === 'NotAllowedError'
+      ? 'Microphone permission was denied. Allow it for this site in your browser settings, then tap again.'
+      : err && err.name === 'NotFoundError'
+        ? 'No microphone was found on this device.'
+        : `Could not start recording (${err?.name || 'error'}: ${err?.message || 'unknown'})`;
+    alert(reason);
   } finally {
     adminVoiceStarting = false;
     voiceBtn.style.opacity = '';
   }
+}
+
+/* Pick a container the browser can actually record. Chrome/Firefox do webm;
+   iOS Safari only does mp4, and recording it while claiming webm produced a
+   file that wouldn't play back. Passing no options lets the browser choose. */
+function pickRecorderOptions() {
+  if (typeof MediaRecorder?.isTypeSupported !== 'function') return undefined;
+  for (const mimeType of ['audio/webm', 'audio/mp4', 'audio/ogg']) {
+    if (MediaRecorder.isTypeSupported(mimeType)) return { mimeType };
+  }
+  return undefined;
+}
+
+function extForAudioType(type) {
+  if (type.includes('mp4')) return 'm4a';
+  if (type.includes('ogg')) return 'ogg';
+  if (type.includes('mpeg')) return 'mp3';
+  return 'webm';
 }
 
 async function sendAdminPendingVoiceNote() {

@@ -953,14 +953,19 @@
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       chatChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder = new MediaRecorder(stream, pickRecorderOptions());
       mediaRecorder.ondataavailable = (e) => { if (e.data.size) chatChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
         resetVoiceButton();
-        const blob = new Blob(chatChunks, { type: 'audio/webm' });
-        if (!blob.size) return;
-        openVoiceReview(new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' }));
+        // Use what the recorder actually produced, not an assumed format.
+        const type = (mediaRecorder.mimeType || chatChunks[0]?.type || 'audio/webm').split(';')[0];
+        const blob = new Blob(chatChunks, { type });
+        if (!blob.size) {
+          alert('Nothing was recorded — try holding the button a moment longer.');
+          return;
+        }
+        openVoiceReview(new File([blob], `voice-${Date.now()}.${extForAudioType(type)}`, { type }));
       };
       mediaRecorder.start();
       voiceBtn.classList.remove('starting');
@@ -969,10 +974,32 @@
       voiceBtn.title = 'Stop recording';
     } catch (err) {
       resetVoiceButton();
-      alert('Microphone access denied or not available');
+      const reason = err && err.name === 'NotAllowedError'
+        ? 'Microphone permission was denied. Allow it for this site in your browser settings, then tap again.'
+        : err && err.name === 'NotFoundError'
+          ? 'No microphone was found on this device.'
+          : `Could not start recording (${err?.name || 'error'}: ${err?.message || 'unknown'})`;
+      alert(reason);
     } finally {
       voiceStarting = false;
     }
+  }
+
+  /* Chrome/Firefox record webm; iOS Safari only does mp4, and recording it
+     while claiming webm produced a file that wouldn't play back. */
+  function pickRecorderOptions() {
+    if (typeof MediaRecorder?.isTypeSupported !== 'function') return undefined;
+    for (const mimeType of ['audio/webm', 'audio/mp4', 'audio/ogg']) {
+      if (MediaRecorder.isTypeSupported(mimeType)) return { mimeType };
+    }
+    return undefined;
+  }
+
+  function extForAudioType(type) {
+    if (type.includes('mp4')) return 'm4a';
+    if (type.includes('ogg')) return 'ogg';
+    if (type.includes('mpeg')) return 'mp3';
+    return 'webm';
   }
 
   async function sendPendingVoiceNote() {
