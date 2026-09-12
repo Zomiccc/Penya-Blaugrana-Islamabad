@@ -189,15 +189,27 @@
   }
   .wa-vr-discard:hover{background:var(--grana);color:#fff}
 
+  /* align-items:flex-end so the buttons stay pinned to the bottom line as
+     the message box grows upward. */
   .wa-composer{
-    display:flex;align-items:center;gap:8px;padding:10px 12px;flex-shrink:0;
+    display:flex;align-items:flex-end;gap:8px;padding:10px 12px;flex-shrink:0;
     border-top:1px solid var(--line);background:rgba(0,0,0,.25);
   }
-  .wa-composer input[type=text]{
+  /* A textarea, not an input, so a long message wraps onto more lines and
+     grows the box instead of scrolling sideways out of view. Height is set
+     from the content by JS, capped at max-height — past that it scrolls
+     vertically. */
+  .wa-composer textarea{
     flex:1;min-width:0;background:rgba(0,0,0,.45);border:1px solid var(--line);color:var(--chalk);
-    padding:11px 14px;border-radius:20px;font-family:inherit;font-size:.86rem;
+    padding:11px 14px;border-radius:18px;font-family:inherit;font-size:.86rem;line-height:1.4;
+    resize:none;overflow-y:auto;max-height:120px;
+    white-space:pre-wrap;overflow-wrap:anywhere;
+    /* style.css sets a global textarea{min-height:130px} for the big form
+       textareas; without overriding it the reply box can never shrink to a
+       single line. */
+    min-height:0;height:42px;
   }
-  .wa-composer input[type=text]:focus{outline:none;border-color:var(--gold)}
+  .wa-composer textarea:focus{outline:none;border-color:var(--gold)}
   .wa-c-btn{
     flex-shrink:0;width:38px;height:38px;border-radius:50%;cursor:pointer;
     display:flex;align-items:center;justify-content:center;font-size:.95rem;
@@ -304,7 +316,7 @@
     </p>
     <form id="addMemberForm" class="pricing-row" style="align-items:flex-end">
       <div class="field"><label>First Name</label><input type="text" id="addFirstName" required></div>
-      <div class="field"><label>Last Name</label><input type="text" id="addLastName"></div>
+      <div class="field"><label>Last Name</label><input type="text" id="addLastName" required></div>
       <div class="field" style="min-width:220px"><label>Email</label><input type="email" id="addEmail" required></div>
       <div class="field">
         <label>Type</label>
@@ -418,7 +430,7 @@
         <div class="wa-composer">
           <button class="wa-c-btn" id="adminChatAttach" title="Attach a file">📎</button>
           <input type="file" id="adminChatFile" hidden accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
-          <input type="text" id="adminChatText" placeholder="Type a message…" maxlength="2000">
+          <textarea id="adminChatText" placeholder="Type a message…" maxlength="2000" rows="1"></textarea>
           <button class="wa-c-btn mic" id="adminChatVoice" title="Record voice note"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
           <button class="wa-c-btn send" id="adminChatSend" title="Send">➤</button>
         </div>

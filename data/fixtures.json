@@ -1,6 +1,6 @@
 {
-  "lastSync": "2026-09-11T10:13:38.666Z",
-  "nextSync": "2026-09-11T22:13:38.675Z",
+  "lastSync": "2026-09-12T07:32:07.821Z",
+  "nextSync": "2026-09-12T19:32:07.828Z",
   "apiStatus": "ok",
   "lastError": null,
   "matches": [
@@ -1707,43 +1707,6 @@
       "goals": []
     },
     {
-      "id": 564667,
-      "utcDate": "2026-09-04T19:00:00Z",
-      "status": "FINISHED",
-      "minute": null,
-      "injuryTime": null,
-      "competitionId": 2014,
-      "competition": "Primera Division",
-      "competitionCode": "PD",
-      "competitionEmblem": "https://crests.football-data.org/laliga.png",
-      "season": {
-        "id": 2518,
-        "startDate": "2026-08-16",
-        "endDate": "2027-05-30",
-        "currentMatchday": 6,
-        "winner": null
-      },
-      "matchday": 4,
-      "stage": "REGULAR_SEASON",
-      "group": null,
-      "venue": "Estadio Benito Villamarín",
-      "city": "Avenida de Heliópolis, s/n Sevilla 41012",
-      "homeTeamId": 90,
-      "homeTeam": "Real Betis Balompié",
-      "homeCrest": "https://crests.football-data.org/90.png",
-      "awayTeamId": 86,
-      "awayTeam": "Real Madrid CF",
-      "awayCrest": "https://crests.football-data.org/86.png",
-      "isHome": false,
-      "isAway": false,
-      "isBarcaMatch": false,
-      "score": {
-        "home": 1,
-        "away": 0
-      },
-      "goals": []
-    },
-    {
       "id": 564663,
       "utcDate": "2026-09-05T14:15:00Z",
       "status": "FINISHED",
@@ -2042,7 +2005,7 @@
     {
       "id": 564669,
       "utcDate": "2026-09-11T19:00:00Z",
-      "status": "TIMED",
+      "status": "FINISHED",
       "minute": null,
       "injuryTime": null,
       "competitionId": 2014,
@@ -2071,8 +2034,8 @@
       "isAway": false,
       "isBarcaMatch": false,
       "score": {
-        "home": null,
-        "away": null
+        "home": 1,
+        "away": 0
       },
       "goals": []
     },
@@ -10768,6 +10731,43 @@
       "score": {
         "home": null,
         "away": null
+      },
+      "goals": []
+    },
+    {
+      "id": 564667,
+      "utcDate": "2026-09-04T19:00:00Z",
+      "status": "FINISHED",
+      "minute": null,
+      "injuryTime": null,
+      "competitionId": 2014,
+      "competition": "Primera Division",
+      "competitionCode": "PD",
+      "competitionEmblem": "https://crests.football-data.org/laliga.png",
+      "season": {
+        "id": 2518,
+        "startDate": "2026-08-16",
+        "endDate": "2027-05-30",
+        "currentMatchday": 6,
+        "winner": null
+      },
+      "matchday": 4,
+      "stage": "REGULAR_SEASON",
+      "group": null,
+      "venue": "Estadio Benito Villamarín",
+      "city": "Avenida de Heliópolis, s/n Sevilla 41012",
+      "homeTeamId": 90,
+      "homeTeam": "Real Betis Balompié",
+      "homeCrest": "https://crests.football-data.org/90.png",
+      "awayTeamId": 86,
+      "awayTeam": "Real Madrid CF",
+      "awayCrest": "https://crests.football-data.org/86.png",
+      "isHome": false,
+      "isAway": false,
+      "isBarcaMatch": false,
+      "score": {
+        "home": 1,
+        "away": 0
       },
       "goals": []
     },

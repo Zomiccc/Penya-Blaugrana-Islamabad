@@ -10,6 +10,58 @@ document.addEventListener("DOMContentLoaded", () => {
       "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;opacity:0;visibility:hidden;transition:opacity 0.3s ease,visibility 0.3s ease;pointer-events:none;";
     document.body.appendChild(backdrop);
 
+    /* Scroll lock for the open menu.
+       body{overflow:hidden} alone does NOT hold on iOS Safari or Android
+       WebView — the page keeps scrolling behind the menu. Pinning the body
+       with position:fixed does, but it collapses the scroll position to the
+       top, so the offset is stashed and restored on close to stop the page
+       jumping. */
+    let lockedScrollY = 0;
+    let isLocked = false;
+    const setBackgroundScrollLocked = (locked) => {
+      // setMenu(false) also runs once on page load; without this guard the
+      // restore below would scroll every page to the top on arrival.
+      if (locked === isLocked) return;
+      isLocked = locked;
+      if (locked) {
+        lockedScrollY = window.scrollY || window.pageYOffset || 0;
+        document.documentElement.classList.add("menu-locked");
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${lockedScrollY}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.width = "100%";
+        document.body.style.overflow = "hidden";
+      } else {
+        document.documentElement.classList.remove("menu-locked");
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        // The site sets html{scroll-behavior:smooth}, which turns this
+        // restore into an animation that gets clamped to 0 before the
+        // un-fixed layout has its height back — landing the user at the top
+        // of the page instead of where they were. Force it instant.
+        const html = document.documentElement;
+        const previousBehavior = html.style.scrollBehavior;
+        html.style.scrollBehavior = "auto";
+        window.scrollTo(0, lockedScrollY);
+        // While the body was pinned, window.scrollY read 0, so the
+        // scroll-driven header expanded out of its condensed state and the
+        // page got taller. Re-apply the offset once that has settled,
+        // otherwise closing the menu leaves the page ~18px out.
+        requestAnimationFrame(() => {
+          window.scrollTo(0, lockedScrollY);
+          requestAnimationFrame(() => {
+            window.scrollTo(0, lockedScrollY);
+            html.style.scrollBehavior = previousBehavior;
+          });
+        });
+      }
+    };
+
     const setMenu = (open) => {
       nav.classList.toggle("open", open);
       burger.classList.toggle("open", open);
@@ -21,13 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
         backdrop.style.opacity = "1";
         backdrop.style.visibility = "visible";
         backdrop.style.pointerEvents = "auto";
-        document.body.style.overflow = "hidden";
       } else {
         backdrop.style.opacity = "0";
         backdrop.style.visibility = "hidden";
         backdrop.style.pointerEvents = "none";
-        document.body.style.overflow = "";
       }
+      setBackgroundScrollLocked(open);
     };
     setMenu(false);
 

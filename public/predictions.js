@@ -507,12 +507,13 @@
               ? `<span class="rm-live">● Live</span><span class="rm-score">${m.live.home}–${m.live.away}</span>`
               : '<span class="rm-live">In progress</span>'}
         </div>
+        ${m.winner ? `<div class="rm-winner">🏆 Closest prediction: <b>${escapeHtml(m.winner.name)}</b></div>` : ''}
         <div class="reveal-body">
           ${m.predictions.map((p) => {
             const cls = p.points === 3 ? 'p3' : p.points === 1 ? 'p1' : 'p0';
             return `
-              <div class="reveal-row ${p.isMe ? 'me' : ''}">
-                <span>${escapeHtml(p.member)}${p.isMe ? ' (you)' : ''}</span>
+              <div class="reveal-row ${p.isMe ? 'me' : ''} ${p.isWinner ? 'winner' : ''}">
+                <span>${p.isWinner ? '<span class="rr-trophy">🏆</span>' : ''}${escapeHtml(p.member)}${p.isMe ? ' (you)' : ''}</span>
                 <span class="rr-pred">${p.homeGoals}–${p.awayGoals}</span>
                 <span class="rr-pts ${cls}">${
                   p.points === null ? 'pending' : `${p.points} pt${p.points === 1 ? '' : 's'}`
@@ -537,6 +538,7 @@
     });
     const title = $('leaderboardTitle');
     if (title) title.textContent = `${COMPETITION_LABELS[code]} Table`;
+    syncJumpButtons();
 
     // Everything on the page is scoped to the chosen competition.
     loadWindow();
@@ -550,6 +552,35 @@
     document.querySelectorAll('.comp-tab').forEach((tab) => {
       tab.addEventListener('click', () => setCompetition(tab.dataset.competition));
     });
+    document.querySelectorAll('.jump-btn').forEach((btn) => {
+      btn.addEventListener('click', () => jumpToTable(btn.dataset.jump));
+    });
+    syncJumpButtons();
+  }
+
+  /** Scroll straight to one of the tables and flash it briefly. */
+  function jumpToTable(panelId) {
+    const panel = $(panelId);
+    if (!panel || panel.hidden) return;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    panel.classList.remove('jump-target');
+    // Reflow so the animation re-runs if the same button is pressed twice.
+    void panel.offsetWidth;
+    panel.classList.add('jump-target');
+    setTimeout(() => panel.classList.remove('jump-target'), 1800);
+  }
+
+  /** LaLiga has two tables; the Champions League has only one, so the
+   *  season-standings button is hidden there rather than pointing at
+   *  something that doesn't exist. */
+  function syncJumpButtons() {
+    const isUCL = selectedCompetition === 'CL';
+    const leagueBtn = $('jumpLeagueBtn');
+    const seasonBtn = $('jumpSeasonBtn');
+    if (leagueBtn) {
+      leagueBtn.textContent = isUCL ? 'Penya UEFA Champions League Table' : 'Penya LaLiga Table';
+    }
+    if (seasonBtn) seasonBtn.hidden = isUCL;
   }
 
   /* ---------------------------- loaders ---------------------------- */
@@ -684,7 +715,14 @@
     } else {
       document.body.classList.remove('chat-locked');
       document.body.style.top = '';
+      // html{scroll-behavior:smooth} would animate this restore and clamp it
+      // to 0 before the un-fixed layout regains its height, dumping the user
+      // at the top of the page. Force it instant.
+      const html = document.documentElement;
+      const previousBehavior = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
       window.scrollTo(0, chatScrollY);
+      html.style.scrollBehavior = previousBehavior;
     }
   }
 

@@ -802,6 +802,9 @@ footer p{font-size:.9rem;color:var(--muted-lt)}
     flex-direction:column;align-items:flex-start;justify-content:center;
     padding:40px 34px;gap:26px;
     transform:translateX(100%);transition:transform .38s cubic-bezier(.16,.84,.44,1);z-index:9999;
+    /* The page behind is pinned while this is open, so the menu itself is
+       the only thing allowed to scroll — and only if it outgrows the screen. */
+    overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   }
   nav.main-nav a{font-size:1rem;letter-spacing:.1em;position:relative;z-index:10000}
   nav.main-nav.open{transform:translateX(0)}

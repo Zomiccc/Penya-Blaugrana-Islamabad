@@ -229,6 +229,10 @@ function initHeaderCondense() {
   let ticking = false;
   const update = () => {
     ticking = false;
+    // While the mobile menu pins the body, window.scrollY reads 0 — acting
+    // on that would expand the header, change the page height, and leave the
+    // page offset once the menu closes. Hold the current state instead.
+    if (document.documentElement.classList.contains('menu-locked')) return;
     header.classList.toggle('condensed', window.scrollY > 60);
   };
   window.addEventListener('scroll', () => {

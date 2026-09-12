@@ -53,8 +53,11 @@ async function init() {
   document.getElementById('broadcastForm').addEventListener('submit', sendBroadcast);
   document.getElementById('adminChatSend').addEventListener('click', sendAdminReply);
   document.getElementById('adminChatText').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); sendAdminReply(); }
+    // Enter still sends; Shift+Enter now starts a new line, which the
+    // single-line input couldn't do.
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAdminReply(); }
   });
+  document.getElementById('adminChatText').addEventListener('input', autoGrowAdminChatInput);
   document.getElementById('adminChatAttach').addEventListener('click', () => {
     if (!activeConvId) return;
     document.getElementById('adminChatFile').click();
@@ -682,6 +685,16 @@ async function loadAdminConversations() {
   }
 }
 
+/** Grow the reply box to fit what's typed, up to the CSS max-height (after
+ *  which it scrolls vertically). Reset to 'auto' first so it shrinks back
+ *  when text is deleted. */
+function autoGrowAdminChatInput() {
+  const el = document.getElementById('adminChatText');
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight}px`;
+}
+
 /* ---------------------------- Conversation list rendering ---------------------------- */
 let allConversations = [];
 
@@ -968,6 +981,7 @@ async function sendAdminReply() {
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  autoGrowAdminChatInput(); // collapse back to one line after sending
   const replyTo = adminReplyToMsgId;
   cancelAdminReply();
   try {

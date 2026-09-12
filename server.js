@@ -482,8 +482,10 @@ app.post('/api/admin/members/:id/mark-paid', requireAdmin, async (req, res) => {
 // to the Match Predictions page immediately.
 app.post('/api/admin/members/add', requireAdmin, async (req, res) => {
   const { firstName, lastName, email, membershipType, password } = req.body || {};
-  if (!email || !firstName) {
-    return res.status(400).json({ error: 'First name and email are required' });
+  // Both names are mandatory: a member with no surname shows up as a
+  // half-name everywhere they're listed (leaderboards, chat, predictions).
+  if (!email || !String(firstName || '').trim() || !String(lastName || '').trim()) {
+    return res.status(400).json({ error: 'First name, last name and email are all required' });
   }
   const normalizedEmail = String(email).trim().toLowerCase();
   if (String(password || '').length < 8) {
@@ -1016,6 +1018,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         .map(({ p, name }) => {
           const points = finished ? predictor.scorePrediction(p, match, lastSync) : null;
           return {
+            memberId: p.memberId,
             member: name,
             isMe: p.memberId === req.member.id,
             homeGoals: p.homeGoals,
@@ -1025,6 +1028,17 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
           };
         })
         .sort((a, b) => (b.points || 0) - (a.points || 0) || a.member.localeCompare(b.member));
+
+      // Whoever guessed closest to the final score — worked out automatically
+      // once the result is in. Independent of points: a member can take the
+      // match without an exact score.
+      const winner = predictor.pickMatchWinner(
+        db.predictions,
+        match,
+        lastSync,
+        (id) => nameById.get(id) || restoredNameById.get(id) || '',
+      );
+      for (const row of rows) row.isWinner = Boolean(winner && row.memberId === winner.memberId);
 
       return {
         fixtureId: match.id,
@@ -1038,6 +1052,7 @@ app.get('/api/predictions/all', requireMember, (req, res) => {
         competition: match.competition,
         actual: finished ? { home: match.score.home, away: match.score.away } : null,
         live,
+        winner: winner ? { memberId: winner.memberId, name: winner.name } : null,
         predictions: rows,
       };
     })
@@ -1461,7 +1476,13 @@ app.post('/api/chat/messages', requireMember, async (req, res) => {
   });
 
   const memberName = `${req.member.firstName} ${req.member.lastName}`.trim();
-  notifyAdminDevices({ title: `New message from ${memberName}`, body: msg.text });
+  notifyAdminDevices({
+    title: `New message from ${memberName}`,
+    body: msg.text,
+    // Lets the admin answer straight from the notification.
+    replyUrl: '/api/admin/chat/reply',
+    conversationId: msg.conversationId,
+  });
 
   res.json({ ok: true, message: msg });
 });
@@ -1509,6 +1530,8 @@ app.post('/api/chat/upload', requireMember, chatUpload.single('file'), async (re
   notifyAdminDevices({
     title: `New message from ${memberName}`,
     body: isVoice ? '🎤 Sent a voice note' : `📎 Sent an attachment: ${req.file.originalname}`,
+    replyUrl: '/api/admin/chat/reply',
+    conversationId: msg.conversationId,
   });
 
   res.json({ ok: true, message: msg });
@@ -1695,7 +1718,7 @@ app.post('/api/admin/chat/reply', requireAdmin, async (req, res) => {
   });
 
   if (!found) return res.status(404).json({ error: 'Conversation not found' });
-  notifyMemberDevices(notifyMemberId, { title: 'Message from Admin', body: msg.text });
+  notifyMemberDevices(notifyMemberId, { title: 'Message from Admin', body: msg.text, replyUrl: '/api/chat/messages' });
   res.json({ ok: true, message: msg });
 });
 
@@ -1749,6 +1772,7 @@ app.post('/api/admin/chat/upload', requireAdmin, chatUpload.single('file'), asyn
 
   if (!found) return res.status(404).json({ error: 'Conversation not found' });
   notifyMemberDevices(notifyMemberId, {
+    replyUrl: '/api/chat/messages',
     title: 'Message from Admin',
     body: isVoice ? '🎤 Sent you a voice note' : `📎 Sent you a file: ${req.file.originalname}`,
   });
