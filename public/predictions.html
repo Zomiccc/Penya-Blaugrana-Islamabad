@@ -79,22 +79,35 @@
     transition:color .2s ease,border-color .2s ease,background .2s ease;
   }
   .comp-tab:hover{color:var(--chalk);border-color:var(--gold)}
+  /* Competition tabs keep the club's deep red. */
   .comp-tab.is-active{
     background:var(--grana);border-color:var(--grana);color:#fff;
   }
+  /* Pressing any of these buttons flashes the club gold rather than going
+     transparent — same feedback on the tabs and the table buttons. */
+  .comp-tab:active,
+  .comp-tab.is-pressed{
+    background:var(--gold);border-color:var(--gold);color:#04060F;
+  }
   .comp-tab:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
-  /* Jump-to-table buttons, sitting under the competition tabs. Wrap rather
-     than overflow on a narrow screen. */
+  /* Jump-to-table buttons, sitting under the competition tabs. Royal blue,
+     the other half of the club's palette, so they read as a separate group
+     from the deep-red competition tabs. Wrap rather than overflow on a
+     narrow screen. */
   .table-jump{display:flex;gap:8px;flex-wrap:wrap;margin:-16px 0 26px}
   .jump-btn{
     flex:1 1 200px;min-width:0;padding:11px 16px;cursor:pointer;
-    background:transparent;border:1px solid var(--line);border-radius:var(--radius-lg);
-    color:var(--chalk-dim);font-family:var(--mono);font-weight:700;
+    background:var(--blau);border:1px solid var(--blau);border-radius:var(--radius-lg);
+    color:#fff;font-family:var(--mono);font-weight:700;
     text-transform:uppercase;letter-spacing:.08em;font-size:.62rem;line-height:1.3;
     transition:color .2s ease,border-color .2s ease,background .2s ease;
   }
-  .jump-btn:hover{color:var(--gold);border-color:var(--gold);background:rgba(237,187,0,.06)}
+  .jump-btn:hover{background:var(--blau-lt);border-color:var(--blau-lt);color:#fff}
+  .jump-btn:active,
+  .jump-btn.is-pressed{
+    background:var(--gold);border-color:var(--gold);color:#04060F;
+  }
   .jump-btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
   /* Brief highlight on the table you landed on, so the jump is obvious. */
   .panel.jump-target{animation:jumpFlash 1.6s ease-out}

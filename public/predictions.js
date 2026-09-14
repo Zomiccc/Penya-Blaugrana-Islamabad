@@ -550,12 +550,25 @@
 
   function initCompetitionTabs() {
     document.querySelectorAll('.comp-tab').forEach((tab) => {
-      tab.addEventListener('click', () => setCompetition(tab.dataset.competition));
+      tab.addEventListener('click', () => {
+        flashPressed(tab);
+        setCompetition(tab.dataset.competition);
+      });
     });
     document.querySelectorAll('.jump-btn').forEach((btn) => {
-      btn.addEventListener('click', () => jumpToTable(btn.dataset.jump));
+      btn.addEventListener('click', () => {
+        flashPressed(btn);
+        jumpToTable(btn.dataset.jump);
+      });
     });
     syncJumpButtons();
+  }
+
+  /* On a touchscreen :active ends the moment the finger lifts, so the gold
+     would barely register. Hold it briefly so the tap is clearly felt. */
+  function flashPressed(btn) {
+    btn.classList.add('is-pressed');
+    setTimeout(() => btn.classList.remove('is-pressed'), 600);
   }
 
   /** Scroll straight to one of the tables and flash it briefly. */
