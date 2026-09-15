@@ -91,6 +91,15 @@
   }
   .comp-tab:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
+  /* Week picker on the weekly table — look back at earlier match weeks. */
+  .week-picker{
+    margin-left:auto;background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);
+    padding:7px 10px;border-radius:4px;font-family:var(--mono);font-size:.62rem;
+    letter-spacing:.06em;cursor:pointer;max-width:150px;
+  }
+  .week-picker:focus{outline:none;border-color:var(--gold)}
+  @media(max-width:600px){.week-picker{margin-left:0}}
+
   /* Jump-to-table buttons, sitting under the competition tabs. Royal blue,
      the other half of the club's palette, so they read as a separate group
      from the deep-red competition tabs. Wrap rather than overflow on a
@@ -709,6 +718,7 @@
           <div class="panel" id="leaguePanel" style="margin-bottom:26px">
             <div class="panel-head">
               <h3 id="leaderboardTitle">Penya LaLiga Table</h3>
+              <select id="weekPicker" class="week-picker" aria-label="Choose match week"></select>
             </div>
             <div class="panel-body">
               <p class="empty-note" id="leaderboardNote" style="margin-bottom:14px" hidden></p>

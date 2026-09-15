@@ -1076,11 +1076,27 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
   const matches = fixtureMatches();
   const scope = ['week', 'season'].includes(req.query.scope) ? req.query.scope : 'all';
 
-  const round = predictor.getCurrentRound(matches, new Date(), competitionCode);
+  const now = new Date();
+  const lastSync = fixtureLastSync();
+  const round = predictor.getCurrentRound(matches, now, competitionCode);
+  const weeks = predictor.getSelectableWeeks(matches, now, competitionCode);
+
+  // ?matchday=N views an earlier week through the week picker. Only weeks
+  // the picker actually offers are accepted, so a hand-typed future week
+  // can't be used to peek at a round nobody has played.
+  const requestedWeek = Number(req.query.matchday);
+  const viewingWeek = weeks.includes(requestedWeek) ? requestedWeek : round.matchday;
+
   const opts = {};
   if (scope === 'week') {
-    opts.matchday = round.matchday;
+    opts.matchday = viewingWeek;
     opts.seasonId = round.seasonId;
+    // Third tiebreak: level on points and exacts, the better season
+    // position comes first.
+    const seasonTable = predictor.buildLeaderboard(
+      db.predictions, currentMembers, matches, lastSync, competitionCode, { seasonId: round.seasonId },
+    );
+    opts.seasonRankByMemberId = new Map(seasonTable.map((r) => [r.memberId, r.rank]));
   } else if (scope === 'season') {
     opts.seasonId = round.seasonId;
   }
@@ -1089,7 +1105,7 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
     db.predictions,
     currentMembers,
     matches,
-    fixtureLastSync(),
+    lastSync,
     competitionCode,
     opts,
   );
@@ -1098,7 +1114,9 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
     points: predictor.POINTS,
     competition: competitionCode,
     scope,
-    matchday: round.matchday,
+    matchday: scope === 'week' ? viewingWeek : round.matchday,
+    currentMatchday: round.matchday,
+    weeks,
     seasonId: round.seasonId,
   });
 });

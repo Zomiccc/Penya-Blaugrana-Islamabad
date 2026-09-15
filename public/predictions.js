@@ -471,7 +471,10 @@
     const note = $('leaderboardNote');
     if (note) {
       if (data.scope === 'week' && Number.isInteger(data.matchday)) {
-        note.textContent = `Match week ${data.matchday} only — this table starts from zero every week. Your all-time total is under "My points".`;
+        const isPast = data.matchday !== data.currentMatchday;
+        note.textContent = isPast
+          ? `Match week ${data.matchday} — a completed week.`
+          : `Match week ${data.matchday} only — this table starts from zero every week. Your all-time total is under "My points".`;
         note.hidden = false;
       } else {
         note.hidden = true;
@@ -479,7 +482,7 @@
     }
 
     if (!rows.length) {
-      el.innerHTML = '<p class="empty-note">No points on the board for this week yet.</p>';
+      el.innerHTML = '<p class="empty-note">Nobody has predicted this week yet.</p>';
       return;
     }
     renderLeaderboardInto('leaderboard', data, false);
@@ -538,6 +541,8 @@
     });
     const title = $('leaderboardTitle');
     if (title) title.textContent = `${COMPETITION_LABELS[code]} Table`;
+    // Week numbers don't carry across competitions — back to current week.
+    selectedWeek = null;
     syncJumpButtons();
 
     // Everything on the page is scoped to the chosen competition.
@@ -561,6 +566,13 @@
         jumpToTable(btn.dataset.jump);
       });
     });
+    const picker = $('weekPicker');
+    if (picker) {
+      picker.addEventListener('change', () => {
+        selectedWeek = picker.value === '' ? null : Number(picker.value);
+        loadLeaderboard();
+      });
+    }
     syncJumpButtons();
   }
 
@@ -615,15 +627,44 @@
       renderMine(await api(`/api/predictions/me${competitionQuery()}`));
     } catch { /* sidebar is non-critical */ }
   }
+  // Which match week the table is showing. null = whatever the server says
+  // is current; set by the week picker to look back at an earlier week.
+  let selectedWeek = null;
+
   async function loadLeaderboard() {
-    // La Liga runs a weekly table that resets each match week; the
-    // Champions League keeps the plain running total it always had.
-    const scope = selectedCompetition === 'PD' ? '&scope=week' : '';
+    // Both tables are weekly and resettable, each with its own week picker.
+    const week = selectedWeek === null ? '' : `&matchday=${encodeURIComponent(selectedWeek)}`;
     try {
-      renderLeaderboard(await api(`/api/predictions/leaderboard${competitionQuery()}${scope}`));
+      const data = await api(`/api/predictions/leaderboard${competitionQuery()}&scope=week${week}`);
+      renderWeekPicker(data);
+      renderLeaderboard(data);
     } catch (err) {
       $('leaderboard').innerHTML = `<p class="empty-note">${escapeHtml(err.message)}</p>`;
     }
+  }
+
+  /** Current Week first, then earlier weeks newest-first. */
+  function renderWeekPicker(data) {
+    const picker = $('weekPicker');
+    if (!picker) return;
+    const weeks = data.weeks || [];
+    if (!weeks.length) {
+      picker.hidden = true;
+      return;
+    }
+    picker.hidden = false;
+
+    const current = data.currentMatchday;
+    const options = [`<option value="">Current Week</option>`]
+      .concat(weeks.filter((w) => w !== current).map((w) => `<option value="${w}">Week ${w}</option>`));
+    const markup = options.join('');
+    // Only rebuild when the list actually changes, so the 60s refresh
+    // doesn't close the dropdown while someone is using it.
+    if (picker.dataset.markup !== markup) {
+      picker.innerHTML = markup;
+      picker.dataset.markup = markup;
+    }
+    picker.value = selectedWeek === null ? '' : String(selectedWeek);
   }
 
   // Season standings are a La Liga-only concept — the panel stays hidden
