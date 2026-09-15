@@ -364,6 +364,27 @@
   </div>
 
   <div class="panel">
+    <h2>Week Audit — Show the Working</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:18px">
+      Pick a competition and a week to see exactly how every total on the members' table was reached:
+      each pick, the final score, and the points it earned. This runs the identical calculation the
+      members' table runs — it only displays it, and changes nobody's points.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px">
+      <select id="auditComp" style="background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:9px 12px;border-radius:2px;font-size:.8rem">
+        <option value="PD">Penya LaLiga</option>
+        <option value="CL">Penya UEFA Champions League</option>
+      </select>
+      <select id="auditWeek" style="background:rgba(0,0,0,.4);border:1px solid var(--line);color:var(--chalk);padding:9px 12px;border-radius:2px;font-size:.8rem"></select>
+      <button class="btn" id="auditRefresh" style="padding:9px 18px;font-size:.8rem">Refresh</button>
+    </div>
+    <div id="auditSummary" style="margin-bottom:14px"></div>
+    <div id="auditOut" style="display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto">
+      <p style="color:var(--muted);font-size:.8rem">Loading…</p>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Orphaned Predictions</h2>
     <p style="color:var(--muted);font-size:.9rem;margin-top:-14px;margin-bottom:20px">
       Predictions and chat history from members who were later deleted stay forever — only their name is gone.

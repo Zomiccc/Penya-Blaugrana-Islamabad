@@ -1177,6 +1177,109 @@ app.post('/api/admin/predictions/matches/:id/unhide', requireAdmin, (req, res) =
   res.json({ ok: true, hiddenMatches: hidden });
 });
 
+/* ---------------------------- Admin: week audit ----------------------------
+   "The points are wrong" can't be answered without showing the working. This
+   returns exactly what the members' table shows for a week — from the SAME
+   buildLeaderboard() call, never a second scoring path, so the audit cannot
+   disagree with the table it audits — plus the reasoning behind every row:
+   each pick, the final score, and the points it earned. If a total looks
+   wrong, the match responsible is named right beside it.
+
+   Read-only. It scores nothing and stores nothing. */
+
+// GET /api/admin/predictions/audit?competition=PD&matchday=4
+//   ?scope=season audits the cumulative season standings instead of one week
+//   — the same distinction members see between the weekly Penya table (which
+//   resets) and the season standings (which don't).
+app.get('/api/admin/predictions/audit', requireAdmin, (req, res) => {
+  const db = readDb();
+  const competitionCode = requestedCompetition(req);
+  const matches = fixtureMatches();
+  const lastSync = fixtureLastSync();
+  const now = new Date();
+
+  // Same member set, same name resolution as /api/predictions/leaderboard.
+  const currentMembers = db.members.filter((m) => m.status === 'paid');
+  const restored = db.deletedMemberNames || {};
+  const resolveName = (id) =>
+    (restored[id] ? `${restored[id].firstName} ${restored[id].lastName}`.trim() : '');
+
+  const round = predictor.getCurrentRound(matches, now, competitionCode);
+  const weeks = predictor.getSelectableWeeks(matches, now, competitionCode);
+  const seasonScope = req.query.scope === 'season';
+  const requestedWeek = Number(req.query.matchday);
+  const viewingWeek = seasonScope
+    ? null
+    : (weeks.includes(requestedWeek) ? requestedWeek : round.matchday);
+
+  const opts = { seasonId: round.seasonId, resolveName };
+  if (!seasonScope) opts.matchday = viewingWeek;
+
+  const table = predictor.buildLeaderboard(
+    db.predictions, currentMembers, matches, lastSync, competitionCode, opts,
+  );
+
+  // The fixtures this table is scored over, in kickoff order.
+  const inScope = matches
+    .filter((m) => m.competitionCode === competitionCode)
+    .filter((m) => (m.season?.id ?? null) === round.seasonId)
+    .filter((m) => seasonScope || m.matchday === viewingWeek)
+    .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+  const inScopeIds = new Set(inScope.map((m) => String(m.id)));
+  const matchById = new Map(matches.map((m) => [String(m.id), m]));
+
+  const countByFixture = new Map();
+  const picksByMember = new Map();
+  for (const p of db.predictions || []) {
+    const key = String(p.fixtureId);
+    countByFixture.set(key, (countByFixture.get(key) || 0) + 1);
+    if (!inScopeIds.has(key)) continue;
+    const match = matchById.get(key);
+    const scored = predictor.hasFinalScore(match, lastSync);
+    if (!picksByMember.has(p.memberId)) picksByMember.set(p.memberId, []);
+    picksByMember.get(p.memberId).push({
+      fixtureId: p.fixtureId,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      utcDate: match.utcDate,
+      guess: { home: p.homeGoals, away: p.awayGoals },
+      actual: scored ? { home: match.score.home, away: match.score.away } : null,
+      points: scored ? predictor.scorePrediction(p, match, lastSync) : null,
+    });
+  }
+
+  const liveMemberIds = new Set(db.members.map((m) => m.id));
+  res.json({
+    competition: competitionCode,
+    scope: seasonScope ? 'season' : 'week',
+    matchday: viewingWeek,
+    currentMatchday: round.matchday,
+    seasonId: round.seasonId,
+    weeks,
+    // Ceiling for what is actually scorable: fixtures still to be played
+    // can not have contributed points to anyone yet.
+    maxPoints: inScope.filter((m) => predictor.hasFinalScore(m, lastSync)).length * predictor.POINTS.EXACT_SCORE,
+    matches: inScope.map((m) => ({
+      fixtureId: m.id,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      utcDate: m.utcDate,
+      matchday: m.matchday,
+      status: m.status,
+      actual: predictor.hasFinalScore(m, lastSync)
+        ? { home: m.score.home, away: m.score.away }
+        : null,
+      predictionsCount: countByFixture.get(String(m.id)) || 0,
+    })),
+    rows: table.map((r) => ({
+      ...r,
+      deleted: !liveMemberIds.has(r.memberId),
+      picks: (picksByMember.get(r.memberId) || [])
+        .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate)),
+    })),
+  });
+});
+
 /* ---------------------------- Admin: remove a single prediction ----------------------------
    Predictions are append-only by design: nothing in this app can EDIT a
    stored score, and that stays true — there is still no route that changes

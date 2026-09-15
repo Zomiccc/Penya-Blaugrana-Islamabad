@@ -84,6 +84,7 @@ async function init() {
   loadBroadcasts();
   loadPredictionResults();
   loadOrphanedPredictions();
+  initWeekAudit();
   loadAdminConversations();
   setInterval(loadAdminConversations, 5000);
 
@@ -573,6 +574,105 @@ async function toggleMatchHidden(fixtureId, hide) {
   } catch (err) {
     alert('Failed to update: ' + err.message);
   }
+}
+
+/* ---------------------------- Week audit ----------------------------
+   Shows the arithmetic behind the members' table so a disputed total can be
+   traced to the match that produced it. Read-only in every sense: it calls
+   one GET and renders what comes back. */
+let auditWeeksLoaded = null; // remembers which competition the picker is built for
+
+function initWeekAudit() {
+  const comp = document.getElementById('auditComp');
+  const week = document.getElementById('auditWeek');
+  if (!comp || !week) return;
+  comp.addEventListener('change', () => { auditWeeksLoaded = null; loadWeekAudit(); });
+  week.addEventListener('change', () => loadWeekAudit());
+  document.getElementById('auditRefresh')?.addEventListener('click', () => loadWeekAudit());
+  loadWeekAudit();
+}
+
+async function loadWeekAudit() {
+  const out = document.getElementById('auditOut');
+  const summaryEl = document.getElementById('auditSummary');
+  const compEl = document.getElementById('auditComp');
+  const weekEl = document.getElementById('auditWeek');
+  if (!out || !compEl || !weekEl) return;
+
+  const competition = compEl.value;
+  const chosen = weekEl.value;
+  const scopeQuery = chosen === 'season' ? '&scope=season' : (chosen ? `&matchday=${encodeURIComponent(chosen)}` : '');
+  out.innerHTML = '<p style="color:var(--muted);font-size:.8rem">Loading…</p>';
+
+  let data;
+  try {
+    data = await api(`/api/admin/predictions/audit?competition=${competition}${scopeQuery}`);
+  } catch (err) {
+    out.innerHTML = `<p style="color:var(--grana);font-size:.8rem">${escapeHtml(err.message)}</p>`;
+    return;
+  }
+
+  // Rebuild the week picker whenever the competition changes.
+  if (auditWeeksLoaded !== competition) {
+    const opts = (data.weeks || []).map((w) => {
+      const label = w === data.currentMatchday ? `Week ${w} (current)` : `Week ${w}`;
+      return `<option value="${w}">${label}</option>`;
+    });
+    opts.push('<option value="season">Whole season (cumulative)</option>');
+    weekEl.innerHTML = opts.join('');
+    auditWeeksLoaded = competition;
+  }
+  weekEl.value = data.scope === 'season' ? 'season' : String(data.matchday);
+
+  const scopeLabel = data.scope === 'season'
+    ? 'the whole season so far'
+    : `match week ${data.matchday}`;
+  const finished = (data.matches || []).filter((m) => m.actual).length;
+  summaryEl.innerHTML = `
+    <div style="border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-size:.8rem;color:var(--chalk-dim);line-height:1.7">
+      Showing <b style="color:var(--gold)">${escapeHtml(scopeLabel)}</b> —
+      ${data.matches.length} fixture${data.matches.length === 1 ? '' : 's'},
+      ${finished} with a final score, ${data.rows.length} participant${data.rows.length === 1 ? '' : 's'}.
+      Highest total possible here is <b style="color:var(--gold)">${data.maxPoints}</b>
+      (exact score 3, correct result 1).
+      <div style="margin-top:6px">${(data.matches || []).filter((m) => data.scope === 'week' || m.actual).map((m) => {
+        const score = m.actual ? `${m.actual.home}–${m.actual.away}` : m.status;
+        return `<span style="display:inline-block;margin:2px 10px 2px 0">${escapeHtml(m.homeTeam)} v ${escapeHtml(m.awayTeam)} <b style="color:var(--gold)">${escapeHtml(score)}</b> <span style="color:var(--muted)">· ${m.predictionsCount} predicted</span></span>`;
+      }).join('')}</div>
+    </div>`;
+
+  if (!data.rows.length) {
+    out.innerHTML = '<p style="color:var(--muted);font-size:.8rem">Nobody predicted this week.</p>';
+    return;
+  }
+
+  out.innerHTML = data.rows.map((r) => {
+    const picks = (r.picks || []).map((p) => {
+      const actual = p.actual ? `${p.actual.home}–${p.actual.away}` : 'not played yet';
+      const pts = p.points === null
+        ? '<span style="color:var(--muted)">—</span>'
+        : `<b style="color:${p.points === 3 ? 'var(--gold)' : p.points === 1 ? '#3ddc8a' : 'var(--muted)'}">+${p.points}</b>`;
+      return `<div style="font-size:.74rem;color:var(--chalk-dim);padding:2px 0;display:flex;gap:8px;flex-wrap:wrap">
+        <span style="min-width:260px">${escapeHtml(p.homeTeam)} v ${escapeHtml(p.awayTeam)}</span>
+        <span>guessed <b style="color:var(--chalk)">${p.guess.home}–${p.guess.away}</b></span>
+        <span style="color:var(--muted)">actual ${escapeHtml(actual)}</span>
+        <span>${pts}</span>
+      </div>`;
+    }).join('') || '<div style="font-size:.74rem;color:var(--muted)">No picks in this scope.</div>';
+
+    const missing = data.matches.length - (r.picks || []).length;
+    return `
+      <details style="border:1px solid var(--line);border-radius:4px;padding:10px 14px">
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.85rem">
+          <span style="color:var(--muted);font-family:var(--mono);min-width:28px">#${r.rank}</span>
+          <b style="color:var(--chalk)">${escapeHtml(r.name)}</b>
+          ${r.deleted ? '<span style="font-size:.62rem;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:1px 7px">deleted account</span>' : ''}
+          <span style="color:var(--gold)"><b>${r.points}</b> pts</span>
+          <span style="color:var(--muted);font-size:.75rem">${r.exact} exact · ${r.correctResult} correct result · ${r.predictionsMade} predicted${missing > 0 ? ` · missed ${missing}` : ''}</span>
+        </summary>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">${picks}</div>
+      </details>`;
+  }).join('');
 }
 
 /* ---------------------------- Orphaned predictions ---------------------------- */
