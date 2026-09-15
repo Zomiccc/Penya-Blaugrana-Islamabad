@@ -1078,6 +1078,11 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
 
   const now = new Date();
   const lastSync = fixtureLastSync();
+  // Names the admin re-attached to deleted members, so their past results
+  // stay in the table instead of vanishing from weeks they played in.
+  const restored = db.deletedMemberNames || {};
+  const resolveName = (id) =>
+    (restored[id] ? `${restored[id].firstName} ${restored[id].lastName}`.trim() : '');
   const round = predictor.getCurrentRound(matches, now, competitionCode);
   const weeks = predictor.getSelectableWeeks(matches, now, competitionCode);
 
@@ -1087,14 +1092,14 @@ app.get('/api/predictions/leaderboard', requireMember, (req, res) => {
   const requestedWeek = Number(req.query.matchday);
   const viewingWeek = weeks.includes(requestedWeek) ? requestedWeek : round.matchday;
 
-  const opts = {};
+  const opts = { resolveName };
   if (scope === 'week') {
     opts.matchday = viewingWeek;
     opts.seasonId = round.seasonId;
     // Third tiebreak: level on points and exacts, the better season
     // position comes first.
     const seasonTable = predictor.buildLeaderboard(
-      db.predictions, currentMembers, matches, lastSync, competitionCode, { seasonId: round.seasonId },
+      db.predictions, currentMembers, matches, lastSync, competitionCode, { seasonId: round.seasonId, resolveName },
     );
     opts.seasonRankByMemberId = new Map(seasonTable.map((r) => [r.memberId, r.rank]));
   } else if (scope === 'season') {
