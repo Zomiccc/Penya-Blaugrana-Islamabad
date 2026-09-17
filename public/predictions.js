@@ -947,8 +947,14 @@
     return out;
   }
 
+  // Guards an in-flight subscribe/unsubscribe so a second tap cannot race it.
+  // Deliberately NOT bell.disabled: the button has to keep looking live,
+  // because the label now changes the instant it is tapped.
+  let bellBusy = false;
+
   function toggleChatNotifications() {
     const bell = $('chatNotifyBtn');
+    if (bellBusy) return;
     const turningOn = !bell.classList.contains('is-on');
 
     if (turningOn) {
@@ -961,24 +967,42 @@
         return;
       }
       const permission = Notification.requestPermission();
-      bell.disabled = true;
+
+      // Say "on" immediately, then do the work. Arming push means a service
+      // worker handshake, a round trip to Google's or Apple's push service
+      // and another to our own server — several seconds on a phone, during
+      // which the button used to sit unchanged and look broken. It now
+      // reports the state the member asked for and catches up behind the
+      // scenes; if any of it fails the button drops back and says why.
+      bellBusy = true;
+      setBellState(true);
+
       Promise.resolve(permission)
         .then((result) => {
-          if (result !== 'granted') return null;
+          if (result !== 'granted') {
+            setBellState(false);
+            return null;
+          }
           return subscribeToChatPush();
         })
-        .then((ok) => { if (ok) setBellState(true); })
-        .catch((err) => alert('Could not turn notifications on: ' + err.message))
-        .finally(() => { bell.disabled = false; });
+        .catch((err) => {
+          setBellState(false);
+          alert('Could not turn notifications on: ' + err.message);
+        })
+        .finally(() => { bellBusy = false; });
       return;
     }
 
     if (!confirm('Turn notifications off for this device?')) return;
-    bell.disabled = true;
+    // Same the other way: off says off at once, the unsubscribe follows.
+    bellBusy = true;
+    setBellState(false);
     unsubscribeFromChatPush()
-      .then(() => setBellState(false))
-      .catch((err) => alert('Could not turn notifications off: ' + err.message))
-      .finally(() => { bell.disabled = false; });
+      .catch((err) => {
+        setBellState(true);
+        alert('Could not turn notifications off: ' + err.message);
+      })
+      .finally(() => { bellBusy = false; });
   }
 
   async function subscribeToChatPush() {
