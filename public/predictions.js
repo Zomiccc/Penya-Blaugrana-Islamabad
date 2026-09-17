@@ -923,18 +923,27 @@
       return;
     }
 
+    // Wire the tap FIRST, before anything is awaited. Registering the
+    // service worker takes seconds on a phone's first load, and attaching the
+    // handler after that await left the button completely dead for the whole
+    // of it — the member's first tap did nothing at all, which is what made
+    // turning notifications on feel slow while turning them off was instant.
+    bell.addEventListener('click', toggleChatNotifications);
+
     try {
       // Register up front. Doing this inside the click handler was what made
       // the button need two or three taps: awaiting registration used up the
       // browser's transient user-activation, so the permission prompt never
       // came up on the first tap. By the third, the worker was cached and the
       // await resolved fast enough for the activation to survive.
+      // A tap that lands before this resolves still works: subscribeToChatPush()
+      // registers on demand when swRegistration is not set yet.
       swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
     } catch {
+      bell.removeEventListener('click', toggleChatNotifications);
       markBellUnavailable(bell);
       return;
     }
-    bell.addEventListener('click', toggleChatNotifications);
     setBellState(Boolean(await swRegistration.pushManager.getSubscription()));
   }
 
@@ -966,16 +975,15 @@
         alert('Notifications are blocked for this site. Allow them in your browser settings, then tap again.');
         return;
       }
-      const permission = Notification.requestPermission();
-
-      // Say "on" immediately, then do the work. Arming push means a service
-      // worker handshake, a round trip to Google's or Apple's push service
-      // and another to our own server — several seconds on a phone, during
-      // which the button used to sit unchanged and look broken. It now
-      // reports the state the member asked for and catches up behind the
-      // scenes; if any of it fails the button drops back and says why.
+      // Say "on" first, then ask. Writing to the DOM does not spend the
+      // browser's transient user-activation — only awaiting does — so the
+      // permission prompt still opens from this same tap, and on the
+      // platforms where that prompt blocks the page underneath the label has
+      // already changed rather than waiting on the member's answer.
       bellBusy = true;
       setBellState(true);
+
+      const permission = Notification.requestPermission();
 
       Promise.resolve(permission)
         .then((result) => {
