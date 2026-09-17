@@ -198,6 +198,10 @@
       if (diff <= 0) {
         clock.innerHTML = '<span class="unit"><span class="num">—</span><span class="lbl">closed</span></span>';
         clearInterval(deadlineTimer);
+        // The round has just kicked off, so it is shut. Pull the next round
+        // immediately rather than leaving live boxes under a clock that
+        // already reads "closed" until the 60s refresh catches up.
+        loadWindow();
         return;
       }
       const s = Math.floor(diff / 1000);
@@ -223,6 +227,9 @@
    * 36 boxes, so anyone filling them in carefully lost the lot. Snapshot the
    * unsaved values (and the caret) before re-rendering, put them back after.
    */
+  // Window data that arrived while the member was typing - see renderWindow().
+  let deferredWindow = null;
+
   function captureDraft() {
     const draft = {};
     document.querySelectorAll('.pred-row').forEach((row) => {
@@ -258,19 +265,32 @@
       if (away && !away.disabled && values.away !== '') away.value = values.away;
     }
     if (!focus) return;
-    const row = document.querySelector(`.pred-row[data-fixture-id="${focus.id}"]`);
-    const input = row && row.querySelector(focus.side === 'home' ? '.pred-home' : '.pred-away');
-    if (input && !input.disabled) {
-      input.focus();
-      // Not supported on number inputs in every browser.
-      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* ignore */ }
-    }
+    // Deliberately NOT re-focusing. A phone raises its keyboard only for a
+    // real tap; focus() from script gives the box a caret but no keyboard,
+    // and because the box already holds focus, tapping it again fires
+    // nothing - leaving the member with a cursor and no way to type.
+    // renderWindow() now defers instead of rebuilding mid-entry, so there is
+    // nothing left to restore focus to.
+  }
+
+  /** True while the member has one of the score boxes focused. */
+  function predListHasFocus() {
+    const el = document.activeElement;
+    return Boolean(el && (el.classList?.contains('pred-home') || el.classList?.contains('pred-away')));
   }
 
   function renderWindow(data) {
     const list = $('predList');
     const bar = $('submitBar');
     const fixtures = data.fixtures || [];
+
+    // Never rebuild the list under someone's fingers. The background refresh
+    // runs every 60s and replaces every input element; on a phone that shuts
+    // the keyboard mid-entry and it cannot be reopened from script. Hold the
+    // new data and apply it the moment they stop typing.
+    if (predListHasFocus()) { deferredWindow = data; return; }
+    deferredWindow = null;
+
     const pending = captureDraft();
 
     if (!fixtures.length) {
@@ -736,6 +756,14 @@
     $('league').hidden = false;
     $('whoName').textContent = `${me.member.firstName} ${me.member.lastName}`.trim();
 
+    // Apply any refresh held back while the member was typing, as soon as
+    // they leave the boxes. A poll rather than a blur/focusout listener:
+    // focus events are not dispatched reliably in every mobile webview, and
+    // one missed event would strand the page on stale data indefinitely.
+    setInterval(() => {
+      if (deferredWindow && !predListHasFocus()) renderWindow(deferredWindow);
+    }, 2000);
+
     await Promise.all([loadWindow(), loadMine(), loadLeaderboard(), loadSeasonLeaderboard(), loadReveal(), loadBroadcasts()]);
     initChat();
 
@@ -857,14 +885,44 @@
       : 'Get notified on this phone when Admin replies';
   }
 
+  /* Explains why the toggle cannot arm on this device, instead of hiding it.
+     It used to disappear wherever push was unavailable - which on an iPhone
+     is every ordinary Safari tab, since Apple exposes the Push API only to
+     sites added to the Home Screen. Members were told the feature existed
+     and then could not find it anywhere. */
+  function explainNoPush() {
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    alert(iOS
+      ? 'To get notifications on an iPhone or iPad:\n\n'
+        + '1. Tap the Share button in Safari\n'
+        + '2. Choose "Add to Home Screen"\n'
+        + '3. Open Penya Blaugrana from that new icon\n'
+        + '4. Tap this button again\n\n'
+        + 'Apple only allows notifications for sites added to the Home Screen.'
+      : 'This browser cannot deliver notifications. Try opening the site in '
+        + 'Chrome, or update your browser, then tap this again.');
+  }
+
+  function markBellUnavailable(bell) {
+    bell.classList.add('is-unavailable');
+    bell.textContent = '🔔 Notifications';
+    bell.title = 'Tap to see how to turn these on';
+    bell.addEventListener('click', explainNoPush);
+  }
+
   async function initChatNotifications() {
     const bell = $('chatNotifyBtn');
     if (!bell) return;
-    // Hide entirely where it can't work rather than showing a dead control.
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
-
+    // Always visible to a logged-in member. Where push cannot work the button
+    // stays put and explains itself rather than vanishing.
     bell.hidden = false;
-    bell.addEventListener('click', toggleChatNotifications);
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+      markBellUnavailable(bell);
+      return;
+    }
+
     try {
       // Register up front. Doing this inside the click handler was what made
       // the button need two or three taps: awaiting registration used up the
@@ -872,10 +930,12 @@
       // came up on the first tap. By the third, the worker was cached and the
       // await resolved fast enough for the activation to survive.
       swRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      setBellState(Boolean(await swRegistration.pushManager.getSubscription()));
     } catch {
-      bell.hidden = true;
+      markBellUnavailable(bell);
+      return;
     }
+    bell.addEventListener('click', toggleChatNotifications);
+    setBellState(Boolean(await swRegistration.pushManager.getSubscription()));
   }
 
   function urlBase64ToUint8Array(base64String) {

@@ -272,8 +272,9 @@
     color:var(--muted-lt);margin-bottom:8px;
   }
   .who-bar strong{color:var(--gold)}
+  .who-bar > span{margin-right:auto}
   .who-bar button{
-    margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted-lt);
+    background:none;border:1px solid var(--line);color:var(--muted-lt);
     font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
     padding:7px 13px;border-radius:2px;cursor:pointer;transition:color .25s ease,border-color .25s ease;
   }
@@ -371,22 +372,25 @@
   .chat-header .chat-sub{font-size:.6rem;opacity:.7;font-family:var(--mono)}
   .chat-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;padding:0;line-height:1;opacity:.8}
   .chat-close:hover{opacity:1}
-  /* Phone-notification toggle. Labelled rather than a bare bell icon so
-     it's obvious what it does; goes solid gold once it's on. */
-  .chat-notify{
-    margin-left:auto;margin-right:10px;flex-shrink:0;
-    background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.35);
-    color:#fff;cursor:pointer;
-    font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;
-    text-transform:uppercase;font-weight:700;line-height:1.25;
-    padding:6px 9px;border-radius:3px;max-width:118px;text-align:center;
+  /* Phone-notification toggle. It used to live inside the chat panel header,
+     where nobody found it — you had to open the chat first. It now sits in
+     the signed-in bar at the top of the page, which only exists once a member
+     is logged in. Labelled rather than a bare bell so it's obvious what it
+     does; goes solid gold once it's on. */
+  .notify-btn{
+    flex-shrink:0;cursor:pointer;
+    background:none;border:1px solid var(--line);color:var(--muted-lt);
+    font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+    text-transform:uppercase;
+    padding:7px 13px;border-radius:2px;
     transition:background .2s ease,border-color .2s ease,color .2s ease;
   }
-  .chat-notify:hover{background:rgba(0,0,0,.45)}
-  .chat-notify.is-on{
+  .notify-btn:hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  .notify-btn.is-on{
     background:var(--gold);border-color:var(--gold);color:#04060F;
   }
-  .chat-notify:disabled{opacity:.6;cursor:default}
+  .notify-btn:disabled{opacity:.6;cursor:default}
+  .notify-btn.is-unavailable{opacity:.6}
   .chat-body{
     flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
     background:
@@ -640,6 +644,7 @@
     <div id="league" hidden>
       <div class="who-bar">
         <span>Signed in as <strong id="whoName">—</strong></span>
+        <button type="button" class="notify-btn" id="chatNotifyBtn" hidden>🔔 Turn Notifications On</button>
         <button type="button" id="logoutBtn">Log out</button>
       </div>
 
@@ -769,7 +774,6 @@
         <h4>Peyna Assistant</h4>
         <div class="chat-sub">Private chat with Admin</div>
       </div>
-      <button class="chat-notify" id="chatNotifyBtn" hidden>🔔 Turn Notifications On</button>
       <button class="chat-close" id="chatClose" aria-label="Close chat">×</button>
     </div>
     <div class="chat-body" id="chatBody">
