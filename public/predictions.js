@@ -30,7 +30,10 @@
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = new Error(data.error || 'Something went wrong. Please try again.');
+      // Keep the status when the server did not send a readable reason.
+      // "Something went wrong" on its own is unactionable — it cost a whole
+      // round of back-and-forth working out which call had actually failed.
+      const err = new Error(data.error || `Server error ${res.status}. Please try again.`);
       err.status = res.status;
       err.data = data;
       throw err;
@@ -1110,32 +1113,68 @@
     }
   }
 
+  /* Arming push has four separate steps, any of which can fail for its own
+     reason — a missing service worker, a server with no VAPID keys, a phone
+     the push service refuses, a database write. They used to collapse into
+     one indistinguishable message. Each step now says which one it was, and
+     the browser's own reason comes through with it. */
+  async function pushStep(label, run) {
+    try {
+      return await run();
+    } catch (err) {
+      const detail = err && (err.message || err.name) ? (err.message || err.name) : 'unknown error';
+      const wrapped = new Error(`${label} — ${detail}`);
+      wrapped.cause = err;
+      throw wrapped;
+    }
+  }
+
   async function subscribeToChatPush() {
-    const reg = swRegistration || (await navigator.serviceWorker.register('/sw.js', { scope: '/' }));
-    const existing = await reg.pushManager.getSubscription();
+    const reg = swRegistration || (await pushStep(
+      'starting the background service',
+      () => navigator.serviceWorker.register('/sw.js', { scope: '/' }),
+    ));
+    const existing = await pushStep(
+      'checking this device',
+      () => reg.pushManager.getSubscription(),
+    );
     const sub = existing || (await (async () => {
-      const { publicKey } = await api('/api/chat/push/public-key');
-      return reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
+      const { publicKey } = await pushStep(
+        'asking the site for its key',
+        () => api('/api/chat/push/public-key'),
+      );
+      return pushStep(
+        'registering with your phone\'s push service',
+        () => reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        }),
+      );
     })());
-    await api('/api/chat/push/subscribe', {
-      method: 'POST',
-      body: JSON.stringify({ subscription: sub.toJSON() }),
-    });
+    await pushStep(
+      'saving this device to your account',
+      () => api('/api/chat/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ subscription: sub.toJSON() }),
+      }),
+    );
     return true;
   }
 
   async function unsubscribeFromChatPush() {
     const reg = swRegistration || (await navigator.serviceWorker.getRegistration('/'));
     const existing = reg && (await reg.pushManager.getSubscription());
+    // Nothing registered on this device: it is already off as far as the
+    // member is concerned, so report success rather than an error.
     if (!existing) return;
-    await api('/api/chat/push/unsubscribe', {
-      method: 'POST',
-      body: JSON.stringify({ endpoint: existing.endpoint }),
-    });
-    await existing.unsubscribe();
+    await pushStep(
+      'removing this device from your account',
+      () => api('/api/chat/push/unsubscribe', {
+        method: 'POST',
+        body: JSON.stringify({ endpoint: existing.endpoint }),
+      }),
+    );
+    await pushStep('releasing the subscription', () => existing.unsubscribe());
   }
 
   async function sendChatText() {
