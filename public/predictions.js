@@ -956,61 +956,104 @@
     return out;
   }
 
-  // Guards an in-flight subscribe/unsubscribe so a second tap cannot race it.
-  // Deliberately NOT bell.disabled: the button has to keep looking live,
-  // because the label now changes the instant it is tapped.
-  let bellBusy = false;
+  /* The toggle is a local switch that always responds, with the real work
+     reconciled behind it.
+
+     What it replaces, and why: the old version refused any tap while a
+     subscribe or unsubscribe was in flight. pushManager.subscribe() can hang
+     indefinitely when the phone cannot reach Google's or Apple's push
+     service, and when it did the guard was never cleared — the button went
+     permanently dead and taps vanished into nothing. On top of that every
+     failure bounced the label back with an alert, and turning off asked for
+     a confirmation first. Between them: "3 times I have to turn on and off"
+     and "it takes much time" in both directions.
+
+     Now: every tap flips the label at once and records what the member
+     wants. A single background worker drives the device towards that wish,
+     always using the LAST thing they asked for, so tapping on-off-on settles
+     as "on" with one round trip rather than three queued ones. Every network
+     step is bounded by a timeout, so nothing can wedge the button, and one
+     silent retry absorbs the usual mobile blip before anyone is told. */
+  const BELL_TIMEOUT_MS = 15000;
+  let bellWanted = null;   // what the member last asked for; null = settled
+  let bellSyncing = false; // a subscribe/unsubscribe is running
+
+  function withTimeout(promise, ms) {
+    let timer;
+    return Promise.race([
+      Promise.resolve(promise).finally(() => clearTimeout(timer)),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('the network took too long — check your connection and try again')),
+          ms,
+        );
+      }),
+    ]);
+  }
 
   function toggleChatNotifications() {
     const bell = $('chatNotifyBtn');
-    if (bellBusy) return;
     const turningOn = !bell.classList.contains('is-on');
 
-    if (turningOn) {
-      // CRITICAL: ask for permission synchronously, as the very first thing
-      // the tap does. Any await before this point spends the browser's
-      // transient user-activation and the prompt silently never appears,
-      // which is what made the button need several taps.
-      if (Notification.permission === 'denied') {
-        alert('Notifications are blocked for this site. Allow them in your browser settings, then tap again.');
-        return;
-      }
-      // Say "on" first, then ask. Writing to the DOM does not spend the
-      // browser's transient user-activation — only awaiting does — so the
-      // permission prompt still opens from this same tap, and on the
-      // platforms where that prompt blocks the page underneath the label has
-      // already changed rather than waiting on the member's answer.
-      bellBusy = true;
-      setBellState(true);
-
-      const permission = Notification.requestPermission();
-
-      Promise.resolve(permission)
-        .then((result) => {
-          if (result !== 'granted') {
-            setBellState(false);
-            return null;
-          }
-          return subscribeToChatPush();
-        })
-        .catch((err) => {
-          setBellState(false);
-          alert('Could not turn notifications on: ' + err.message);
-        })
-        .finally(() => { bellBusy = false; });
+    if (turningOn && Notification.permission === 'denied') {
+      alert('Notifications are blocked for this site. Allow them in your browser settings, then tap again.');
       return;
     }
 
-    if (!confirm('Turn notifications off for this device?')) return;
-    // Same the other way: off says off at once, the unsubscribe follows.
-    bellBusy = true;
-    setBellState(false);
-    unsubscribeFromChatPush()
-      .catch((err) => {
-        setBellState(true);
-        alert('Could not turn notifications off: ' + err.message);
-      })
-      .finally(() => { bellBusy = false; });
+    // Flip on EVERY tap. No in-flight guard: a button that ignores taps is
+    // exactly what made this feel broken.
+    setBellState(turningOn);
+    bellWanted = turningOn;
+
+    // Asking for permission has to happen in the same task as the tap, or
+    // the browser treats it as unprompted and never shows the dialog. Skip it
+    // entirely when permission has already been granted — re-asking is pure
+    // latency on every subsequent toggle.
+    if (turningOn && Notification.permission !== 'granted') {
+      Notification.requestPermission().then((result) => {
+        if (result !== 'granted') {
+          // Dismissed or blocked — put the switch back where it was.
+          if (bellWanted === true) { bellWanted = null; setBellState(false); }
+          return;
+        }
+        syncBellSubscription();
+      });
+      return;
+    }
+
+    syncBellSubscription();
+  }
+
+  /** Drives the device to whatever the member last asked for. */
+  async function syncBellSubscription() {
+    if (bellSyncing) return; // the running loop will pick up the new wish
+    bellSyncing = true;
+    try {
+      while (bellWanted !== null) {
+        const target = bellWanted;
+        try {
+          await withTimeout(target ? subscribeToChatPush() : unsubscribeFromChatPush(), BELL_TIMEOUT_MS);
+          if (bellWanted === target) bellWanted = null; // settled
+        } catch (err) {
+          // One quiet retry first — a dropped request on a phone is routine
+          // and not worth interrupting anyone over.
+          try {
+            await withTimeout(target ? subscribeToChatPush() : unsubscribeFromChatPush(), BELL_TIMEOUT_MS);
+            if (bellWanted === target) bellWanted = null;
+          } catch (err2) {
+            // Only speak up if this is still what they want; if they have
+            // tapped again since, the loop is about to act on that instead.
+            if (bellWanted === target) {
+              bellWanted = null;
+              setBellState(!target);
+              alert(`Could not turn notifications ${target ? 'on' : 'off'}: ${err2.message}`);
+            }
+          }
+        }
+      }
+    } finally {
+      bellSyncing = false;
+    }
   }
 
   async function subscribeToChatPush() {
