@@ -912,6 +912,13 @@
   }
 
   function markBellUnavailable(bell) {
+    // If the member has already tapped, the sync loop owns the label and will
+    // report success or failure itself. Overwriting it here is what produced
+    // the "yellow box": this ran after their tap, replacing "Notifications On"
+    // with the bare word "Notifications" while leaving the gold is-on styling
+    // in place, so the button ended up gold and meaningless.
+    if (bellTouched) return;
+    bell.classList.remove('is-on');
     bell.classList.add('is-unavailable');
     bell.textContent = '🔔 Notifications';
     bell.title = 'Tap to see how to turn these on';
@@ -951,7 +958,15 @@
       markBellUnavailable(bell);
       return;
     }
-    setBellState(Boolean(await swRegistration.pushManager.getSubscription()));
+
+    // Read the real subscription only if the member has not already decided.
+    // This lookup goes through the service worker and the push service and
+    // lands seconds after load; when it landed after a tap it found no
+    // subscription yet — the one being created was still in flight — and
+    // snapped the button back to "off", undoing what they had just done.
+    // That is why it only ever looked right after a page refresh.
+    const existing = await swRegistration.pushManager.getSubscription();
+    if (!bellTouched) setBellState(Boolean(existing));
   }
 
   function urlBase64ToUint8Array(base64String) {
@@ -984,6 +999,10 @@
   const BELL_TIMEOUT_MS = 15000;
   let bellWanted = null;   // what the member last asked for; null = settled
   let bellSyncing = false; // a subscribe/unsubscribe is running
+  // Set the moment the member touches the toggle. Page-load housekeeping must
+  // never write over a switch they have already thrown — see the two places
+  // below that check it.
+  let bellTouched = false;
 
   function withTimeout(promise, ms) {
     let timer;
@@ -1000,6 +1019,7 @@
 
   function toggleChatNotifications() {
     const bell = $('chatNotifyBtn');
+    bellTouched = true;
     const turningOn = !bell.classList.contains('is-on');
 
     if (turningOn && Notification.permission === 'denied') {
