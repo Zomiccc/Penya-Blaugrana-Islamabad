@@ -399,6 +399,25 @@
   }
   .notify-btn:disabled{opacity:.6;cursor:default}
   .notify-btn.is-unavailable{opacity:.6}
+  /* Spoken confirmation of the switch, shown on every tap. Sits above
+     everything and says which way the setting now points, so the answer never
+     depends on noticing a colour change on a small button. */
+  .notify-toast{
+    position:fixed;left:50%;top:104px;transform:translate(-50%,0);
+    z-index:9999;pointer-events:none;
+    background:var(--chalk);border:1px solid var(--chalk);
+    color:#04060F;font-family:var(--mono);font-size:.72rem;
+    letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+    padding:12px 20px;border-radius:4px;max-width:calc(100vw - 32px);
+    text-align:center;box-shadow:0 10px 34px rgba(0,0,0,.6);
+    /* Shown and hidden with display alone. No fade, no slide: a transition or
+       animation that a browser throttles, skips or refuses (reduced-motion,
+       a backgrounded tab) would leave the confirmation invisible, which is
+       the one thing it must never be. */
+    display:none;transform:translate(-50%,0);
+  }
+  .notify-toast.is-on{background:var(--gold);border-color:var(--gold);color:#04060F}
+  .notify-toast.show{display:block}
   .chat-body{
     flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;
     background:

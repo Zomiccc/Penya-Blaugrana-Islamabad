@@ -1017,6 +1017,32 @@
     ]);
   }
 
+  /* Says the new setting out loud, in words, the moment it is tapped.
+     The button's own gold "on" styling was not landing for members — the
+     report was that it "just goes golden" and they could not tell whether it
+     had worked. This is independent of the button: a banner that states
+     plainly which way the switch now sits, then fades. The real subscribe or
+     unsubscribe runs behind it and takes as long as it takes. */
+  let notifyToastTimer = null;
+
+  function showNotifyToast(on) {
+    let toast = $('notifyToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'notifyToast';
+      toast.className = 'notify-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = on ? '✓ Notifications are ON' : 'Notifications are OFF';
+    toast.classList.toggle('is-on', on);
+    // Restart the animation even when the previous banner is still showing.
+    toast.classList.remove('show');
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    clearTimeout(notifyToastTimer);
+    notifyToastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
   function toggleChatNotifications() {
     const bell = $('chatNotifyBtn');
     bellTouched = true;
@@ -1030,6 +1056,7 @@
     // Flip on EVERY tap. No in-flight guard: a button that ignores taps is
     // exactly what made this feel broken.
     setBellState(turningOn);
+    showNotifyToast(turningOn);
     bellWanted = turningOn;
 
     // Asking for permission has to happen in the same task as the tap, or
