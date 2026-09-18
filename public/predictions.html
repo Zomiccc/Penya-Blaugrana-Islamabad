@@ -278,7 +278,15 @@
     font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
     padding:7px 13px;border-radius:2px;cursor:pointer;transition:color .25s ease,border-color .25s ease;
   }
-  .who-bar button:hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  /* Hover only where a pointer can actually hover. A phone keeps the :hover
+     state on a button after you tap it, until you tap something else or
+     reload — and this rule outranks .notify-btn.is-on (0,2,1 against 0,2,0),
+     so tapping the notifications button turned its label gold on a gold
+     background and left a solid yellow box with nothing written on it. That
+     is also why it looked right again after a refresh. */
+  @media (hover:hover){
+    .who-bar button:not(.is-on):hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  }
   .my-total{
     display:flex;align-items:baseline;gap:10px;
     background:rgba(0,0,0,.3);border:1px solid var(--line);border-left:3px solid var(--gold);
@@ -390,7 +398,9 @@
     padding:7px 13px;border-radius:2px;
     transition:background .2s ease,border-color .2s ease,color .2s ease;
   }
-  .notify-btn:hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  @media (hover:hover){
+    .notify-btn:not(.is-on):hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  }
   /* Switched on: gold, bold, and a tick in place of the bell, so it differs
      from the off state in more than just colour. */
   .notify-btn.is-on{
