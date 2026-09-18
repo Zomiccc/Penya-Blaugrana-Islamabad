@@ -875,14 +875,21 @@
   // handler never has to await it — see toggleChatNotifications().
   let swRegistration = null;
 
+  /* The "on" state has to read as ON at a glance. A gold box with the same
+     bell icon and near-identical wording did not: members were tapping it
+     and seeing "just a yellow box", unsure whether anything had happened.
+     It now swaps the bell for a tick and says plainly that it is switched
+     on, in bold, so the two states differ in word, symbol and weight rather
+     than only in colour. */
   function setBellState(on) {
     const bell = $('chatNotifyBtn');
     if (!bell) return;
     bell.classList.toggle('is-on', on);
-    bell.textContent = on ? '🔔 Notifications On' : '🔔 Turn Notifications On';
+    bell.textContent = on ? '✓ Notifications On' : '🔔 Turn Notifications On';
     bell.title = on
-      ? 'Notifications are on for this device — tap to turn them off'
+      ? 'Notifications are on for this phone — tap to turn them off'
       : 'Get notified on this phone when Admin replies';
+    bell.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
 
   /* Explains why the toggle cannot arm on this device, instead of hiding it.

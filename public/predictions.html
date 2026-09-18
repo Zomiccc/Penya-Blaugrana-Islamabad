@@ -319,6 +319,11 @@
     }
     .score-input input{width:42px;flex-shrink:0;font-size:1rem;padding:8px 4px}
     .pred-when{text-align:center;min-width:0;order:3;font-size:.58rem}
+    /* Give the member's name its own line so the two buttons sit together
+       beneath it, instead of the wider "on" label orphaning Log out onto a
+       row of its own. */
+    .who-bar{gap:8px 10px}
+    .who-bar > span{flex-basis:100%;margin-right:0}
     .gate-card{padding:30px 20px}
     /* Match row: home team | score | away team in one line */
     .pred-row > .pred-team{order:0}
@@ -380,14 +385,17 @@
   .notify-btn{
     flex-shrink:0;cursor:pointer;
     background:none;border:1px solid var(--line);color:var(--muted-lt);
-    font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+    font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
     text-transform:uppercase;
     padding:7px 13px;border-radius:2px;
     transition:background .2s ease,border-color .2s ease,color .2s ease;
   }
   .notify-btn:hover{color:var(--gold);border-color:rgba(237,187,0,.45)}
+  /* Switched on: gold, bold, and a tick in place of the bell, so it differs
+     from the off state in more than just colour. */
   .notify-btn.is-on{
     background:var(--gold);border-color:var(--gold);color:#04060F;
+    font-weight:700;letter-spacing:.08em;
   }
   .notify-btn:disabled{opacity:.6;cursor:default}
   .notify-btn.is-unavailable{opacity:.6}
@@ -681,7 +689,7 @@
             <div class="lock-note">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.5 3.8 10.3 9 11.5 5.2-1.2 9-6 9-11.5V5l-9-4Zm0 6a2.5 2.5 0 0 1 2.5 2.5V11h.5a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1h.5V9.5A2.5 2.5 0 0 1 12 7Zm0 1.5a1 1 0 0 0-1 1V11h2V9.5a1 1 0 0 0-1-1Z"/></svg>
               <span>
-                Predictions lock when the first match of the week kicks off. Once you submit your predictions they are permanently locked and cannot be changed. Other members' predictions are hidden until the first match of the week kicks off.
+                Each match locks when it kicks off. Once you submit your predictions they are permanently locked and cannot be changed. Other members' predictions stay hidden until that match kicks off.
               </span>
             </div>
             <div class="panel-body">
